@@ -8,7 +8,6 @@ import {
 } from '@noma/config/server';
 import { AppModule } from './app.module.js';
 
-
 const REMOTE_ENVIRONMENTS = new Set(['preview', 'staging', 'production']);
 
 function loadOptionalLocalEnvironment(): void {
@@ -39,6 +38,6 @@ async function bootstrap(): Promise<void> {
 }
 
 void bootstrap().catch((error: unknown) => {
-  console.error(JSON.stringify(toSafeStartupError(error)));
-  process.exitCode = 1;
+  const diagnostic = `${JSON.stringify(toSafeStartupError(error))}\n`;
+  process.stderr.write(diagnostic, () => process.exit(1));
 });
