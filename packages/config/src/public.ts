@@ -3,3 +3,4 @@ export interface PublicRuntimeConfig {
 }
 
 export const publicConfigBoundary = 'browser-safe' as const;
+export { resolveRuntimeAddress, type RuntimeAddress, type RuntimeName } from './runtime.js';

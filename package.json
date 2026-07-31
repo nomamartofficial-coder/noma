@@ -12,13 +12,24 @@
   "scripts": {
     "workspace:validate": "node scripts/validate-workspace.mjs",
     "workspace:self-test": "node scripts/validate-workspace.mjs --self-test",
+    "runtimes:validate": "node scripts/validate-runtime-scaffolds.mjs",
+    "runtimes:self-test": "node scripts/validate-runtime-scaffolds.mjs --self-test",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "build": "turbo run build",
-    "check": "pnpm workspace:validate && pnpm lint && pnpm typecheck && pnpm build",
+    "dev": "turbo run dev --parallel",
+    "dev:web": "pnpm --filter @noma/web dev",
+    "dev:api": "pnpm --filter @noma/api dev",
+    "dev:worker": "pnpm --filter @noma/worker dev",
+    "start:web": "pnpm --filter @noma/web start",
+    "start:api": "pnpm --filter @noma/api start",
+    "start:worker": "pnpm --filter @noma/worker start",
+    "smoke:runtimes": "pnpm build && node scripts/smoke-runtimes.mjs",
+    "check": "pnpm workspace:validate && pnpm runtimes:validate && pnpm lint && pnpm typecheck && pnpm build",
     "clean": "turbo run clean && node scripts/clean-workspace.mjs"
   },
   "devDependencies": {
+    "tsx": "4.22.3",
     "turbo": "2.9.14",
     "typescript": "6.0.3"
   }
