@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, copy, json, re, sys
+import argparse, base64, copy, gzip, json, re, sys
 from pathlib import Path
 from collections import defaultdict
 ROOT=Path(__file__).resolve().parents[1]
@@ -13,7 +13,15 @@ def load_ndjson(pattern):
     paths=sorted(TR.glob(pattern))
     if not paths: raise ValidationError(f'no files match {pattern}')
     for path in paths:
-        for n,line in enumerate(path.read_text(encoding='utf-8').splitlines(),1):
+        try:
+            if path.name.endswith('.ndjson.gz.b64'):
+                encoded=''.join(path.read_text(encoding='ascii').split())
+                raw=gzip.decompress(base64.b64decode(encoded, validate=True)).decode('utf-8')
+            else:
+                raw=path.read_text(encoding='utf-8')
+        except (ValueError, OSError, UnicodeError) as e:
+            raise ValidationError(f'{path.name}: cannot decode register: {e}')
+        for n,line in enumerate(raw.splitlines(),1):
             if not line.strip(): continue
             try: rows.append(json.loads(line))
             except json.JSONDecodeError as e: raise ValidationError(f'{path.name}:{n}: invalid JSON: {e}')
@@ -76,8 +84,8 @@ def build_reverse(tasks):
     return {k:sorted(set(v)) for k,v in reverse.items()}
 
 def validate(bundle=None):
-    tasks=load_ndjson('task-register-*.ndjson') if bundle is None else bundle['tasks']
-    reqs=load_ndjson('requirement-register-*.ndjson') if bundle is None else bundle['requirements']
+    tasks=load_ndjson('task-register-*.ndjson.gz.b64') if bundle is None else bundle['tasks']
+    reqs=load_ndjson('requirement-register-*.ndjson.gz.b64') if bundle is None else bundle['requirements']
     decs=load_ndjson('decision-register.ndjson') if bundle is None else bundle['decisions']
     if len(tasks)!=150: raise ValidationError(f'expected 150 tasks, found {len(tasks)}')
     if sum(t['priority']=='P0' for t in tasks)!=139: raise ValidationError('expected 139 P0 tasks')
@@ -121,7 +129,7 @@ def validate(bundle=None):
     return {'tasks':len(tasks),'p0':sum(t['priority']=='P0' for t in tasks),'requirements':len(reqs),'decisions':len(decs),'reverse':build_reverse(tasks)}
 
 def self_test():
-    bundle={'tasks':copy.deepcopy(load_ndjson('task-register-*.ndjson')),'requirements':load_ndjson('requirement-register-*.ndjson'),'decisions':load_ndjson('decision-register.ndjson')}
+    bundle={'tasks':copy.deepcopy(load_ndjson('task-register-*.ndjson.gz.b64')),'requirements':load_ndjson('requirement-register-*.ndjson.gz.b64'),'decisions':load_ndjson('decision-register.ndjson')}
     bundle['tasks'][0]['relations']['roles']['refs'].append('ROLE:UNKNOWN-INJECTED')
     try: validate(bundle)
     except ValidationError as e:
