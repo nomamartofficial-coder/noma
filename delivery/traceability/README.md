@@ -15,7 +15,8 @@ The baseline contains all **150** backlog tasks, including all **139 P0 tasks**.
 - `task-register-01.ndjson.gz.b64` through `task-register-03.ndjson.gz.b64` — one logical task register containing task metadata, dependencies, status, and forward traceability.
 - `requirement-register-01.ndjson.gz.b64` and `requirement-register-02.ndjson.gz.b64` — one logical requirement register containing acceptance requirements with task, decision, test, and evidence back-links.
 - `decision-register.ndjson` — 15 locked scope decisions plus repository, architecture, quality, and readiness decisions with reverse task/requirement links.
-- `task-index.csv` and `requirement-index.csv` — plain-text review indexes for quick human inspection.
+- `task-index.csv` — plain-text summary of all 150 tasks.
+- `requirement-index-01.csv` through `requirement-index-03.csv` — plain-text summaries of all 150 acceptance requirements.
 - `manifest.json` — counts, version, files, and validation commands.
 - `schemas/*.schema.json` — JSON Schema contracts for each record type.
 - `scripts/validate_traceability.py` — zero-dependency structural, source, forward/backward, and referential validator.
