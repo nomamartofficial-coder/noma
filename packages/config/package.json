@@ -1,0 +1,27 @@
+{
+  "name": "@noma/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Client-safe and server-only typed configuration contracts; never stores secret values.",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    "./public": {
+      "types": "./dist/public.d.ts",
+      "default": "./dist/public.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    }
+  },
+  "scripts": {
+    "lint": "node ../../scripts/lint-package.mjs .",
+    "typecheck": "node ../../scripts/run-tsc.mjs --noEmit",
+    "build": "node ../../scripts/run-tsc.mjs",
+    "clean": "node ../../scripts/clean-package.mjs ."
+  }
+}

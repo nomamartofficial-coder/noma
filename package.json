@@ -1,0 +1,25 @@
+{
+  "name": "noma",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Noma Covenant pilot workspace monorepo",
+  "packageManager": "pnpm@11.17.0",
+  "engines": {
+    "node": ">=24.0.0 <25",
+    "pnpm": "11.17.0"
+  },
+  "scripts": {
+    "workspace:validate": "node scripts/validate-workspace.mjs",
+    "workspace:self-test": "node scripts/validate-workspace.mjs --self-test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "build": "turbo run build",
+    "check": "pnpm workspace:validate && pnpm lint && pnpm typecheck && pnpm build",
+    "clean": "turbo run clean && node scripts/clean-workspace.mjs"
+  },
+  "devDependencies": {
+    "turbo": "2.9.14",
+    "typescript": "6.0.3"
+  }
+}

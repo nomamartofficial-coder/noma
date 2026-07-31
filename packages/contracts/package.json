@@ -1,0 +1,23 @@
+{
+  "name": "@noma/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared public API, event, job, and error contracts.",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "lint": "node ../../scripts/lint-package.mjs .",
+    "typecheck": "node ../../scripts/run-tsc.mjs --noEmit",
+    "build": "node ../../scripts/run-tsc.mjs",
+    "clean": "node ../../scripts/clean-package.mjs ."
+  }
+}

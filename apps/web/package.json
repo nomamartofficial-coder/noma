@@ -1,0 +1,20 @@
+{
+  "name": "@noma/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Noma web runtime workspace placeholder; runtime framework arrives in DEV-002.",
+  "dependencies": {
+    "@noma/config": "workspace:*",
+    "@noma/contracts": "workspace:*",
+    "@noma/observability": "workspace:*",
+    "@noma/ui": "workspace:*"
+  },
+  "scripts": {
+    "lint": "node ../../scripts/lint-package.mjs .",
+    "typecheck": "node ../../scripts/run-tsc.mjs --noEmit",
+    "build": "node ../../scripts/run-tsc.mjs",
+    "clean": "node ../../scripts/clean-package.mjs .",
+    "dev": "node ../../scripts/dev-not-scaffolded.mjs web"
+  }
+}
