@@ -1,0 +1,51 @@
+id,priority,risk,status,statement
+REQ-FND-001,P0,P0-RECOVERY,SATISFIED,"No production code changes; report identifies governing docs, missing foundations, reusable patterns, blockers, and proposed first branch."
+REQ-FND-002,P0,P0-COMMERCE,SATISFIED,Repository paths are exact; no duplicate competing copies; links resolve; docs/01–11 remain unchanged except approved link corrections.
+REQ-FND-003,P0,P2-PRESENTATION,SATISFIED,Vision agrees with docs/01; does not expand scope; future Noma ambition is distinguished from pilot obligations.
+REQ-FND-004,P0,P0-AUTHORITY,SATISFIED,"Codex can identify required docs and commands from one file; instructions prohibit scope invention, direct status edits, provider truth fabrication, and test deferral."
+REQ-FND-005,P0,P1-OPERATIONS,SATISFIED,A clean machine can reach the documented development state without production credentials or tribal knowledge.
+REQ-FND-006,P0,P0-AUTHORITY,SATISFIED,"Templates fail review if scope source, risk, tests, or intentionally inactive branches are missing."
+REQ-FND-007,P0,P0-RECOVERY,IN_VERIFICATION,Every P0 task can be traced forward and backward; unknown references fail validation.
+REQ-FND-008,P0,P0-RECOVERY,PLANNED,"No secret or personal data is permitted in evidence; evidence artefacts have commit, environment, owner, date, and expiry fields."
+REQ-DEV-001,P0,P0-COMMERCE,PLANNED,Workspace builds from clean install; package boundaries match Part 6; no browser package imports server/database internals.
+REQ-DEV-002,P0,P0-COMMERCE,PLANNED,Web/API/Worker start independently; readiness/liveness are distinct; no provider secrets in Web bundle.
+REQ-DEV-003,P0,P0-AUTHORITY,PLANNED,Missing production-critical values fail startup safely; logs redact secrets; preview cannot load production credentials.
+REQ-DEV-004,P0,P0-RECOVERY,PLANNED,Real PostgreSQL starts locally/CI; migrations upgrade empty and prior schema; unsafe reset is impossible in production.
+REQ-DEV-005,P0,P0-RECOVERY,PLANNED,Committed outbox work survives API crash; duplicate dispatch is harmless; dead jobs remain visible and owned.
+REQ-DEV-006,P0,P0-RECOVERY,PLANNED,Tests run without production data or credentials; time/randomness/provider outcomes are controllable; cleanup preserves append-only semantics.
+REQ-DEV-007,P0,P0-FINANCIAL,PLANNED,"Domain/application modules import ports only; simulators reproduce success, timeout, duplicate, reversal, out-of-order, and unknown outcomes."
+REQ-DEV-008,P0,P0-RECOVERY,PLANNED,Protected branch cannot merge on failed required checks; P0 flaky tests remain failures; evidence identifies commit/environment.
+REQ-DEV-009,P0,P1-OPERATIONS,PLANNED,"Preview/staging never use production database, queue, buckets, keys, or provider recipients; rollback path is documented."
+REQ-DEV-010,P0,P0-RECOVERY,PLANNED,One synthetic request can be traced Web→API→DB/outbox→Worker; sensitive fields are absent; dependency failure changes readiness honestly.
+REQ-UI-001,P0,P2-PRESENTATION,PLANNED,No feature hardcodes status colours; semantic tokens meet documented contrast; final brand inputs can remap without changing meaning.
+REQ-UI-002,P0,P1-OPERATIONS,PLANNED,"Keyboard, focus, labels, error association, disabled/pending states, target size, and reduced motion pass component tests."
+REQ-UI-003,P0,P0-COMMERCE,PLANNED,Components distinguish requested/processing/final/failed/uncertain states and never infer provider or custody completion.
+REQ-UI-004,P0,P0-COMMERCE,PLANNED,Public and private navigation follow Part 4; route visibility does not grant action authority; responsive/reflow pass.
+REQ-UI-005,P0,P1-OPERATIONS,PLANNED,No universal dashboard; direct deep links enforce server access; data density and touch behaviour match each surface.
+REQ-UI-006,P0,P2-PRESENTATION,PLANNED,All pilot components expose loading/empty/error/pending/disabled/permission states; baseline changes require review.
+REQ-IAM-001,P0,P0-AUTHORITY,PLANNED,One User identity supports multiple memberships; tokens are hashed/one-time/expiring; sessions are revocable and device-visible.
+REQ-IAM-002,P0,P0-AUTHORITY,PLANNED,No password/OTP/token logging; session rotates after login; concurrent revoke blocks future requests; direct API tests pass.
+REQ-IAM-003,P0,P0-AUTHORITY,PLANNED,Email delivery is not verification truth; duplicate/expired token fails safely; recovery revokes relevant sessions.
+REQ-IAM-004,P0,P0-AUTHORITY,PLANNED,Privileged roles cannot use protected surfaces without MFA; sensitive actions reject stale assurance; recovery cannot silently remove controls.
+REQ-IAM-005,P0,P0-AUTHORITY,PLANNED,No global role grants unbounded access; one identity may combine approved roles; revoked/expired grants fail immediately.
+REQ-IAM-006,P0,P0-AUTHORITY,PLANNED,Deny-by-default; every protected API uses policy middleware/application guard; hidden UI is not a control.
+REQ-IAM-007,P0,P0-PRIVACY,PLANNED,"Seller, rider, buyer, Support, Finance, Trust, and Admin views expose only necessary fields; errors do not leak restricted reasons."
+REQ-IAM-008,P0,P0-AUTHORITY,PLANNED,"Money, access, enforcement, evidence access, configuration, and emergency actions are auditable; ordinary admins cannot edit/delete events."
+REQ-IAM-009,P0,P0-AUTHORITY,PLANNED,Maker cannot self-approve high-risk grant; scope/expiry required; revocation invalidates active authority and sessions where required.
+REQ-IAM-010,P0,P0-AUTHORITY,PLANNED,User can revoke other sessions; sensitive changes require step-up; truthful pending/failed states and accessible recovery work.
+REQ-INS-001,P0,P0-AUTHORITY,PLANNED,No Covenant email or matric pattern is hardcoded without configured approval; institution scope is present on protected records.
+REQ-INS-002,P0,P0-AUTHORITY,PLANNED,Straightforward cases can approve; duplicate/conflict never silently merges; affiliation is independent from seller/payout/trust status.
+REQ-INS-003,P0,P0-PRIVACY,PLANNED,"Evidence is private, least-privilege, time-limited, and not visible to sellers/riders; decision preserves history and reason."
+REQ-INS-004,P0,P0-AUTHORITY,PLANNED,Expired affiliation removes campus checkout without deleting account/history; stale sessions cannot retain capability.
+REQ-LOC-001,P0,P0-CUSTODY,PLANNED,Only approved active points are selectable; private room data is not exposed; all times use Africa/Lagos policy.
+REQ-LOC-002,P0,P0-CUSTODY,PLANNED,Closure blocks new commitments but preserves in-flight obligations; changes are audited and conflict-safe.
+REQ-SEL-001,P0,P0-AUTHORITY,PLANNED,Seller type is not a global role; application approval and activation are distinct; agreements are versioned.
+REQ-SEL-002,P0,P1-OPERATIONS,PLANNED,Applicant sees truthful status and missing actions; private evidence uses Files policy; no public store before activation.
+REQ-SEL-003,P1,P1-PROGRESSIVE,PLANNED,No public external registration; invitation alone does not activate checkout or inbound logistics.
+REQ-SEL-004,P0,P1-OPERATIONS,PLANNED,Reviewer authority is scoped; decision is auditable; approved seller remains inactive until readiness conditions pass.
+REQ-SEL-005,P0,P0-COMMERCE,PLANNED,Suspension blocks new commerce without losing paid-order obligations; no generic admin status edit.
+REQ-RDR-001,P0,P0-CUSTODY,PLANNED,Rider capability is institution-scoped and independent from buyer/seller roles; sensitive data is limited.
+REQ-RDR-002,P0,P0-CUSTODY,PLANNED,Expired/off-shift rider cannot accept assignments; override is reasoned and audited; Wi-Fi-first operation supported.
+REQ-CUX-001,P0,P0-AUTHORITY,PLANNED,"Dispatcher sees only assigned/eligible jobs and cannot access buyer private location, payments, seller ledger, or admin controls."
+REQ-CAT-001,P0,P0-COMMERCE,PLANNED,Category-specific fields replace giant nullable product table; disabled commerce types cannot create live listings.
+REQ-CAT-002,P0,P0-COMMERCE,PLANNED,Canonical product is seller-independent; duplicate suggestions require human approval; existing order snapshots are unaffected.
