@@ -3,6 +3,7 @@ import { resolve, relative, sep } from 'node:path';
 
 const base = resolve(process.argv[2] ?? '.');
 const allowedExtensions = new Set(['.ts', '.js', '.mjs', '.json', '.md', '.yaml', '.yml']);
+const ignoredDirectories = new Set(['node_modules', 'dist', '.turbo', '.next']);
 const failures = [];
 
 function extensionOf(name) {
@@ -12,7 +13,7 @@ function extensionOf(name) {
 
 async function walk(directory) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
-    if (['node_modules', 'dist', '.turbo'].includes(entry.name)) continue;
+    if (ignoredDirectories.has(entry.name)) continue;
 
     const path = resolve(directory, entry.name);
     if (entry.isDirectory()) {
