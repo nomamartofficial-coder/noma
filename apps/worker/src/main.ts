@@ -7,7 +7,7 @@ import {
   toSafeStartupError,
 } from '@noma/config/server';
 import { WorkerModule } from './app.module.js';
-
+import { startHealthServer } from './health-server.js';
 
 const REMOTE_ENVIRONMENTS = new Set(['preview', 'staging', 'production']);
 
@@ -24,7 +24,6 @@ function loadOptionalLocalEnvironment(): void {
     throw new Error('Remote environments must use platform-managed configuration, not a local .env file');
   }
 }
-import { startHealthServer } from './health-server.js';
 
 async function bootstrap(): Promise<void> {
   loadOptionalLocalEnvironment();
@@ -51,6 +50,6 @@ async function bootstrap(): Promise<void> {
 }
 
 void bootstrap().catch((error: unknown) => {
-  console.error(JSON.stringify(toSafeStartupError(error)));
-  process.exitCode = 1;
+  const diagnostic = `${JSON.stringify(toSafeStartupError(error))}\n`;
+  process.stderr.write(diagnostic, () => process.exit(1));
 });
