@@ -1,0 +1,151 @@
+id,epic,title,priority,risk,status,owner
+FND-001,EP00,Inspect repository and publish baseline orientation report,P0,P0-RECOVERY,COMPLETE,Engineering + human reviewer
+FND-002,EP00,Install the version-controlled Build Pack and document index,P0,P0-COMMERCE,COMPLETE,Product/Engineering
+FND-003,EP00,Create docs/00-product-vision.md,P0,P2-PRESENTATION,COMPLETE,Founder/Product
+FND-004,EP00,Create root AGENTS.md for Codex governance,P0,P0-AUTHORITY,COMPLETE,Engineering + Product
+FND-005,EP00,Create repository README and local-start contract,P0,P1-OPERATIONS,COMPLETE,Engineering
+FND-006,EP00,"Create issue, pull-request, ADR, and scope-change templates",P0,P0-AUTHORITY,COMPLETE,Engineering/Product/QA
+FND-007,EP00,"Create task, decision, and requirement traceability registers",P0,P0-RECOVERY,IN_PROGRESS,QA/Product
+FND-008,EP00,Create release-evidence and change-control directories,P0,P0-RECOVERY,NOT_STARTED,QA/Security
+DEV-001,EP01,Initialise pnpm workspace and Turborepo monorepo,P0,P0-COMMERCE,NOT_STARTED,Engineering
+DEV-002,EP01,"Scaffold Next.js, NestJS API, and NestJS Worker runtimes",P0,P0-COMMERCE,NOT_STARTED,Engineering
+DEV-003,EP01,Implement typed environment configuration and secret validation,P0,P0-AUTHORITY,NOT_STARTED,Engineering/Security
+DEV-004,EP01,Create Prisma/PostgreSQL foundation and migration discipline,P0,P0-RECOVERY,NOT_STARTED,Engineering/Data
+DEV-005,EP01,Create Redis/BullMQ queue and transactional-outbox foundation,P0,P0-RECOVERY,NOT_STARTED,Engineering
+DEV-006,EP01,Create deterministic testing package and Testcontainers harness,P0,P0-RECOVERY,NOT_STARTED,QA/Engineering
+DEV-007,EP01,Create provider ports and local simulators,P0,P0-FINANCIAL,NOT_STARTED,Engineering/QA
+DEV-008,EP01,Create GitHub Actions quality pipeline,P0,P0-RECOVERY,NOT_STARTED,Engineering/QA/Security
+DEV-009,EP01,Create preview/staging deployment skeleton,P0,P1-OPERATIONS,NOT_STARTED,DevOps/Engineering
+DEV-010,EP01,"Bootstrap OpenTelemetry, structured logging, correlation, and health",P0,P0-RECOVERY,NOT_STARTED,Engineering/DevOps
+UI-001,EP02,Implement core and semantic design tokens,P0,P2-PRESENTATION,NOT_STARTED,Design/Web
+UI-002,EP02,Implement accessible primitive component set,P0,P1-OPERATIONS,NOT_STARTED,Web/Design/QA
+UI-003,EP02,"Implement commerce status, money, timeline, evidence, and action patterns",P0,P0-COMMERCE,NOT_STARTED,Web/Design
+UI-004,EP02,Implement Marketplace and Buyer Account shells,P0,P0-COMMERCE,NOT_STARTED,Web
+UI-005,EP02,"Implement Seller, Rider, Operations, and Admin shells",P0,P1-OPERATIONS,NOT_STARTED,Web/QA
+UI-006,EP02,Create Storybook/component documentation and visual regression,P0,P2-PRESENTATION,NOT_STARTED,Design/Web/QA
+IAM-001,EP03,"Implement User, credential, session, and recovery persistence",P0,P0-AUTHORITY,NOT_STARTED,Identity Engineering
+IAM-002,EP03,"Implement password registration, sign-in, sign-out, and session rotation",P0,P0-AUTHORITY,NOT_STARTED,Identity/Security
+IAM-003,EP03,Implement email verification and password recovery,P0,P0-AUTHORITY,NOT_STARTED,Identity
+IAM-004,EP03,Implement privileged MFA and recent-authentication assurance,P0,P0-AUTHORITY,NOT_STARTED,Identity/Security
+IAM-005,EP03,"Implement membership, role grant, capability, and scope model",P0,P0-AUTHORITY,NOT_STARTED,Access Engineering
+IAM-006,EP03,Implement central authorization policy engine,P0,P0-AUTHORITY,NOT_STARTED,Access/Security
+IAM-007,EP03,Implement field-level projections and sensitive-data redaction,P0,P0-PRIVACY,NOT_STARTED,Access/Privacy
+IAM-008,EP03,Implement append-only audit service and privileged-action timeline,P0,P0-AUTHORITY,NOT_STARTED,Audit/Security
+IAM-009,EP03,Implement Access Admin workflows and access-review export,P0,P0-AUTHORITY,NOT_STARTED,Access Admin/QA
+IAM-010,EP03,Implement account security pages and session management,P0,P0-AUTHORITY,NOT_STARTED,Web/Identity
+INS-001,EP04,"Implement Institution, affiliation, domain, and identifier-rule entities",P0,P0-AUTHORITY,NOT_STARTED,Institution Engineering
+INS-002,EP04,Implement Covenant email-and-identifier auto-verification,P0,P0-AUTHORITY,NOT_STARTED,Institution/Identity
+INS-003,EP04,Implement manual affiliation review and evidence workflow,P0,P0-PRIVACY,NOT_STARTED,Operations/Privacy
+INS-004,EP04,"Implement affiliation expiry, revocation, and capability gating",P0,P0-AUTHORITY,NOT_STARTED,Institution/Access
+LOC-001,EP04,Implement approved location graph and operating windows,P0,P0-CUSTODY,NOT_STARTED,Institution/Logistics
+LOC-002,EP04,Implement location/capacity administration and emergency closure,P0,P0-CUSTODY,NOT_STARTED,Operations/Admin
+SEL-001,EP05,"Implement Seller entity, representatives, application, and agreement records",P0,P0-AUTHORITY,NOT_STARTED,Seller Engineering
+SEL-002,EP05,Implement student-vendor and campus-store application APIs/UI,P0,P1-OPERATIONS,NOT_STARTED,Seller/Web
+SEL-003,EP05,Implement invite-only External Vendor participation boundary,P1,P1-PROGRESSIVE,NOT_STARTED,Seller/Operations
+SEL-004,EP05,Implement Operations seller review and decision workflow,P0,P1-OPERATIONS,NOT_STARTED,Operations/Seller
+SEL-005,EP05,"Implement seller activation, suspension continuity, and store visibility",P0,P0-COMMERCE,NOT_STARTED,Seller/Trust
+RDR-001,EP05,"Implement rider membership, eligibility, device, and training records",P0,P0-CUSTODY,NOT_STARTED,Logistics/Access
+RDR-002,EP05,Implement rider shifts and availability lifecycle,P0,P0-CUSTODY,NOT_STARTED,Logistics
+CUX-001,EP05,Implement CU Express partner dispatcher membership and scope,P0,P0-AUTHORITY,NOT_STARTED,Partner/Access
+CAT-001,EP06,"Implement category, attribute, option, and policy schema",P0,P0-COMMERCE,NOT_STARTED,Catalogue
+CAT-002,EP06,Implement canonical Product and identity/deduplication workflow,P0,P0-COMMERCE,NOT_STARTED,Catalogue
+OFF-001,EP06,"Implement Seller Offer, variants, price, condition, and publication machine",P0,P0-COMMERCE,NOT_STARTED,Offer/Seller
+FIL-001,EP06,Implement secure file upload intents and metadata,P0,P0-PRIVACY,NOT_STARTED,Files/Security
+FIL-002,EP06,"Implement image validation, scan, derivatives, and quarantine worker",P0,P0-PRIVACY,NOT_STARTED,Files/Worker
+INV-001,EP06,"Implement inventory stock, movement, and adjustment ledger",P0,P0-CUSTODY,NOT_STARTED,Inventory
+INV-002,EP06,"Implement reservation, expiry, consume, and release",P0,P0-CUSTODY,NOT_STARTED,Inventory/Checkout
+INV-003,EP06,Implement seller inventory and listing workspace,P0,P1-OPERATIONS,NOT_STARTED,Seller/Web
+CAT-003,EP06,Implement catalogue moderation queue and controlled corrections,P0,P1-OPERATIONS,NOT_STARTED,Catalogue Operations
+SRC-001,EP06,Implement PostgreSQL full-text and pg_trgm search index,P0,P0-COMMERCE,NOT_STARTED,Search
+SRC-002,EP06,"Implement categories, filters, sort, autocomplete, and synonyms",P0,P0-COMMERCE,NOT_STARTED,Search/Web
+MKT-001,EP06,"Implement public homepage, category, search, product, store, and collection pages",P0,P0-COMMERCE,NOT_STARTED,Web/Design
+CRT-001,EP07,Implement server-backed cart and item grouping,P0,P0-COMMERCE,NOT_STARTED,Cart
+PRC-001,EP07,"Implement money, price, fee, promotion, and allocation primitives",P0,P0-FINANCIAL,NOT_STARTED,Commerce/Finance
+DLQ-001,EP07,Implement Standard delivery quote and campus-zone rules,P0,P0-COMMERCE,NOT_STARTED,Delivery Pricing
+CHK-001,EP07,Implement checkout eligibility and immutable snapshot builder,P0,P0-COMMERCE,NOT_STARTED,Checkout
+CHK-002,EP07,Implement Parent/Vendor/Fulfilment grouping plan,P0,P0-COMMERCE,NOT_STARTED,Checkout/Order
+CHK-003,EP07,Implement checkout reservation orchestration and expiry,P0,P0-CUSTODY,NOT_STARTED,Checkout/Inventory
+CHK-004,EP07,Implement checkout review and delivery/recipient selection UI,P0,P0-COMMERCE,NOT_STARTED,Web/Checkout
+PAY-001,EP08,"Implement Payment, attempt, provider-event, and verification persistence",P0,P0-FINANCIAL,NOT_STARTED,Payment
+PAY-002,EP08,Implement Paystack initialize and verify adapters,P0,P0-FINANCIAL,NOT_STARTED,Payments/Integrations
+PAY-003,EP08,Implement durable Paystack webhook receipt and processor,P0,P0-FINANCIAL,NOT_STARTED,Payments/Worker
+ORD-001,EP08,"Implement Parent Order, Vendor Order, Order Item, and snapshot persistence",P0,P0-COMMERCE,NOT_STARTED,Order
+LED-001,EP08,Implement chart of accounts and append-only double-entry posting engine,P0,P0-FINANCIAL,NOT_STARTED,Ledger/Finance
+ORD-002,EP08,Implement atomic payment-confirmation and order-creation orchestration,P0,P0-FINANCIAL,NOT_STARTED,Payments/Order/Ledger
+ORD-003,EP08,Implement independent Vendor Order acceptance and partial continuity,P0,P0-COMMERCE,NOT_STARTED,Order/Seller
+LED-002,EP08,"Implement payment allocations, pending seller earnings, and balance projections",P0,P0-FINANCIAL,NOT_STARTED,Ledger/Finance
+PAY-004,EP08,"Implement payment status, uncertainty, and Finance reconciliation workspaces",P0,P0-FINANCIAL,NOT_STARTED,Web/Finance
+FUL-001,EP09,"Implement Fulfilment Group, item allocation, package, and preparation records",P0,P0-CUSTODY,NOT_STARTED,Fulfilment
+FUL-002,EP09,"Implement seller acceptance, preparation, ready, and packaging commands",P0,P0-CUSTODY,NOT_STARTED,Seller/Fulfilment
+DLV-001,EP09,"Implement Delivery Job, assignment, carrier, and dispatch-rule records",P0,P0-CUSTODY,NOT_STARTED,Delivery
+DLV-002,EP09,Implement dispatch board and assignment workflow,P0,P1-OPERATIONS,NOT_STARTED,Operations/Dispatch
+DLV-003,EP09,Implement package QR pickup credential and custody transaction,P0,P0-CUSTODY,NOT_STARTED,Delivery/Custody
+DLV-004,EP09,Implement buyer/delegate PIN or QR delivery credential,P0,P0-CUSTODY,NOT_STARTED,Delivery/Custody
+DLV-005,EP09,Implement failed-attempt evidence and return-to-custody,P0,P0-CUSTODY,NOT_STARTED,Delivery/Operations
+RDR-003,EP09,"Implement Rider PWA assignment, pickup, delivery, offline, and incident flows",P0,P0-CUSTODY,NOT_STARTED,Web/Rider
+BUY-001,EP09,"Implement buyer order detail, tracking, timeline, delegation, and help entry",P0,P0-COMMERCE,NOT_STARTED,Web/Buyer
+CAN-001,EP10,Implement lifecycle cancellation policy and quote engine,P0,P0-COMMERCE,NOT_STARTED,Order/Protection
+CAN-002,EP10,"Implement buyer, seller, and Operations cancellation commands/UI",P0,P0-COMMERCE,NOT_STARTED,Order/Web/Operations
+REF-001,EP10,"Implement Refund aggregate, decision, allocation, and provider-attempt records",P0,P0-FINANCIAL,NOT_STARTED,Refund/Finance
+REF-002,EP10,"Implement Paystack refund adapter, webhook/status sync, and reconciliation",P0,P0-FINANCIAL,NOT_STARTED,Refund/Integrations
+REF-003,EP10,"Implement buyer, seller, Support, and Finance refund views",P0,P0-FINANCIAL,NOT_STARTED,Web/Finance/Support
+HLD-001,EP10,"Implement targeted seller holds, reserves, releases, and liability conversion",P0,P0-FINANCIAL,NOT_STARTED,Ledger/Protection
+PYO-001,EP10,"Implement payout account resolution, confirmation, encryption, and cooling",P0,P0-FINANCIAL,NOT_STARTED,Payout/Security
+PYO-002,EP10,Implement withdrawal request and available-value reservation,P0,P0-FINANCIAL,NOT_STARTED,Payout/Ledger
+PYO-003,EP10,Implement Finance maker-checker payout batches and transfer attempts,P0,P0-FINANCIAL,NOT_STARTED,Finance/Payout
+PYO-004,EP10,"Implement transfer webhooks, reversal/failure handling, and reconciliation",P0,P0-FINANCIAL,NOT_STARTED,Payout/Integrations
+REC-001,EP10,"Implement financial reconciliation dashboards, queries, and runbook hooks",P0,P0-FINANCIAL,NOT_STARTED,Finance/Operations
+MSG-001,EP11,"Implement scoped conversation, message, and system-timeline records",P0,P0-PRIVACY,NOT_STARTED,Messaging
+MSG-002,EP11,"Implement text messaging, templates, rate limits, and anti-bypass detection",P0,P0-PRIVACY,NOT_STARTED,Messaging/Trust
+MSG-003,EP11,Implement structured substitution approval,P0,P0-COMMERCE,NOT_STARTED,Order/Messaging
+NTF-001,EP11,"Implement notification records, preferences, templates, and delivery attempts",P0,P1-OPERATIONS,NOT_STARTED,Notifications
+PRT-001,EP11,"Implement Protection Case, reasons, deadlines, parties, evidence, and queues",P0,P0-COMMERCE,NOT_STARTED,Protection
+PRT-002,EP11,Implement case intake and evidence UX for buyers/sellers/staff,P0,P0-PRIVACY,NOT_STARTED,Web/Support
+RTN-001,EP11,"Implement approved return logistics, receipt, inspection, and custody",P0,P0-CUSTODY,NOT_STARTED,Returns/Delivery
+PRT-003,EP11,Implement remedy decisions and linked refund/replacement/redelivery,P0,P0-FINANCIAL,NOT_STARTED,Protection/Finance
+REV-001,EP11,Implement verified-purchase reviews and moderation,P0,P1-OPERATIONS,NOT_STARTED,Reviews
+TRS-001,EP11,Implement seller performance projections and enforcement cases,P0,P1-OPERATIONS,NOT_STARTED,Trust and Safety
+TRS-002,EP11,"Implement seller appeals, corrections, and recall/safety containment",P0,P0-COMMERCE,NOT_STARTED,Trust and Safety
+FOOD-001,EP12,"Implement feature-gated Food menu, availability, hours, modifiers, and prep estimates",P1,P1-PROGRESSIVE,NOT_STARTED,Food
+FOOD-002,EP12,"Implement Food acceptance, preparation, ready, cancellation, and perishable exceptions",P1,P1-PROGRESSIVE,NOT_STARTED,Food/Operations
+EXT-001,EP12,Implement external-origin offer and inbound shipment foundation,P1,P1-PROGRESSIVE,NOT_STARTED,External Inbound
+FBN-001,EP12,"Implement one-location FBN enrolment, inbound plan, bin, and inventory movements",P1,P1-PROGRESSIVE,NOT_STARTED,FBN
+FBN-002,EP12,"Implement FBN pick, pack, custody handoff, returns, quarantine, and cycle counts",P1,P1-PROGRESSIVE,NOT_STARTED,FBN
+PRE-001,EP12,"Implement structured Pre-Owned condition, actual-unit media, disclosures, and ownership",P1,P1-PROGRESSIVE,NOT_STARTED,Pre-Owned
+PRE-002,EP12,Implement serialized electronics and inspection extension in disabled state,P1,P1-PROGRESSIVE,NOT_STARTED,Pre-Owned/Trust
+TIER-001,EP12,Implement Priority tier configuration and limited-capacity guard,P1,P1-PROGRESSIVE,NOT_STARTED,Delivery
+TIER-002,EP12,Implement Saver batch suggestion and controlled activation,P1,P1-PROGRESSIVE,NOT_STARTED,Delivery
+SEC-001,EP13,"Implement production HTTP, cookie, CSRF, CORS, and CSP baseline",P0,P0-AUTHORITY,NOT_STARTED,Security/Engineering
+SEC-002,EP13,Implement risk-sensitive rate limits and abuse signals,P0,P0-AUTHORITY,NOT_STARTED,Security
+SEC-003,EP13,"Implement envelope encryption, masking, and key-version migration",P0,P0-PRIVACY,NOT_STARTED,Security/Data
+CMP-001,EP13,"Create processing, lawful-basis, retention, transfer, DPIA, and provider registers",P0,P0-PRIVACY,NOT_STARTED,Privacy/Legal
+CMP-002,EP13,"Implement consent, policy acceptance, data-rights, retention, and deletion workflows",P0,P0-PRIVACY,NOT_STARTED,Privacy/Engineering
+OBS-001,EP13,"Configure Sentry, PostHog EU, Grafana/OTel, and redaction",P0,P0-RECOVERY,NOT_STARTED,DevOps/Security/Data
+OBS-002,EP13,Implement critical business health queries and alerts,P0,P0-RECOVERY,NOT_STARTED,Operations/DevOps
+INF-001,EP13,Provision automated database backups and independent logical exports,P0,P0-RECOVERY,NOT_STARTED,DevOps/Data
+INF-002,EP13,"Implement isolated restore, reconciliation, and re-deletion drill",P0,P0-RECOVERY,NOT_STARTED,DevOps/Finance/Security
+INC-001,EP13,"Implement incident records, emergency feature controls, and stop-the-line actions",P0,P0-RECOVERY,NOT_STARTED,Security/Operations/Admin
+INC-002,EP13,"Create security, privacy, provider, finance, delivery, and recovery runbooks",P0,P0-RECOVERY,NOT_STARTED,Security/Operations/Finance
+SEC-004,EP13,Run privileged-access and provider-account reviews,P0,P0-AUTHORITY,NOT_STARTED,Security/Access Admin
+QA-001,EP14,"Populate requirement-test, machine-coverage, and journey matrices",P0,P0-RECOVERY,NOT_STARTED,QA/Product
+QA-002,EP14,"Implement API, event, job, and provider contract suites",P0,P0-RECOVERY,NOT_STARTED,QA/Engineering
+QA-003,EP14,"Implement financial, inventory, custody, authority, and idempotency property suites",P0,P0-FINANCIAL,NOT_STARTED,QA/Engineering
+QA-004,EP14,Implement the 25 mandatory concurrency races,P0,P0-RECOVERY,NOT_STARTED,QA/Engineering
+QA-005,EP14,Implement P0 browser end-to-end suite for Journeys J01–J23 and J28–J30,P0,P0-COMMERCE,NOT_STARTED,QA/Web/Operations
+QA-006,EP14,Implement progressive feature suites for J24–J27,P1,P1-PROGRESSIVE,NOT_STARTED,QA/Feature owners
+QA-007,EP14,Execute accessibility conformance programme,P0,P0-COMMERCE,NOT_STARTED,Accessibility/Design/QA
+QA-008,EP14,Execute security verification and abuse testing,P0,P0-AUTHORITY,NOT_STARTED,Security/QA
+QA-009,EP14,"Execute performance, capacity, spike, soak, and degraded-mode tests",P0,P0-RECOVERY,NOT_STARTED,Performance/DevOps
+QA-010,EP14,Execute provider sandbox and controlled live drills,P0,P0-FINANCIAL,NOT_STARTED,Finance/Engineering/QA
+UAT-001,EP14,Run founding-team end-to-end UAT,P0,P1-OPERATIONS,NOT_STARTED,Product/Operations
+UAT-002,EP14,Run founding-seller and catalogue UAT,P0,P1-OPERATIONS,NOT_STARTED,Seller Operations
+UAT-003,EP14,Run Rider/CU Express dispatch and custody UAT,P0,P0-CUSTODY,NOT_STARTED,Logistics/Operations
+UAT-004,EP14,"Run Support, Finance, Trust, Security, and Admin UAT",P0,P0-AUTHORITY,NOT_STARTED,Ops/Finance/Trust/Security
+REL-001,EP14,Generate release-candidate evidence manifest and gate report,P0,P0-RECOVERY,NOT_STARTED,QA/Release
+REL-002,EP15,Provision and harden production provider accounts and infrastructure,P0,P0-RECOVERY,NOT_STARTED,DevOps/Security
+REL-003,EP15,Deploy production runtimes with safe migrations and rollback,P0,P0-RECOVERY,NOT_STARTED,Release/DevOps
+REL-004,EP15,"Load realistic Covenant catalogue, locations, policies, and founding participants",P0,P1-OPERATIONS,NOT_STARTED,Product/Operations
+REL-005,EP15,"Configure pilot capacity, cohorts, operating hours, and emergency controls",P0,P0-RECOVERY,NOT_STARTED,Operations/Admin
+REL-006,EP15,"Complete founding seller, rider, Support, Finance, and incident runbooks/training",P0,P1-OPERATIONS,NOT_STARTED,Operations
+REL-007,EP15,Run final controlled production smoke and reconciliation,P0,P0-FINANCIAL,NOT_STARTED,Finance/Operations/Engineering
+REL-008,EP15,Assemble Part 13 Covenant pilot readiness evidence pack,P0,P0-RECOVERY,NOT_STARTED,Release/Product
