@@ -4,3 +4,4 @@ export interface ServerRuntimeConfig {
 }
 
 export const serverConfigBoundary = 'server-only' as const;
+export { resolveRuntimeAddress, type RuntimeAddress, type RuntimeName } from './runtime.js';
