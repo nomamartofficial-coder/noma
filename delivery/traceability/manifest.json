@@ -19,7 +19,13 @@
     "evidence": 150
   },
   "files": [
-    "task-register-01.ndjson.gz.b64",
+    "task-register-01-01.ndjson.gz.b64",
+    "task-register-01-02.ndjson.gz.b64",
+    "task-register-01-03.ndjson.gz.b64",
+    "task-register-01-04.ndjson.gz.b64",
+    "task-register-01-05.ndjson.gz.b64",
+    "task-register-01-06.ndjson.gz.b64",
+    "task-register-01-07.ndjson.gz.b64",
     "task-register-02.ndjson.gz.b64",
     "task-register-03.ndjson.gz.b64",
     "requirement-register-01.ndjson.gz.b64",
@@ -41,6 +47,6 @@
     "python scripts/validate_traceability.py --lookup J05",
     "python scripts/validate_traceability.py --lookup DEC-SCOPE-006"
   ],
-  "transport": "Detailed task and requirement NDJSON is gzip-compressed and base64-wrapped for repository-connector transport. The validator decodes it before validation; CSV indexes support direct human review.",
+  "transport": "Detailed task and requirement NDJSON is gzip-compressed and base64-wrapped for repository-connector transport. The validator decodes it before validation; CSV indexes support direct human review. The first task segment is split into seven smaller deterministic sub-shards for independently verifiable writes.",
   "important_note": "Planned test and evidence references are obligations, not proof that a test ran or evidence exists."
 }
