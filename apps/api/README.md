@@ -1,3 +1,3 @@
 # @noma/api
 
-Workspace boundary only. DEV-002 will scaffold the approved runtime without adding business features.
+NestJS HTTP API scaffold. DEV-002 exposes only `/health/live` and `/health/ready`; authentication, OpenAPI, persistence, providers, and business endpoints remain dependency-ordered later work.
