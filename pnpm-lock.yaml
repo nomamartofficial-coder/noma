@@ -56,6 +56,10 @@ importers:
       rxjs:
         specifier: 7.8.2
         version: 7.8.2
+    devDependencies:
+      '@types/node':
+        specifier: 24.12.4
+        version: 24.12.4
 
   apps/web:
     dependencies:
@@ -126,6 +130,10 @@ importers:
       rxjs:
         specifier: 7.8.2
         version: 7.8.2
+    devDependencies:
+      '@types/node':
+        specifier: 24.12.4
+        version: 24.12.4
 
   packages/config: {}
 
