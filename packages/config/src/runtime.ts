@@ -1,4 +1,4 @@
-export type RuntimeName = 'web' | 'api' | 'worker';
+import type { EnvironmentSource, EnvironmentValidationIssue, RuntimeAddress, RuntimeName } from './model.js';
 
 const DEFAULT_PORTS: Readonly<Record<RuntimeName, number>> = {
   web: 3000,
@@ -6,23 +6,40 @@ const DEFAULT_PORTS: Readonly<Record<RuntimeName, number>> = {
   worker: 3002,
 };
 
-export interface RuntimeAddress {
-  readonly host: string;
-  readonly port: number;
+function parsePort(
+  key: string,
+  raw: string | undefined,
+  fallback: number,
+  issues: EnvironmentValidationIssue[],
+): number {
+  if (raw === undefined || raw.trim() === '') return fallback;
+
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65_535) {
+    issues.push({
+      key,
+      code: 'invalid',
+      message: 'must be an integer between 1 and 65535',
+    });
+    return fallback;
+  }
+
+  return parsed;
 }
 
 export function resolveRuntimeAddress(
   runtime: RuntimeName,
-  environment: Readonly<Record<string, string | undefined>>,
+  environment: EnvironmentSource,
+  issues: EnvironmentValidationIssue[] = [],
 ): RuntimeAddress {
-  const scopedPort = environment[`${runtime.toUpperCase()}_PORT`];
-  const parsed = Number(scopedPort ?? environment.PORT ?? DEFAULT_PORTS[runtime]);
-  const port = Number.isInteger(parsed) && parsed > 0 && parsed < 65_536
-    ? parsed
-    : DEFAULT_PORTS[runtime];
+  const scopedKey = `${runtime.toUpperCase()}_PORT`;
+  const scopedPort = environment[scopedKey];
+  const portKey = scopedPort === undefined ? 'PORT' : scopedKey;
 
-  return {
-    host: environment.HOST ?? '0.0.0.0',
-    port,
-  };
+  return Object.freeze({
+    host: environment.HOST?.trim() || '0.0.0.0',
+    port: parsePort(portKey, scopedPort ?? environment.PORT, DEFAULT_PORTS[runtime], issues),
+  });
 }
+
+export type { RuntimeAddress, RuntimeName } from './model.js';

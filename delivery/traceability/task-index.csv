@@ -7,9 +7,9 @@ FND-005,EP00,Create repository README and local-start contract,P0,P1-OPERATIONS,
 FND-006,EP00,"Create issue, pull-request, ADR, and scope-change templates",P0,P0-AUTHORITY,COMPLETE,Engineering/Product/QA
 FND-007,EP00,"Create task, decision, and requirement traceability registers",P0,P0-RECOVERY,COMPLETE,QA/Product
 FND-008,EP00,Create release-evidence and change-control directories,P0,P0-RECOVERY,COMPLETE,QA/Security
-DEV-001,EP01,Initialise pnpm workspace and Turborepo monorepo,P0,P0-COMMERCE,IN_REVIEW,Engineering
-DEV-002,EP01,"Scaffold Next.js, NestJS API, and NestJS Worker runtimes",P0,P0-COMMERCE,NOT_STARTED,Engineering
-DEV-003,EP01,Implement typed environment configuration and secret validation,P0,P0-AUTHORITY,NOT_STARTED,Engineering/Security
+DEV-001,EP01,Initialise pnpm workspace and Turborepo monorepo,P0,P0-COMMERCE,COMPLETE,Engineering
+DEV-002,EP01,"Scaffold Next.js, NestJS API, and NestJS Worker runtimes",P0,P0-COMMERCE,COMPLETE,Engineering
+DEV-003,EP01,Implement typed environment configuration and secret validation,P0,P0-AUTHORITY,IN_REVIEW,Engineering/Security
 DEV-004,EP01,Create Prisma/PostgreSQL foundation and migration discipline,P0,P0-RECOVERY,NOT_STARTED,Engineering/Data
 DEV-005,EP01,Create Redis/BullMQ queue and transactional-outbox foundation,P0,P0-RECOVERY,NOT_STARTED,Engineering
 DEV-006,EP01,Create deterministic testing package and Testcontainers harness,P0,P0-RECOVERY,NOT_STARTED,QA/Engineering
