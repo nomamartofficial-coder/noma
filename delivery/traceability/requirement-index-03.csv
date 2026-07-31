@@ -1,0 +1,51 @@
+id,priority,risk,status,statement
+REQ-PRT-001,P0,P0-COMMERCE,PLANNED,Case is item-linked where applicable; temporary safeguard is not guilt; serious cases route to correct specialist queue.
+REQ-PRT-002,P0,P0-PRIVACY,PLANNED,Evidence attaches to exact case/item; private files use signed access; Support cannot exceed refund/enforcement authority.
+REQ-RTN-001,P0,P0-CUSTODY,PLANNED,Returned is not refunded; one current custodian; wrong unit opens exception; inspection evidence is append-only.
+REQ-PRT-003,P0,P0-FINANCIAL,PLANNED,Remedy is item-level; approval does not fabricate provider completion; replacement preserves original failure and stock/custody.
+REQ-REV-001,P0,P1-OPERATIONS,PLANNED,Only completed Noma purchase can review; refund does not auto-delete criticism; public buyer ratings are absent.
+REQ-TRS-001,P0,P1-OPERATIONS,PLANNED,Metrics rebuild from authoritative outcomes; serious controls are human-approved; paid obligations continue under suspension.
+REQ-TRS-002,P0,P0-COMMERCE,PLANNED,Successful appeal corrects all connected effects without deleting history; recall containment can pause product/category safely.
+REQ-FOOD-001,P1,P1-PROGRESSIVE,PLANNED,Food cannot appear or checkout unless institution/seller/cohort gate active; ordinary Product tables are not overloaded.
+REQ-FOOD-002,P1,P1-PROGRESSIVE,PLANNED,Complete scoped state/test evidence exists before activation; Food remains disabled by default and separate in fulfilment grouping.
+REQ-EXT-001,P1,P1-PROGRESSIVE,PLANNED,External courier never becomes campus last-mile authority; no public external registration; gated/invite-only.
+REQ-FBN-001,P1,P1-PROGRESSIVE,PLANNED,Only eligible low-risk non-perishable categories; exact movements auditable; no activation without approved physical location/SOP.
+REQ-FBN-002,P1,P1-PROGRESSIVE,PLANNED,No wave/multi-warehouse automation; tasks are operator-controlled/audited; feature remains capacity-gated.
+REQ-PRE-001,P1,P1-PROGRESSIVE,PLANNED,Stock/AI images cannot replace actual unit; low-risk categories only; ordinary seller description is not Noma verification.
+REQ-PRE-002,P1,P1-PROGRESSIVE,PLANNED,Phones/laptops remain disabled or invite-only; Noma Verified badge cannot render without approved exact-unit inspection.
+REQ-TIER-001,P1,P1-PROGRESSIVE,PLANNED,Priority is operationally distinct; unavailable capacity prevents sale; disabled by default.
+REQ-TIER-002,P1,P1-PROGRESSIVE,PLANNED,No hot-food incompatible batching; each parcel retains evidence; no autonomous routing; disabled until density/reliability gate.
+REQ-SEC-001,P0,P0-AUTHORITY,PLANNED,Protected mutation cannot be cross-site; CSP blocks unapproved script sources; headers differ safely by environment.
+REQ-SEC-002,P0,P0-AUTHORITY,PLANNED,Shared campus network does not cause blanket permanent bans; bypass attempts and limits are auditable.
+REQ-SEC-003,P0,P0-PRIVACY,PLANNED,Plaintext absent from DB/logs; decryption is capability-scoped; key rotation is resumable/reconcilable.
+REQ-CMP-001,P0,P0-PRIVACY,PLANNED,No active field/provider/event lacks inventory and owner; unresolved legal classification is explicitly gated for counsel/DPCO review.
+REQ-CMP-002,P0,P0-PRIVACY,PLANNED,Essential processing is not mislabelled consent; append-only/financial records are retained/anonymised lawfully; rights actions are audited.
+REQ-OBS-001,P0,P0-RECOVERY,PLANNED,Synthetic error/trace/event arrive; no secrets/private message/evidence/bank data; provider outage does not block business commits.
+REQ-OBS-002,P0,P0-RECOVERY,PLANNED,Each alert has severity/owner/runbook; alerts use authoritative records; deliberate fault reaches responsible channel.
+REQ-INF-001,P0,P0-RECOVERY,PLANNED,Backups are automatic and environment-isolated; failed backup alerts; credentials are not personal/shared.
+REQ-INF-002,P0,P0-RECOVERY,PLANNED,Restored financial totals and obligations reconcile; restored environment is destroyed safely; unresolved gap blocks launch.
+REQ-INC-001,P0,P0-RECOVERY,PLANNED,Pause prevents new obligations while preserving in-flight truth; restart requires independent approval/evidence; all actions audited.
+REQ-INC-002,P0,P0-RECOVERY,PLANNED,"Each runbook has detection, authority, containment, evidence, communication, recovery, escalation, and post-incident review."
+REQ-SEC-004,P0,P0-AUTHORITY,PLANNED,No shared privileged/provider dashboards; stale access revoked; exceptions have owner/expiry.
+REQ-QA-001,P0,P0-RECOVERY,PLANNED,No P0 requirement lacks oracle/owner/test plan; unknown IDs fail CI; progressive activation matrices are separate.
+REQ-QA-002,P0,P0-RECOVERY,PLANNED,Breaking changes fail; provider simulator and production adapter satisfy same port; consumers do not depend on internal persistence.
+REQ-QA-003,P0,P0-FINANCIAL,PLANNED,Properties hold for generated sequences; counterexamples persist as regression fixtures.
+REQ-QA-004,P0,P0-RECOVERY,PLANNED,"Tests use barriers/locks, not sleeps; authoritative final state, audit, outbox, ledger/custody are asserted."
+REQ-QA-005,P0,P0-COMMERCE,PLANNED,No DB edits complete journeys; intended actors can recover; provider/custody truth asserted through approved inspection.
+REQ-QA-006,P1,P1-PROGRESSIVE,PLANNED,Tests passing does not activate feature; capacity/operations/Part 13 gate still required.
+REQ-QA-007,P0,P0-COMMERCE,PLANNED,Critical journeys meet WCAG 2.2 AA target; automation is not sole evidence; defects have severity/owner.
+REQ-QA-008,P0,P0-AUTHORITY,PLANNED,No Critical/High launch blocker unresolved; tests cover direct API and stale/deep-link/session races.
+REQ-QA-009,P0,P0-RECOVERY,PLANNED,Configured pilot capacity passes without removing authorization/audit/transactions; degradation preserves safety and honest status.
+REQ-QA-010,P0,P0-FINANCIAL,PLANNED,Every live value movement reconciles; test recipients/data isolated; maker-checker and rollback observed.
+REQ-UAT-001,P0,P1-OPERATIONS,PLANNED,No developer DB intervention; defects triaged; accountable owners sign each P0 script.
+REQ-UAT-002,P0,P1-OPERATIONS,PLANNED,Seller completes tasks from approved interfaces/training; no constant founder intervention; catalogue truth is usable.
+REQ-UAT-003,P0,P0-CUSTODY,PLANNED,Every parcel has one custodian; approved points/procedures work physically; operations can recover.
+REQ-UAT-004,P0,P0-AUTHORITY,PLANNED,Each role can complete only permitted responsibilities; maker-checker and escalation work; audit/evidence complete.
+REQ-REL-001,P0,P0-RECOVERY,PLANNED,"Missing/expired/failed P0 evidence makes gate fail; report distinguishes deployment, feature activation, and paid-pilot activation."
+REQ-REL-002,P0,P0-RECOVERY,PLANNED,"Accounts are organisation-controlled, least-privilege, inventoried, monitored, and isolated from staging; no shared personal admin account."
+REQ-REL-003,P0,P0-RECOVERY,PLANNED,Deployment does not enable real payments/orders; rollback preserves schema/data compatibility; health proves dependencies honestly.
+REQ-REL-004,P0,P1-OPERATIONS,PLANNED,No placeholder/live false data; inventory reconfirmed; every actor has minimum authority/training and no excess privilege.
+REQ-REL-005,P0,P0-RECOVERY,PLANNED,Limit reached fails safely or widens promise as approved; all progressive features remain disabled unless separately passed.
+REQ-REL-006,P0,P1-OPERATIONS,PLANNED,Pilot opens only when staffed coverage exists; staff can use runbooks without developer intervention.
+REQ-REL-007,P0,P0-FINANCIAL,PLANNED,"Provider, order, ledger, custody, refund/payout and notifications reconcile; test artefacts identified and retained/deleted correctly."
+REQ-REL-008,P0,P0-RECOVERY,PLANNED,Part 13 can decide every gate without searching private chats or requesting undocumented demonstrations.
