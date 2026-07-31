@@ -12,7 +12,7 @@ The baseline contains all **150** backlog tasks, including all **139 P0 tasks**.
 
 ## Files
 
-- `task-register-01.ndjson.gz.b64` through `task-register-03.ndjson.gz.b64` — one logical task register containing task metadata, dependencies, status, and forward traceability.
+- `task-register-01-01.ndjson.gz.b64` through `task-register-01-07.ndjson.gz.b64`, plus `task-register-02.ndjson.gz.b64` and `task-register-03.ndjson.gz.b64` — one logical task register containing task metadata, dependencies, status, and forward traceability.
 - `requirement-register-01.ndjson.gz.b64` and `requirement-register-02.ndjson.gz.b64` — one logical requirement register containing acceptance requirements with task, decision, test, and evidence back-links.
 - `decision-register.ndjson` — 15 locked scope decisions plus repository, architecture, quality, and readiness decisions with reverse task/requirement links.
 - `task-index.csv` — plain-text summary of all 150 tasks.
@@ -21,7 +21,7 @@ The baseline contains all **150** backlog tasks, including all **139 P0 tasks**.
 - `schemas/*.schema.json` — JSON Schema contracts for each record type.
 - `scripts/validate_traceability.py` — zero-dependency structural, source, forward/backward, and referential validator.
 
-The detailed task and requirement NDJSON shards are gzip-compressed and base64-wrapped because of repository-connector write limits. This is deterministic transport, **not encryption**. The validator decodes them in memory before validating. The plain CSV indexes remain directly diffable and reviewable.
+The detailed task and requirement NDJSON shards are gzip-compressed and base64-wrapped because of repository-connector write limits. This is deterministic transport, **not encryption**. The validator decodes them in memory before validating. The plain CSV indexes remain directly diffable and reviewable. The first task segment is intentionally split into smaller sub-shards so every connector write can be verified independently.
 
 ## Relation status
 
