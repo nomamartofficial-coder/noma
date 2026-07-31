@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0.0",
+  "id": "READ-RG00-FND008-EXAMPLE",
+  "gate": "RG-00",
+  "requirement": "Demonstrate the evidence metadata schema without granting readiness.",
+  "source_requirements": [
+    "docs/12-delivery-backlog.md#FND-008",
+    "docs/13-covenant-pilot-readiness.md#12-evidence-item-schema"
+  ],
+  "task_ids": [
+    "FND-008"
+  ],
+  "risk_class": "P0-RECOVERY",
+  "pilot_stage": "P0",
+  "status": "NOT_STARTED",
+  "evidence_type": "repository_foundation_schema_example",
+  "owner_role": "QA",
+  "verifier_role": "Security",
+  "environment": "repository-foundation",
+  "commit_sha": "3997f10a3ace40fbf0699dd1eb0d5c37e12e3fa1",
+  "release_id": "UNASSIGNED",
+  "provider_environment": null,
+  "performed_at": "2026-07-31T14:11:00+01:00",
+  "expires_at": "2026-08-31T23:59:59+01:00",
+  "artefact_links": [
+    "evidence/README.md"
+  ],
+  "redaction_review": "PASS",
+  "result_summary": "Schema demonstration only; this record does not prove readiness or a passed test.",
+  "known_limitations": [
+    "No release candidate, environment test, or independent approval exists yet."
+  ],
+  "related_defects": [],
+  "approved_by_roles": [],
+  "classification": "INTERNAL_METADATA_ONLY",
+  "contains_personal_data": false,
+  "contains_secrets": false,
+  "retention_class": "FOUNDATION_EXAMPLE",
+  "supersedes": [],
+  "superseded_by": null,
+  "is_example": true
+}

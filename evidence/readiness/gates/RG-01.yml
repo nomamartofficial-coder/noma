@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0.0",
+  "gate_id": "RG-01",
+  "status": "NOT_STARTED",
+  "critical": true,
+  "owner_role": "Legal/Privacy/Partnership",
+  "release_id": "UNASSIGNED",
+  "commit_sha": "3997f10a3ace40fbf0699dd1eb0d5c37e12e3fa1",
+  "environment": "repository-foundation",
+  "updated_at": "2026-07-31T14:11:00+01:00",
+  "expires_at": "2026-08-31T23:59:59+01:00",
+  "evidence_item_ids": [],
+  "open_defects": [],
+  "decision": "HOLD",
+  "notes": ["Skeleton only; a merged file does not constitute gate approval."],
+  "contains_personal_data": false,
+  "contains_secrets": false
+}

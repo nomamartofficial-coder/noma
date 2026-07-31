@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://noma.local/schemas/evidence-item.schema.json",
+  "title": "Noma evidence item",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "gate",
+    "requirement",
+    "source_requirements",
+    "task_ids",
+    "risk_class",
+    "pilot_stage",
+    "status",
+    "evidence_type",
+    "owner_role",
+    "verifier_role",
+    "environment",
+    "commit_sha",
+    "release_id",
+    "provider_environment",
+    "performed_at",
+    "expires_at",
+    "artefact_links",
+    "redaction_review",
+    "result_summary",
+    "known_limitations",
+    "related_defects",
+    "approved_by_roles",
+    "classification",
+    "contains_personal_data",
+    "contains_secrets",
+    "retention_class",
+    "supersedes",
+    "superseded_by",
+    "is_example"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Z0-9][A-Z0-9_-]{5,79}$"
+    },
+    "gate": {
+      "type": "string",
+      "pattern": "^RG-(0[0-9]|1[0-3])$"
+    },
+    "requirement": {
+      "type": "string",
+      "minLength": 10
+    },
+    "source_requirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "task_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z]{2,5}-\\d{3}$"
+      }
+    },
+    "risk_class": {
+      "type": "string",
+      "pattern": "^P[0-2]-[A-Z-]+$"
+    },
+    "pilot_stage": {
+      "type": "string",
+      "enum": [
+        "P0",
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5",
+        "P6"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "NOT_STARTED",
+        "IN_PROGRESS",
+        "PASS",
+        "FAIL",
+        "EXPIRED",
+        "WAIVED_NON_BLOCKING",
+        "NOT_APPLICABLE"
+      ]
+    },
+    "evidence_type": {
+      "type": "string",
+      "minLength": 3
+    },
+    "owner_role": {
+      "type": "string",
+      "minLength": 2
+    },
+    "verifier_role": {
+      "type": "string",
+      "minLength": 2
+    },
+    "environment": {
+      "type": "string",
+      "minLength": 3
+    },
+    "commit_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "release_id": {
+      "type": "string",
+      "minLength": 3
+    },
+    "provider_environment": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "performed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "artefact_links": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "redaction_review": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL",
+        "PENDING"
+      ]
+    },
+    "result_summary": {
+      "type": "string",
+      "minLength": 10
+    },
+    "known_limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "related_defects": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "approved_by_roles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "classification": {
+      "type": "string",
+      "enum": [
+        "PUBLIC",
+        "INTERNAL",
+        "INTERNAL_METADATA_ONLY",
+        "RESTRICTED_METADATA_ONLY"
+      ]
+    },
+    "contains_personal_data": {
+      "const": false
+    },
+    "contains_secrets": {
+      "const": false
+    },
+    "retention_class": {
+      "type": "string",
+      "minLength": 3
+    },
+    "supersedes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "superseded_by": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "is_example": {
+      "type": "boolean"
+    }
+  }
+}

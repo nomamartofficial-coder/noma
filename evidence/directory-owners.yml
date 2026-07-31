@@ -1,0 +1,111 @@
+{
+  "schema_version": "1.0.0",
+  "updated_at": "2026-07-31T14:11:00+01:00",
+  "directories": [
+    {
+      "path": "quality/",
+      "primary_owner_role": "QA",
+      "reviewer_roles": [
+        "Engineering",
+        "Product"
+      ],
+      "approval_roles": [
+        "QA"
+      ],
+      "review_cadence": "per_pull_request_and_release",
+      "classification": "INTERNAL_METADATA_ONLY",
+      "personal_data_allowed": false,
+      "secrets_allowed": false,
+      "expiry_required": true
+    },
+    {
+      "path": "compliance/",
+      "primary_owner_role": "Privacy",
+      "reviewer_roles": [
+        "Legal",
+        "Security",
+        "Product"
+      ],
+      "approval_roles": [
+        "Privacy",
+        "Legal"
+      ],
+      "review_cadence": "on_processing_or_provider_change",
+      "classification": "RESTRICTED_METADATA_ONLY",
+      "personal_data_allowed": false,
+      "secrets_allowed": false,
+      "expiry_required": true
+    },
+    {
+      "path": "security/",
+      "primary_owner_role": "Security",
+      "reviewer_roles": [
+        "Engineering",
+        "Privacy"
+      ],
+      "approval_roles": [
+        "Security"
+      ],
+      "review_cadence": "per_release_and_incident",
+      "classification": "RESTRICTED_METADATA_ONLY",
+      "personal_data_allowed": false,
+      "secrets_allowed": false,
+      "expiry_required": true
+    },
+    {
+      "path": "runbooks/",
+      "primary_owner_role": "Operations",
+      "reviewer_roles": [
+        "Engineering",
+        "Security",
+        "Finance"
+      ],
+      "approval_roles": [
+        "Operations",
+        "Relevant Domain Owner"
+      ],
+      "review_cadence": "after_each_drill_or_material_change",
+      "classification": "INTERNAL",
+      "personal_data_allowed": false,
+      "secrets_allowed": false,
+      "expiry_required": true
+    },
+    {
+      "path": "evidence/",
+      "primary_owner_role": "QA",
+      "reviewer_roles": [
+        "Security",
+        "Release",
+        "Relevant Domain Owner"
+      ],
+      "approval_roles": [
+        "Independent Verifier",
+        "Relevant Gate Owner"
+      ],
+      "review_cadence": "per_evidence_item_and_release",
+      "classification": "INTERNAL_METADATA_ONLY",
+      "personal_data_allowed": false,
+      "secrets_allowed": false,
+      "expiry_required": true
+    },
+    {
+      "path": "change-control/",
+      "primary_owner_role": "Product",
+      "reviewer_roles": [
+        "Engineering",
+        "QA",
+        "Security",
+        "Relevant Domain Owner"
+      ],
+      "approval_roles": [
+        "Product",
+        "Affected Domain Owners"
+      ],
+      "review_cadence": "per_change_request",
+      "classification": "INTERNAL_METADATA_ONLY",
+      "personal_data_allowed": false,
+      "secrets_allowed": false,
+      "expiry_required": true
+    }
+  ]
+}
