@@ -1,0 +1,148 @@
+name: Scope change request
+description: Request a controlled change to the locked Covenant pilot scope.
+title: "[SCOPE-CHANGE]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form only for a material change to the locked MVP scope.
+        A route, enum, schema, prototype, or feature flag does not make a capability active.
+        The request remains unapproved until the required owners record a decision.
+
+  - type: textarea
+    id: requested-change
+    attributes:
+      label: Requested change
+      description: State exactly what should be added, removed, reclassified, delayed, or activated.
+      placeholder: Describe the requested change and affected capability.
+    validations:
+      required: true
+
+  - type: textarea
+    id: affected-authority
+    attributes:
+      label: Affected locked decision and governing sections
+      description: Cite the exact scope decision, Build Pack sections, task IDs, journeys, machines, routes, modules, and readiness gates affected.
+      placeholder: |
+        Locked decision:
+        Documents/sections:
+        Tasks:
+        Journeys/machines:
+        Readiness gates:
+    validations:
+      required: true
+
+  - type: textarea
+    id: reason-evidence
+    attributes:
+      label: Reason and evidence
+      description: Explain which permitted scope-change condition applies and provide evidence.
+      placeholder: |
+        Condition:
+        - required for a locked flow; or
+        - required for safety/legal/privacy/security/financial integrity; or
+        - removes a pilot blocker; or
+        - replaces equal or greater work.
+        Evidence:
+    validations:
+      required: true
+
+  - type: input
+    id: current-classification
+    attributes:
+      label: Current classification
+      description: Use the exact scope classification currently in force.
+      placeholder: BUILD NOW / ACTIVATE PROGRESSIVELY / OPERATE MANUALLY / ARCHITECT NOW / DEFER / PROHIBITED
+    validations:
+      required: true
+
+  - type: input
+    id: proposed-classification
+    attributes:
+      label: Proposed classification
+      description: State the requested classification after approval.
+      placeholder: ACTIVATE PROGRESSIVELY
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact-analysis
+    attributes:
+      label: Full impact analysis
+      description: Cover engineering, design, operations, Support, security, privacy, legal, financial, logistics, providers, testing, capacity, and schedule.
+      placeholder: |
+        Engineering:
+        Design/accessibility:
+        Operations/Support:
+        Security/privacy/legal:
+        Financial:
+        Logistics/providers:
+        Testing/evidence:
+        Capacity/schedule:
+    validations:
+      required: true
+
+  - type: textarea
+    id: displacement
+    attributes:
+      label: Removed, delayed, or reduced work
+      description: Identify the work displaced by this change. State "None" only when the capacity evidence supports it.
+      placeholder: List affected task IDs, milestones, or progressive capabilities.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-activation
+    attributes:
+      label: Acceptance criteria and activation gate
+      description: Define implementation acceptance separately from customer activation approval.
+      placeholder: |
+        Implementation acceptance:
+        Required tests/evidence:
+        Activation gate:
+        Pause/rollback trigger:
+    validations:
+      required: true
+
+  - type: textarea
+    id: ownership
+    attributes:
+      label: Owner and required approvers
+      description: Name Product plus every domain owner affected by the change.
+      placeholder: |
+        Owner:
+        Product:
+        Engineering:
+        Security/Privacy:
+        Finance:
+        Operations/Logistics:
+        Other:
+    validations:
+      required: true
+
+  - type: textarea
+    id: documentation
+    attributes:
+      label: Required documentation and traceability updates
+      description: List every Build Pack, ADR, register, issue, test matrix, runbook, policy, or readiness record that must change after approval.
+      placeholder: |
+        - docs/...
+        - delivery/...
+        - quality/...
+        - change-control/...
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: safeguards
+    attributes:
+      label: Safeguards
+      options:
+        - label: This request does not treat existing code, a route, schema, enum, or feature flag as activation approval.
+          required: true
+        - label: The request identifies progressive and deferred work that must remain inactive.
+          required: true
+        - label: The request includes schedule and capacity consequences.
+          required: true
+        - label: The affected implementation must remain on HOLD until the required approval is recorded.
+          required: true
