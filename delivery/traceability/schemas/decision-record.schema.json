@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://noma.local/schemas/decision-record.schema.json",
+  "title": "Noma decision traceability record",
+  "type": "object",
+  "required": [
+    "id",
+    "category",
+    "status",
+    "statement",
+    "source_refs",
+    "task_refs",
+    "requirement_refs"
+  ],
+  "properties": {
+    "status": {
+      "enum": [
+        "PROPOSED",
+        "LOCKED",
+        "SUPERSEDED",
+        "REJECTED"
+      ]
+    }
+  },
+  "additionalProperties": true
+}
