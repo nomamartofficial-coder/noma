@@ -1,3 +1,3 @@
 # @noma/worker
 
-Workspace boundary only. DEV-002 will scaffold the approved runtime without adding business features.
+NestJS standalone Worker scaffold with an internal health server. DEV-002 adds no BullMQ processors, schedulers, provider jobs, database access, or public business ingress.
