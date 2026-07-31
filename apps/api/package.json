@@ -3,21 +3,27 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Noma api runtime workspace placeholder; runtime framework arrives in DEV-002.",
+  "description": "Noma NestJS HTTP API runtime scaffold.",
   "dependencies": {
+    "@nestjs/common": "11.1.28",
+    "@nestjs/core": "11.1.28",
+    "@nestjs/platform-express": "11.1.28",
     "@noma/config": "workspace:*",
     "@noma/contracts": "workspace:*",
     "@noma/database": "workspace:*",
     "@noma/integrations": "workspace:*",
     "@noma/observability": "workspace:*",
     "@noma/platform": "workspace:*",
-    "@noma/security": "workspace:*"
+    "@noma/security": "workspace:*",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2"
   },
   "scripts": {
     "lint": "node ../../scripts/lint-package.mjs .",
-    "typecheck": "node ../../scripts/run-tsc.mjs --noEmit",
-    "build": "node ../../scripts/run-tsc.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "tsc -p tsconfig.build.json",
     "clean": "node ../../scripts/clean-package.mjs .",
-    "dev": "node ../../scripts/dev-not-scaffolded.mjs api"
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js"
   }
 }
