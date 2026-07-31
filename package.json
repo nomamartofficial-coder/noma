@@ -14,6 +14,11 @@
     "workspace:self-test": "node scripts/validate-workspace.mjs --self-test",
     "runtimes:validate": "node scripts/validate-runtime-scaffolds.mjs",
     "runtimes:self-test": "node scripts/validate-runtime-scaffolds.mjs --self-test",
+    "env:validate": "node scripts/validate-environment-config.mjs",
+    "env:self-test": "node scripts/validate-environment-config.mjs --self-test",
+    "env:test": "pnpm --filter @noma/config build && pnpm --filter @noma/config test",
+    "env:startup-test": "pnpm build && node scripts/test-environment-startup.mjs",
+    "env:verify": "pnpm env:validate && pnpm env:self-test && pnpm env:test && pnpm env:startup-test",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "build": "turbo run build",
@@ -25,7 +30,7 @@
     "start:api": "pnpm --filter @noma/api start",
     "start:worker": "pnpm --filter @noma/worker start",
     "smoke:runtimes": "pnpm build && node scripts/smoke-runtimes.mjs",
-    "check": "pnpm workspace:validate && pnpm runtimes:validate && pnpm lint && pnpm typecheck && pnpm build",
+    "check": "pnpm workspace:validate && pnpm runtimes:validate && pnpm env:validate && pnpm lint && pnpm typecheck && pnpm build",
     "clean": "turbo run clean && node scripts/clean-workspace.mjs"
   },
   "devDependencies": {

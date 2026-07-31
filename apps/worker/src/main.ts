@@ -1,18 +1,44 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { resolveRuntimeAddress } from '@noma/config/server';
+import { loadEnvFile } from 'node:process';
+import {
+  describeServerEnvironment,
+  loadServerEnvironment,
+  toSafeStartupError,
+} from '@noma/config/server';
 import { WorkerModule } from './app.module.js';
+
+
+const REMOTE_ENVIRONMENTS = new Set(['preview', 'staging', 'production']);
+
+function loadOptionalLocalEnvironment(): void {
+  if (process.env.NOMA_ENV && REMOTE_ENVIRONMENTS.has(process.env.NOMA_ENV)) return;
+
+  try {
+    loadEnvFile(new URL('../.env', import.meta.url));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
+
+  if (process.env.NOMA_ENV && REMOTE_ENVIRONMENTS.has(process.env.NOMA_ENV)) {
+    throw new Error('Remote environments must use platform-managed configuration, not a local .env file');
+  }
+}
 import { startHealthServer } from './health-server.js';
 
 async function bootstrap(): Promise<void> {
+  loadOptionalLocalEnvironment();
+  const config = loadServerEnvironment('worker', process.env);
   let ready = false;
   const app = await NestFactory.createApplicationContext(WorkerModule, { bufferLogs: true });
   app.enableShutdownHooks();
 
-  const { host, port } = resolveRuntimeAddress('worker', process.env);
-  const healthServer = startHealthServer(host, port, () => ready);
+  const healthServer = startHealthServer(config.address.host, config.address.port, () => ready);
   ready = true;
-  console.log(JSON.stringify({ event: 'runtime.started', runtime: 'worker', host, port }));
+  console.log(JSON.stringify({
+    event: 'runtime.started',
+    ...describeServerEnvironment(config),
+  }));
 
   const shutdown = async (): Promise<void> => {
     ready = false;
@@ -24,4 +50,7 @@ async function bootstrap(): Promise<void> {
   process.once('SIGTERM', () => void shutdown());
 }
 
-void bootstrap();
+void bootstrap().catch((error: unknown) => {
+  console.error(JSON.stringify(toSafeStartupError(error)));
+  process.exitCode = 1;
+});
