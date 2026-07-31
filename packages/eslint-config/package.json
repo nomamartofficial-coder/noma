@@ -1,0 +1,15 @@
+{
+  "name": "@noma/eslint-config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "scripts": {
+    "lint": "node ../../scripts/lint-package.mjs .",
+    "typecheck": "node ../../scripts/validate-config-package.mjs .",
+    "build": "node ../../scripts/validate-config-package.mjs .",
+    "clean": "node ../../scripts/clean-package.mjs ."
+  }
+}

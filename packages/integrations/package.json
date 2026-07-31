@@ -1,0 +1,27 @@
+{
+  "name": "@noma/integrations",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Provider adapter boundary implementing platform ports.",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "lint": "node ../../scripts/lint-package.mjs .",
+    "typecheck": "node ../../scripts/run-tsc.mjs --noEmit",
+    "build": "node ../../scripts/run-tsc.mjs",
+    "clean": "node ../../scripts/clean-package.mjs ."
+  },
+  "dependencies": {
+    "@noma/contracts": "workspace:*",
+    "@noma/platform": "workspace:*"
+  }
+}

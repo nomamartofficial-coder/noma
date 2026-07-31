@@ -1,0 +1,17 @@
+{
+  "name": "@noma/tsconfig",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./base.json": "./base.json",
+    "./browser.json": "./browser.json",
+    "./server.json": "./server.json"
+  },
+  "scripts": {
+    "lint": "node ../../scripts/lint-package.mjs .",
+    "typecheck": "node ../../scripts/validate-config-package.mjs .",
+    "build": "node ../../scripts/validate-config-package.mjs .",
+    "clean": "node ../../scripts/clean-package.mjs ."
+  }
+}
