@@ -1,0 +1,207 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://noma.local/schemas/change-record.schema.json",
+  "title": "Noma change-control record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "type",
+    "status",
+    "title",
+    "requested_by_role",
+    "owner_role",
+    "created_at",
+    "expires_at",
+    "source_requirements",
+    "task_ids",
+    "risk_class",
+    "affected_capabilities",
+    "current_state",
+    "proposed_state",
+    "rationale",
+    "security_impact",
+    "privacy_impact",
+    "financial_impact",
+    "custody_impact",
+    "required_tests",
+    "required_evidence",
+    "approval_roles",
+    "approvals",
+    "rollback_plan",
+    "related_issues",
+    "related_pull_requests",
+    "supersedes",
+    "superseded_by",
+    "contains_personal_data",
+    "contains_secrets",
+    "is_example"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^CHG-\\d{4}-\\d{3}$"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "SCOPE_CHANGE",
+        "ARCHITECTURE_CHANGE",
+        "SECURITY_EXCEPTION",
+        "OPERATIONAL_CHANGE",
+        "RELEASE_DECISION"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "DRAFT",
+        "HOLD",
+        "APPROVED",
+        "APPROVED_WITH_RESTRICTIONS",
+        "REJECTED",
+        "EXPIRED",
+        "SUPERSEDED"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 8
+    },
+    "requested_by_role": {
+      "type": "string",
+      "minLength": 2
+    },
+    "owner_role": {
+      "type": "string",
+      "minLength": 2
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source_requirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "task_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "risk_class": {
+      "type": "string",
+      "pattern": "^P[0-2]-[A-Z-]+$"
+    },
+    "affected_capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "current_state": {
+      "type": "string",
+      "minLength": 3
+    },
+    "proposed_state": {
+      "type": "string",
+      "minLength": 3
+    },
+    "rationale": {
+      "type": "string",
+      "minLength": 10
+    },
+    "security_impact": {
+      "type": "string",
+      "minLength": 3
+    },
+    "privacy_impact": {
+      "type": "string",
+      "minLength": 3
+    },
+    "financial_impact": {
+      "type": "string",
+      "minLength": 3
+    },
+    "custody_impact": {
+      "type": "string",
+      "minLength": 3
+    },
+    "required_tests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "required_evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "approval_roles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "approvals": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "rollback_plan": {
+      "type": "string",
+      "minLength": 10
+    },
+    "related_issues": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      }
+    },
+    "related_pull_requests": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      }
+    },
+    "supersedes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "superseded_by": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "contains_personal_data": {
+      "const": false
+    },
+    "contains_secrets": {
+      "const": false
+    },
+    "is_example": {
+      "type": "boolean"
+    }
+  }
+}

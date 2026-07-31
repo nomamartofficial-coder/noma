@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://noma.local/schemas/evidence-register.schema.json",
+  "title": "Noma readiness evidence register",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "register_id",
+    "status",
+    "release_id",
+    "commit_sha",
+    "environment",
+    "owner_role",
+    "created_at",
+    "expires_at",
+    "evidence_item_ids",
+    "gate_files",
+    "contains_personal_data",
+    "contains_secrets",
+    "notes"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "register_id": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_-]{6,80}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "NOT_STARTED",
+        "IN_PROGRESS",
+        "PASS",
+        "FAIL",
+        "EXPIRED"
+      ]
+    },
+    "release_id": {
+      "type": "string",
+      "minLength": 3
+    },
+    "commit_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "environment": {
+      "type": "string",
+      "minLength": 3
+    },
+    "owner_role": {
+      "type": "string",
+      "minLength": 2
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "evidence_item_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "gate_files": {
+      "type": "array",
+      "minItems": 14,
+      "items": {
+        "type": "string",
+        "pattern": "^evidence/readiness/gates/RG-(0[0-9]|1[0-3])\\.yml$"
+      }
+    },
+    "contains_personal_data": {
+      "const": false
+    },
+    "contains_secrets": {
+      "const": false
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

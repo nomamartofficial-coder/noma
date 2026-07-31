@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0.0",
+  "id": "CHG-2026-000",
+  "type": "SCOPE_CHANGE",
+  "status": "DRAFT",
+  "title": "Example only — no scope change requested",
+  "requested_by_role": "Product",
+  "owner_role": "Product",
+  "created_at": "2026-07-31T14:11:00+01:00",
+  "expires_at": "2026-08-31T23:59:59+01:00",
+  "source_requirements": [
+    "docs/01-mvp-scope.md#scope-change-process"
+  ],
+  "task_ids": [
+    "FND-008"
+  ],
+  "risk_class": "P0-AUTHORITY",
+  "affected_capabilities": [],
+  "current_state": "No requested change.",
+  "proposed_state": "No requested change.",
+  "rationale": "Schema example only; implementation remains governed by the existing Build Pack.",
+  "security_impact": "None; example metadata only.",
+  "privacy_impact": "None; example metadata only.",
+  "financial_impact": "None; example metadata only.",
+  "custody_impact": "None; example metadata only.",
+  "required_tests": [
+    "Schema validation",
+    "Redaction self-test"
+  ],
+  "required_evidence": [
+    "Draft PR review"
+  ],
+  "approval_roles": [
+    "Product",
+    "Engineering",
+    "QA"
+  ],
+  "approvals": [],
+  "rollback_plan": "Delete the example record if the schema or process is superseded.",
+  "related_issues": [],
+  "related_pull_requests": [],
+  "supersedes": [],
+  "superseded_by": null,
+  "contains_personal_data": false,
+  "contains_secrets": false,
+  "is_example": true
+}
