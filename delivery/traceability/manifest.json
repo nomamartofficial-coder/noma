@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0.0",
+  "register_version": "2026-07-31.1",
+  "authority": "docs/12-delivery-backlog.md FND-007",
+  "generated_at": "2026-07-31T12:56:00+01:00",
+  "counts": {
+    "tasks": 150,
+    "p0_tasks": 139,
+    "requirements": 150,
+    "decisions": 19,
+    "documents": 16,
+    "roles": 56,
+    "journeys": 30,
+    "routes": 61,
+    "modules": 41,
+    "entities": 175,
+    "machines": 42,
+    "tests": 150,
+    "evidence": 150
+  },
+  "files": [
+    "task-register-01-01.ndjson.gz.b64",
+    "task-register-01-02.ndjson.gz.b64",
+    "task-register-01-03.ndjson.gz.b64",
+    "task-register-01-04.ndjson.gz.b64",
+    "task-register-01-05.ndjson.gz.b64",
+    "task-register-01-06.ndjson.gz.b64",
+    "task-register-01-07.ndjson.gz.b64",
+    "task-register-02.ndjson.gz.b64",
+    "task-register-03.ndjson.gz.b64",
+    "requirement-register-01.ndjson.gz.b64",
+    "requirement-register-02.ndjson.gz.b64",
+    "decision-register.ndjson",
+    "task-index.csv",
+    "requirement-index-01.csv",
+    "requirement-index-02.csv",
+    "requirement-index-03.csv",
+    "manifest.json",
+    "schemas/task-record.schema.json",
+    "schemas/requirement-record.schema.json",
+    "schemas/decision-record.schema.json"
+  ],
+  "validation_command": "python scripts/validate_traceability.py",
+  "negative_test_command": "python scripts/validate_traceability.py --self-test",
+  "lookup_examples": [
+    "python scripts/validate_traceability.py --lookup FND-007",
+    "python scripts/validate_traceability.py --lookup J05",
+    "python scripts/validate_traceability.py --lookup DEC-SCOPE-006"
+  ],
+  "transport": "Detailed task and requirement NDJSON is gzip-compressed and base64-wrapped for repository-connector transport. The validator decodes it before validation; CSV indexes support direct human review. The first task segment is split into seven smaller deterministic sub-shards for independently verifiable writes.",
+  "important_note": "Planned test and evidence references are obligations, not proof that a test ran or evidence exists."
+}

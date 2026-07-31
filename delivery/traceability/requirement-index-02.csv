@@ -1,0 +1,51 @@
+id,priority,risk,status,statement
+REQ-OFF-001,P0,P0-COMMERCE,PLANNED,Offer publication checks seller/category/required fields; no free-form state edit; Product and Offer truth remain separate.
+REQ-FIL-001,P0,P0-PRIVACY,PLANNED,Private evidence is never public; permanent public upload URLs are absent; browser MIME is not trusted.
+REQ-FIL-002,P0,P0-PRIVACY,PLANNED,Original preserved where required; unsafe/failed scan cannot become visible; AI enhancement cannot erase defects.
+REQ-INV-001,P0,P0-CUSTODY,PLANNED,No mutable stock counter without movement evidence; adjustments require reason/authority; negative availability prevented.
+REQ-INV-002,P0,P0-CUSTODY,PLANNED,Two buyers cannot reserve final unit; expired reservations release once; unit-specific offers reserve the exact item.
+REQ-INV-003,P0,P1-OPERATIONS,PLANNED,Seller cannot edit another seller or immutable order snapshot; validation is category-specific and accessible.
+REQ-CAT-003,P0,P1-OPERATIONS,PLANNED,Catalogue staff cannot activate seller or edit ledger; corrections preserve attribution/history.
+REQ-SRC-001,P0,P0-COMMERCE,PLANNED,Search is projection only; checkout revalidates; patches use supported PostgreSQL release; zero-result queries recorded.
+REQ-SRC-002,P0,P0-COMMERCE,PLANNED,Filters are category-relevant; synonyms require approval; unavailable/ineligible offers do not appear purchasable.
+REQ-MKT-001,P0,P0-COMMERCE,PLANNED,Product identity and seller offer are distinct; no false verification/sponsorship; direct add-to-cart revalidates offer.
+REQ-CRT-001,P0,P0-COMMERCE,PLANNED,Cart is not reservation or promise; invalid one item does not destroy other items; direct API authorization passes.
+REQ-PRC-001,P0,P0-FINANCIAL,PLANNED,Allocations reconcile exactly; no floating point; promotion funding remains attributable for refunds.
+REQ-DLQ-001,P0,P0-COMMERCE,PLANNED,Quote is time-bound; unsupported point/tier fails; provider/maps are not required; total is transparent.
+REQ-CHK-001,P0,P0-COMMERCE,PLANNED,Snapshot preserves buyer-visible truth; no network call in DB transaction; stale/changed item yields partial recovery.
+REQ-CHK-002,P0,P0-COMMERCE,PLANNED,Vendor Orders and Fulfilments are independent; grouping is reproducible/versioned; unrelated sellers stay private.
+REQ-CHK-003,P0,P0-CUSTODY,PLANNED,Final stock race has one winner; expired checkout releases once; payment-initiation retry does not duplicate reservations.
+REQ-CHK-004,P0,P0-COMMERCE,PLANNED,No unrelated navigation; total and terms are clear; stale change is recoverable; accessibility and mobile reflow pass.
+REQ-PAY-001,P0,P0-FINANCIAL,PLANNED,Provider event identity is unique; unknown states are preserved; browser callback cannot mutate success.
+REQ-PAY-002,P0,P0-FINANCIAL,PLANNED,Expected amount/currency/environment checked; secret remains server-side; network call outside transaction.
+REQ-PAY-003,P0,P0-FINANCIAL,PLANNED,Duplicate charge event creates one payment effect; invalid signature has no business effect; failed processing remains operationally visible.
+REQ-ORD-001,P0,P0-COMMERCE,PLANNED,One payment can own multiple Vendor Orders; seller can see only their portion; state fields match Part 8.
+REQ-LED-001,P0,P0-FINANCIAL,PLANNED,Every journal balances by currency; postings cannot be edited/deleted; balance projection rebuild equals journal truth.
+REQ-ORD-002,P0,P0-FINANCIAL,PLANNED,Callback/webhook race creates one order; amount mismatch enters reconciliation; no paid order without ledger evidence.
+REQ-ORD-003,P0,P0-COMMERCE,PLANNED,One seller rejection does not cancel valid sellers; earnings/stock/fulfilment reflect only affected items; seller scope enforced.
+REQ-LED-002,P0,P0-FINANCIAL,PLANNED,"Buyer payment, order allocations, fees, and ledger reconcile exactly; customer payment is not payout eligibility."
+REQ-PAY-004,P0,P0-FINANCIAL,PLANNED,Unknown outcome never invites duplicate pay; Finance cannot directly mark success; authoritative provider evidence is displayed.
+REQ-FUL-001,P0,P0-CUSTODY,PLANNED,One order item can be split deliberately without double fulfilment; Vendor Order and Fulfilment remain independent.
+REQ-FUL-002,P0,P0-CUSTODY,PLANNED,Free-form message cannot mark ready; package/item match required; seller cannot act after pickup or on other seller.
+REQ-DLV-001,P0,P0-CUSTODY,PLANNED,Noma owns Delivery Job; CU Express API is not assumed; reassignment history is preserved; assignment after pickup requires custody transfer.
+REQ-DLV-002,P0,P1-OPERATIONS,PLANNED,Operations can recover without DB edits; two riders cannot accept one offer; override is audited; board uses authoritative states.
+REQ-DLV-003,P0,P0-CUSTODY,PLANNED,Credential is single-use; wrong rider/parcel/location/state fails; pickup and custody are one transaction.
+REQ-DLV-004,P0,P0-CUSTODY,PLANNED,Arrival is not delivery; replaced credential invalidates prior; two attempts cannot deliver twice; rider sees minimum data.
+REQ-DLV-005,P0,P0-CUSTODY,PLANNED,Failed attempt is not delivered; parcel retains one current custodian; unsafe/private evidence is restricted.
+REQ-RDR-003,P0,P0-CUSTODY,PLANNED,Touch/keyboard/accessibility work; offline cannot fabricate secure handoff; stale assignment conflict is explicit.
+REQ-BUY-001,P0,P0-COMMERCE,PLANNED,Buyer sees one understandable purchase while partial seller/delivery states remain clear; unrelated seller data is hidden.
+REQ-CAN-001,P0,P0-COMMERCE,PLANNED,Cancellation is action-specific; pickup/custody races are rejected; unaffected items continue; quote precedes commitment.
+REQ-CAN-002,P0,P0-COMMERCE,PLANNED,No free-form message cancels; authorized scope/state enforced; repeated command is idempotent.
+REQ-REF-001,P0,P0-FINANCIAL,PLANNED,Approved/submitted/processing/processed are distinct; refundable total cannot exceed evidence; allocations reverse exact funding.
+REQ-REF-002,P0,P0-FINANCIAL,PLANNED,Timeout never creates blind duplicate; provider-confirmed completion posts final reversal; needs-attention remains visible.
+REQ-REF-003,P0,P0-FINANCIAL,PLANNED,No actor can manually set processed; private Finance details are scoped; accessible uncertainty/recovery states exist.
+REQ-HLD-001,P0,P0-FINANCIAL,PLANNED,One case normally holds only exposure; unrelated available earnings remain; release/refund race preserves ledger balance.
+REQ-PYO-001,P0,P0-FINANCIAL,PLANNED,Resolved name is confirmed by seller; account change cannot immediately drain funds; previous records remain auditable.
+REQ-PYO-002,P0,P0-FINANCIAL,PLANNED,Two withdrawals cannot reserve same earnings; pending holds/cooling/restrictions block correctly; seller cannot select arbitrary recipient.
+REQ-PYO-003,P0,P0-FINANCIAL,PLANNED,Maker cannot self-approve above policy; initiation is not paid; uncertain attempt cannot be blindly reissued.
+REQ-PYO-004,P0,P0-FINANCIAL,PLANNED,Only provider-confirmed success marks paid; duplicate/out-of-order events are safe; reversal restores correct bucket once.
+REQ-REC-001,P0,P0-FINANCIAL,PLANNED,Finance can resolve without direct DB edits; reconciliation actions append audit/journals; unresolved mismatches block relevant gate.
+REQ-MSG-001,P0,P0-PRIVACY,PLANNED,Only authorized participants access; system events are immutable and distinct from chat; buyer contact/private location hidden.
+REQ-MSG-002,P0,P0-PRIVACY,PLANNED,Detection is not automatic guilt; blocked content is not delivered; repeated deliberate attempts create signals; no WhatsApp shortcut.
+REQ-MSG-003,P0,P0-COMMERCE,PLANNED,Chat alone cannot substitute; only one active proposal; expiry/replay safe; money/stock changes use authoritative commands.
+REQ-NTF-001,P0,P1-OPERATIONS,PLANNED,Notification is not business truth; sensitive lock-screen content avoided; failed email does not rollback committed order.

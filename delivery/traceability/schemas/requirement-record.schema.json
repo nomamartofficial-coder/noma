@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://noma.local/schemas/requirement-record.schema.json",
+  "title": "Noma requirement traceability record",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "priority",
+    "risk",
+    "status",
+    "statement",
+    "source_refs",
+    "task_refs",
+    "decision_refs",
+    "test_refs",
+    "evidence_refs"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^REQ-[A-Z]{2,5}-[0-9]{3}$"
+    }
+  },
+  "additionalProperties": true
+}

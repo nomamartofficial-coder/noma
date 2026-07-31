@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://noma.local/schemas/task-record.schema.json",
+  "title": "Noma task traceability record",
+  "type": "object",
+  "required": [
+    "id",
+    "epic",
+    "title",
+    "priority",
+    "risk",
+    "status",
+    "owner",
+    "depends_on",
+    "source_refs",
+    "requirement_refs",
+    "relations"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Z]{2,5}-[0-9]{3}$"
+    },
+    "priority": {
+      "enum": [
+        "P0",
+        "P1",
+        "P2"
+      ]
+    },
+    "status": {
+      "enum": [
+        "NOT_STARTED",
+        "IN_PROGRESS",
+        "IN_REVIEW",
+        "BLOCKED",
+        "COMPLETE",
+        "CANCELLED"
+      ]
+    },
+    "relations": {
+      "type": "object",
+      "required": [
+        "scope_decisions",
+        "roles",
+        "journeys",
+        "routes",
+        "modules",
+        "entities",
+        "machines",
+        "tests",
+        "evidence"
+      ]
+    }
+  },
+  "additionalProperties": false
+}
