@@ -8,22 +8,25 @@
     "p0_tasks": 139,
     "requirements": 150,
     "decisions": 19,
-    "roles": 51,
+    "documents": 16,
+    "roles": 56,
     "journeys": 30,
     "routes": 61,
-    "modules": 42,
+    "modules": 41,
     "entities": 175,
     "machines": 42,
     "tests": 150,
     "evidence": 150
   },
   "files": [
-    "task-register-01.ndjson",
-    "task-register-02.ndjson",
-    "task-register-03.ndjson",
-    "requirement-register-01.ndjson",
-    "requirement-register-02.ndjson",
+    "task-register-01.ndjson.gz.b64",
+    "task-register-02.ndjson.gz.b64",
+    "task-register-03.ndjson.gz.b64",
+    "requirement-register-01.ndjson.gz.b64",
+    "requirement-register-02.ndjson.gz.b64",
     "decision-register.ndjson",
+    "task-index.csv",
+    "requirement-index.csv",
     "manifest.json",
     "schemas/task-record.schema.json",
     "schemas/requirement-record.schema.json",
@@ -36,5 +39,6 @@
     "python scripts/validate_traceability.py --lookup J05",
     "python scripts/validate_traceability.py --lookup DEC-SCOPE-006"
   ],
-  "important_note": "PLANNED test/evidence references are obligations, not proof that a test ran or evidence exists."
+  "transport": "Detailed task and requirement NDJSON is gzip-compressed and base64-wrapped for repository-connector transport. The validator decodes it before validation; CSV indexes support direct human review.",
+  "important_note": "Planned test and evidence references are obligations, not proof that a test ran or evidence exists."
 }
