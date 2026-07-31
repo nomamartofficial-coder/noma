@@ -1,0 +1,179 @@
+name: Bounded delivery task
+description: Create one reviewable Noma task from the approved Build Pack backlog.
+title: "[TASK-ID]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for one bounded implementation, verification, documentation, or operational task.
+        Read `AGENTS.md` and the governing Build Pack sections before submitting.
+        Do not use this form to silently expand the Covenant pilot scope.
+
+  - type: input
+    id: task-id
+    attributes:
+      label: Task ID
+      description: Use the exact approved ID from `docs/12-delivery-backlog.md` or an approved change-control record.
+      placeholder: FND-006
+    validations:
+      required: true
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective and user or operator outcome
+      description: State the problem, the intended outcome, and why this task is needed now.
+      placeholder: Describe the bounded outcome in objective terms.
+    validations:
+      required: true
+
+  - type: textarea
+    id: governing-contracts
+    attributes:
+      label: Governing Build Pack sections
+      description: Cite exact repository documents and sections. Include scope authority first.
+      placeholder: |
+        - docs/01-mvp-scope.md, Section ...
+        - docs/06-technical-architecture.md, Section ...
+        - docs/12-delivery-backlog.md, Task ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: traceability
+    attributes:
+      label: Requirement and traceability IDs
+      description: List known requirement IDs, role/capability, Journey IDs, routes/pages, modules, entities, Machine IDs, provider contracts, tests, and readiness gates.
+      placeholder: |
+        Scope:
+        Roles/capabilities:
+        Journeys:
+        Routes/pages:
+        Modules/entities:
+        State machines:
+        Providers:
+        Tests/evidence:
+        Readiness gates:
+    validations:
+      required: true
+
+  - type: input
+    id: risk
+    attributes:
+      label: Highest risk class
+      description: Use the governing Part 11/12 risk classification, for example P0-AUTHORITY or P0-FINANCIAL.
+      placeholder: P0-AUTHORITY
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and current status
+      description: List prerequisite task IDs, provider/operations dependencies, approved simulators, and whether each dependency is merged or blocked.
+      placeholder: |
+        - FND-004 — merged
+        - Human reviewer — available
+    validations:
+      required: true
+
+  - type: textarea
+    id: in-scope
+    attributes:
+      label: In-scope work
+      description: Define the smallest complete slice this issue authorises.
+      placeholder: List the exact files, behaviours, contracts, or evidence to create or change.
+    validations:
+      required: true
+
+  - type: textarea
+    id: exclusions
+    attributes:
+      label: Out of scope and intentionally inactive branches
+      description: Name adjacent capabilities, progressive features, deferred workflows, migrations, providers, or UI that must remain unchanged or disabled.
+      placeholder: State exclusions explicitly; use "None beyond the bounded task" only when accurate.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Objective acceptance criteria
+      description: Use observable pass/fail outcomes. Do not use vague terms such as "works correctly."
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: tests
+    attributes:
+      label: Required tests, commands, and evidence
+      description: List the applicable unit, component, integration, contract, property, concurrency, E2E, accessibility, security, performance, recovery, UAT, or document validation evidence.
+      placeholder: |
+        Commands:
+        Test layers:
+        Evidence artefacts:
+        Human review:
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Security, privacy, authority, financial, inventory, custody, and operational impact
+      description: Assess each relevant domain. Say "No impact" only with a short reason.
+      placeholder: |
+        Authorization:
+        Security:
+        Privacy:
+        Financial:
+        Inventory:
+        Custody:
+        Operations/support:
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots, recordings, or other review evidence
+      description: Describe required evidence for visible changes. Use safe test data and remove personal data and secrets. For non-visual work, explain the replacement evidence.
+      placeholder: Evidence required and redaction rules.
+    validations:
+      required: true
+
+  - type: textarea
+    id: rollback
+    attributes:
+      label: Rollback, forward-fix, and recovery plan
+      description: Explain how the change can be reversed or safely corrected without rewriting financial, custody, provider, case, enforcement, or audit history.
+      placeholder: Describe rollback boundaries, compatibility, data recovery, and stop conditions.
+    validations:
+      required: true
+
+  - type: input
+    id: reviewer
+    attributes:
+      label: Accountable human reviewer
+      description: Name the role or GitHub handle responsible for accepting the task.
+      placeholder: Engineering/Product/QA reviewer
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: readiness
+    attributes:
+      label: Definition of Ready confirmation
+      options:
+        - label: I identified the governing scope source and exact task boundary.
+          required: true
+        - label: Dependencies are merged, available, or represented by an approved simulator or contract.
+          required: true
+        - label: Tests and evidence have objective oracles.
+          required: true
+        - label: Progressive and deferred adjacent capabilities are explicitly excluded.
+          required: true
+        - label: No secret, production personal data, or private evidence is included.
+          required: true
