@@ -1,56 +1,54 @@
 # Noma Traceability Registers
 
-> **Task:** FND-007  
-> **Status:** Repository foundation  
-> **Authority:** `docs/12-delivery-backlog.md`  
-> **Risk:** `P0-RECOVERY`
+> **Task:** `FND-007`  
+> **Risk:** `P0-RECOVERY`  
+> **Authority:** `docs/12-delivery-backlog.md`
 
 ## Purpose
 
-These registers make Noma's delivery claims traceable in both directions. A task points to its governing requirement, decisions, roles, journeys, routes, modules, entities, state machines, planned tests, and evidence obligation. `reverse-index.json` provides the inverse lookup from each reference back to affected tasks.
+The registers provide a machine-readable path from each delivery task to its governing acceptance requirement, locked decisions, roles, journeys, routes, modules, entities, state machines, planned tests, and evidence obligation. The same data can be queried backward from any reference to every affected task.
 
-The first baseline contains all **150** backlog tasks, including **139 P0 tasks**. Each task has one canonical delivery-acceptance requirement, one planned verification obligation, and one planned evidence obligation.
+The baseline contains all **150** backlog tasks, including all **139 P0 tasks**. Each task has one canonical acceptance requirement, one planned verification obligation, and one planned evidence obligation.
 
 ## Files
 
-- `task-register.json` — all backlog tasks, dependencies, status, and forward traceability.
-- `requirement-register.json` — one canonical acceptance requirement per task, with task/decision/test/evidence back-links.
-- `decision-register.json` — the 15 locked scope decisions plus repository, architecture, quality, and readiness decisions.
-- `reference-catalog.json` — canonical IDs for documents, roles, journeys, routes, modules, entities, machines, test obligations, and evidence obligations.
-- `reverse-index.json` — generated reverse lookups from every reference category to tasks.
-- `manifest.json` — versions, counts, files, and validation commands.
-- `schemas/*.schema.json` — machine-readable structural contracts.
-- `scripts/validate_traceability.py` — zero-dependency referential validator and negative self-test.
+- `task-register-01.ndjson.gz.b64` through `task-register-03.ndjson.gz.b64` — one logical task register containing task metadata, dependencies, status, and forward traceability.
+- `requirement-register-01.ndjson.gz.b64` and `requirement-register-02.ndjson.gz.b64` — one logical requirement register containing acceptance requirements with task, decision, test, and evidence back-links.
+- `decision-register.ndjson` — 15 locked scope decisions plus repository, architecture, quality, and readiness decisions with reverse task/requirement links.
+- `task-index.csv` and `requirement-index.csv` — plain-text review indexes for quick human inspection.
+- `manifest.json` — counts, version, files, and validation commands.
+- `schemas/*.schema.json` — JSON Schema contracts for each record type.
+- `scripts/validate_traceability.py` — zero-dependency structural, source, forward/backward, and referential validator.
 
-## Mapping status
+The detailed task and requirement NDJSON shards are gzip-compressed and base64-wrapped because of repository-connector write limits. This is deterministic transport, **not encryption**. The validator decodes them in memory before validating. The plain CSV indexes remain directly diffable and reviewable.
 
-Every relation has one of:
+## Relation status
 
-- `MAPPED` — one or more canonical references are recorded;
-- `NOT_APPLICABLE` — the relation does not apply and a reason is mandatory.
+- `MAPPED` means one or more canonical references are recorded.
+- `NOT_APPLICABLE` means the category does not apply and a reason is mandatory.
 
-A `PLANNED` test or evidence node is an obligation only. It must never be presented as proof that a command ran, a test passed, UAT occurred, or a readiness gate passed.
+A test or evidence reference is an obligation, not proof that a command ran, a test passed, UAT occurred, or a readiness gate passed.
 
-## Validation
+## Commands
 
 ```bash
 python scripts/validate_traceability.py
 python scripts/validate_traceability.py --self-test
+python scripts/validate_traceability.py --lookup FND-007
+python scripts/validate_traceability.py --lookup J05
+python scripts/validate_traceability.py --lookup DEC-SCOPE-006
 ```
 
-The validator fails on:
+Validation fails on:
 
 - duplicate IDs;
 - unknown task dependencies;
 - unknown document, decision, role, journey, route, module, entity, machine, test, or evidence references;
-- missing P0 traceability categories;
+- missing mandatory P0 traceability;
 - empty `NOT_APPLICABLE` reasons;
-- broken requirement-to-task or decision-to-task back-links;
-- stale or inconsistent reverse indexes; and
-- a negative test that fails to detect an injected unknown reference.
+- broken requirement-to-task or decision-to-task back-links; or
+- failure to reject the deliberately injected unknown reference in the negative self-test.
 
 ## Update rule
 
-Every task PR must update the applicable records when it changes scope, requirements, dependencies, roles, journeys, routes, modules, entities, machines, tests, evidence, status, or decision impact. Do not hand-edit `reverse-index.json` without regenerating or validating it against the forward records.
-
-Unknown or ambiguous references must be resolved through the governing document or scope-change process. Do not invent IDs merely to make validation pass.
+Every task PR must update applicable records when it changes scope, requirements, dependencies, roles, journeys, routes, modules, entities, machines, tests, evidence, status, or decision impact. Unknown or ambiguous references must be resolved from the governing documents or through approved scope change. Do not invent IDs merely to make validation pass.
