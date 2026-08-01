@@ -18,10 +18,17 @@
     "lint": "node ../../scripts/lint-package.mjs .",
     "typecheck": "node ../../scripts/run-tsc.mjs --noEmit",
     "build": "node ../../scripts/run-tsc.mjs",
+    "test": "pnpm build && node --test tests/*.test.mjs",
     "clean": "node ../../scripts/clean-package.mjs ."
   },
   "dependencies": {
     "@noma/contracts": "workspace:*",
-    "@noma/platform": "workspace:*"
+    "@noma/observability": "workspace:*",
+    "@noma/platform": "workspace:*",
+    "bullmq": "5.81.2",
+    "ioredis": "5.11.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.12.4"
   }
 }

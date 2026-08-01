@@ -4,6 +4,6 @@ Server-only Prisma/PostgreSQL persistence boundary.
 
 The public package exports the bounded client factory and transaction helpers. Prisma-generated types, migrations, reset safety, repositories, and future module mappings remain internal; deep imports are prohibited.
 
-DEV-004 intentionally contains no business model or seed data. Later owning-module tasks add schema and repositories with reviewed constraints, indexes, authorization scope, audit/outbox effects, and real PostgreSQL tests.
+DEV-005 adds only the technical `outbox_events`, `job_executions`, and append-only `job_execution_attempts` models. `createOutboxEvent` requires an existing transaction. Dispatcher claiming, recovery, completion evidence, dead-letter ownership, and idempotent execution remain server-only database responsibilities; network publication never occurs inside a transaction.
 
-Canonical guidance and commands are in [`DATABASE.md`](../../DATABASE.md).
+Canonical guidance and commands are in [`DATABASE.md`](../../DATABASE.md) and [`QUEUE.md`](../../QUEUE.md).

@@ -10,6 +10,6 @@ DEV-002 introduces three independently runnable processes and no business featur
 
 Run all processes with `pnpm dev`, or one process with `pnpm dev:web`, `pnpm dev:api`, or `pnpm dev:worker`. Production-mode smoke verification is `pnpm smoke:runtimes` after a clean frozen install.
 
-Liveness means the process is running. Readiness means the scaffold is able to accept its current no-business workload. DEV-004 provides the database package, migrations, and real local/test PostgreSQL but deliberately does not open runtime connections, so database readiness remains `not-configured`. Queue readiness remains `not-configured` until DEV-005.
+Liveness means the process is running. Readiness means the runtime can safely accept its configured workload. The DEV-005 Worker reports database and queue as `not-configured` when both URLs are absent. When both are present it starts only after live PostgreSQL and Redis probes, and readiness becomes unavailable if either dependency is lost. A single configured dependency fails startup.
 
-No provider or database secrets belong in Web configuration or bundles. DEV-003 enforces the typed environment boundary; DEV-004 keeps Prisma and PostgreSQL access server-only.
+No provider, database, or Redis secrets belong in Web configuration or bundles. DEV-003 enforces the typed environment boundary; DEV-004/DEV-005 keep Prisma, PostgreSQL, and Redis access server-only.

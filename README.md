@@ -253,7 +253,7 @@ pnpm db:migrate:dev
 pnpm dev
 ```
 
-The PostgreSQL foundation and local endpoint are documented in [`DATABASE.md`](DATABASE.md). Redis/queue, mail-capture, and full observability endpoints are introduced only by their dependency-ordered tasks.
+The PostgreSQL foundation and local endpoint are documented in [`DATABASE.md`](DATABASE.md). The Redis/BullMQ and transactional-outbox foundation is documented in [`QUEUE.md`](QUEUE.md). Mail capture and full observability exporters remain dependency-ordered work.
 
 If the repository uses a bootstrap script, it must remain transparent and equivalent to the documented steps rather than hiding destructive or production actions.
 

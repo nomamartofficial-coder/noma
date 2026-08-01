@@ -151,6 +151,14 @@ export function loadServerEnvironment(
     requireTls: production,
   });
 
+  if (runtime === 'worker' && Boolean(databaseUrl) !== Boolean(redisUrl)) {
+    issues.push({
+      key: databaseUrl ? 'REDIS_URL' : 'DATABASE_URL',
+      code: 'missing',
+      message: 'must be configured together with the Worker database and queue dependency',
+    });
+  }
+
   if (production && databaseUrl) {
     const database = new URL(databaseUrl);
     const sslMode = database.searchParams.get('sslmode');

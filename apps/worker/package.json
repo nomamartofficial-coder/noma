@@ -24,6 +24,7 @@
     "lint": "node ../../scripts/lint-package.mjs .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build": "tsc -p tsconfig.build.json",
+    "test": "pnpm build && node --test tests/*.test.mjs",
     "clean": "node ../../scripts/clean-package.mjs .",
     "dev": "tsx watch src/main.ts",
     "start": "node dist/main.js"

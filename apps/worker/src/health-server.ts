@@ -1,7 +1,19 @@
 import { createServer, type Server } from 'node:http';
-import { createHealthResponse } from '@noma/contracts';
+import {
+  createHealthResponse,
+  type DependencyHealth,
+} from '@noma/contracts';
 
-export function startHealthServer(host: string, port: number, isReady: () => boolean): Server {
+export interface WorkerHealthSnapshot {
+  readonly ready: boolean;
+  readonly dependencies: Readonly<Record<string, DependencyHealth>>;
+}
+
+export function startHealthServer(
+  host: string,
+  port: number,
+  readHealth: () => WorkerHealthSnapshot,
+): Server {
   const server = createServer((request, response) => {
     const check = request.url === '/health/ready'
       ? 'readiness'
@@ -15,12 +27,13 @@ export function startHealthServer(host: string, port: number, isReady: () => boo
       return;
     }
 
-    const ready = check === 'liveness' ? true : isReady();
+    const health = readHealth();
+    const ready = check === 'liveness' ? true : health.ready;
     const body = createHealthResponse({
       runtime: 'worker',
       check,
       ready,
-      dependencies: { queue: 'not-configured', database: 'not-configured' },
+      dependencies: health.dependencies,
     });
 
     response.writeHead(ready ? 200 : 503, { 'content-type': 'application/json' });

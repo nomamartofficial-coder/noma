@@ -34,5 +34,37 @@ services:
     shm_size: 256mb
     stop_grace_period: 30s
 
+  redis:
+    image: redis:8.8.1-alpine3.23@sha256:8096655e437712b07503796fb64d81359256cfcff0ab29d95a7da72863786efb
+    restart: unless-stopped
+    environment:
+      NOMA_REDIS_PASSWORD: ${NOMA_REDIS_PASSWORD:-noma-local-redis-only}
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --maxmemory-policy
+      - noeviction
+      - --requirepass
+      - ${NOMA_REDIS_PASSWORD:-noma-local-redis-only}
+    ports:
+      - 127.0.0.1:${NOMA_REDIS_PORT:-56379}:6379
+    volumes:
+      - noma_redis_data:/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'REDISCLI_AUTH="$${NOMA_REDIS_PASSWORD}" redis-cli --no-auth-warning ping | grep -qx PONG'
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 3s
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s
+
 volumes:
   noma_postgres_data:
+  noma_redis_data:
