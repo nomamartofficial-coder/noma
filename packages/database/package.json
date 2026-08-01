@@ -15,13 +15,26 @@
     }
   },
   "scripts": {
-    "lint": "node ../../scripts/lint-package.mjs .",
-    "typecheck": "node ../../scripts/run-tsc.mjs --noEmit",
-    "build": "node ../../scripts/run-tsc.mjs",
-    "clean": "node ../../scripts/clean-package.mjs ."
+    "lint": "node ../../scripts/lint-package.mjs . src/generated/prisma",
+    "typecheck": "pnpm db:generate && node ../../scripts/run-tsc.mjs --noEmit",
+    "build": "pnpm db:generate && node ../../scripts/run-tsc.mjs",
+    "clean": "node ../../scripts/clean-package.mjs . src/generated/prisma",
+    "test": "pnpm build && node --test tests/*.test.mjs",
+    "db:validate": "prisma validate",
+    "db:generate": "prisma generate",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:status": "prisma migrate status"
   },
   "dependencies": {
     "@noma/contracts": "workspace:*",
-    "@noma/platform": "workspace:*"
+    "@noma/platform": "workspace:*",
+    "@prisma/adapter-pg": "7.9.1",
+    "@prisma/client": "7.9.1",
+    "pg": "8.22.0"
+  },
+  "devDependencies": {
+    "@types/pg": "8.20.0",
+    "prisma": "7.9.1"
   }
 }

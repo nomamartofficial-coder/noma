@@ -1,0 +1,14 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// DEV-004 intentionally introduces no business model. Owning modules add models
+// and reviewed constraints in later bounded tasks; the baseline and foundation
+// migrations only establish forward-only history and approved extensions.
