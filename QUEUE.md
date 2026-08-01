@@ -80,7 +80,9 @@ pnpm build
 pnpm smoke:runtimes
 ```
 
-`queue:verify` uses an isolated real PostgreSQL/Redis Compose project. It exercises rollback, abrupt producer exit, concurrent claiming, duplicate delivery, worker restart, acknowledgement failure, Redis outage and data loss, aggregate ordering, poison/exhausted jobs, owned attention, and metric visibility. It uses polling deadlines and database barriers, not in-memory Redis substitutes. The reusable Testcontainers harness remains DEV-006.
+`queue:verify` uses an isolated real PostgreSQL/Redis Compose project. It exercises rollback, abrupt producer exit, concurrent claiming, duplicate delivery, worker restart, acknowledgement failure, Redis outage and data loss, aggregate ordering, poison/exhausted jobs, owned attention, and metric visibility. It uses polling deadlines and database barriers, not in-memory Redis substitutes.
+
+DEV-006 now provides `@noma/testing/containers` for new reusable integration suites with the same reviewed image digests, authenticated Redis policy, real PostgreSQL migrations, synthetic credentials, and disposable resource cleanup. The focused DEV-005 crash/data-loss Compose rehearsal remains intact.
 
 ## Production boundary
 

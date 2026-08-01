@@ -225,7 +225,7 @@ A development machine should have:
 - the Node.js version declared by the repository (`.nvmrc`, `.node-version`, or `package.json` engines);
 - Corepack enabled;
 - the pnpm version declared by `packageManager` in `package.json`;
-- Docker Engine or Docker Desktop with Compose support for local PostgreSQL and Redis-compatible services;
+- Docker Engine or Docker Desktop with Compose and Testcontainers support for local PostgreSQL/Redis services and integration tests;
 - a supported browser for Web and Playwright testing; and
 - access only to the non-production credentials required for the assigned task.
 
@@ -304,6 +304,9 @@ pnpm test
 pnpm test:unit
 pnpm test:component
 pnpm test:integration
+pnpm test:coverage
+pnpm test:typecheck
+pnpm testing:verify
 pnpm test:contract
 pnpm test:e2e
 pnpm test:accessibility
@@ -388,6 +391,7 @@ High-risk areas require more than happy-path tests:
 - backup restoration, reconciliation, pause, and restart drills.
 
 Read [`docs/11-testing-strategy.md`](docs/11-testing-strategy.md) before adding or changing a critical test.
+The implemented deterministic runner, fixture, and container contract is documented in [`TESTING.md`](TESTING.md).
 
 ---
 

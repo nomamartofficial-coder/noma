@@ -18,7 +18,7 @@
     "lint": "node ../../scripts/lint-package.mjs .",
     "typecheck": "node ../../scripts/run-tsc.mjs --noEmit",
     "build": "node ../../scripts/run-tsc.mjs",
-    "test": "pnpm build && node --test tests/*.test.mjs",
+    "test": "pnpm build && pnpm --dir ../.. exec vitest run --config vitest.config.ts --project unit packages/integrations/tests",
     "clean": "node ../../scripts/clean-package.mjs ."
   },
   "dependencies": {

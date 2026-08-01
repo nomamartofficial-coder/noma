@@ -19,7 +19,7 @@
     "typecheck": "pnpm db:generate && node ../../scripts/run-tsc.mjs --noEmit",
     "build": "pnpm db:generate && node ../../scripts/run-tsc.mjs",
     "clean": "node ../../scripts/clean-package.mjs . src/generated/prisma",
-    "test": "pnpm build && node --test tests/*.test.mjs",
+    "test": "pnpm build && pnpm --dir ../.. exec vitest run --config vitest.config.ts --project unit packages/database/tests",
     "db:validate": "prisma validate",
     "db:generate": "prisma generate",
     "db:migrate:dev": "prisma migrate dev",
