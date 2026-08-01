@@ -9,6 +9,136 @@ datasource db {
   provider = "postgresql"
 }
 
-// DEV-004 intentionally introduces no business model. Owning modules add models
-// and reviewed constraints in later bounded tasks; the baseline and foundation
-// migrations only establish forward-only history and approved extensions.
+enum OutboxStatus {
+  PENDING
+  DISPATCHED
+  PROCESSED
+  DEAD_LETTERED
+
+  @@map("outbox_status")
+}
+
+enum JobExecutionStatus {
+  PROCESSING
+  RETRYABLE_FAILURE
+  COMPLETED
+  DEAD_LETTERED
+
+  @@map("job_execution_status")
+}
+
+enum JobAttemptStatus {
+  STARTED
+  RETRYABLE_FAILURE
+  PERMANENT_FAILURE
+  COMPLETED
+
+  @@map("job_attempt_status")
+}
+
+enum AttentionOwner {
+  OPERATIONS
+  FINANCE
+  SECURITY
+
+  @@map("attention_owner")
+}
+
+enum AttentionStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+
+  @@map("attention_status")
+}
+
+model OutboxEvent {
+  id                    String           @id @db.Uuid
+  eventType             String           @map("event_type") @db.VarChar(160)
+  eventVersion          Int              @map("event_version")
+  queueName             String           @map("queue_name") @db.VarChar(80)
+  jobName               String           @map("job_name") @db.VarChar(160)
+  jobVersion            Int              @map("job_version")
+  aggregateType         String           @map("aggregate_type") @db.VarChar(100)
+  aggregateId           String           @map("aggregate_id") @db.VarChar(200)
+  aggregateVersion      BigInt           @map("aggregate_version")
+  institutionId         String?          @map("institution_id") @db.Uuid
+  scopeType             String?          @map("scope_type") @db.VarChar(80)
+  scopeId               String?          @map("scope_id") @db.VarChar(200)
+  payload               Json             @db.JsonB
+  privacyClassification String           @map("privacy_classification") @db.VarChar(40)
+  servicePrincipal      String           @map("service_principal") @db.VarChar(120)
+  correlationId         String           @map("correlation_id") @db.VarChar(200)
+  occurredAt            DateTime         @map("occurred_at") @db.Timestamptz(6)
+  availableAt           DateTime         @map("available_at") @db.Timestamptz(6)
+  status                OutboxStatus     @default(PENDING)
+  leaseOwner            String?          @map("lease_owner") @db.VarChar(160)
+  leaseExpiresAt        DateTime?        @map("lease_expires_at") @db.Timestamptz(6)
+  dispatchAttempts      Int              @default(0) @map("dispatch_attempts")
+  dispatchedAt          DateTime?        @map("dispatched_at") @db.Timestamptz(6)
+  processedAt           DateTime?        @map("processed_at") @db.Timestamptz(6)
+  deadLetteredAt        DateTime?        @map("dead_lettered_at") @db.Timestamptz(6)
+  attentionOwner        AttentionOwner?  @map("attention_owner")
+  attentionStatus       AttentionStatus? @map("attention_status")
+  attentionDeadlineAt   DateTime?        @map("attention_deadline_at") @db.Timestamptz(6)
+  recoveryAction        String?          @map("recovery_action") @db.VarChar(80)
+  lastFailureCode       String?          @map("last_failure_code") @db.VarChar(120)
+  lastFailureMessage    String?          @map("last_failure_message") @db.VarChar(500)
+  createdAt             DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  jobExecutions         JobExecution[]
+
+  @@index([aggregateType, aggregateId, aggregateVersion], map: "outbox_events_aggregate_idx")
+  @@map("outbox_events")
+}
+
+model JobExecution {
+  id                  String             @id @db.Uuid
+  outboxEventId       String?            @map("outbox_event_id") @db.Uuid
+  queueName           String             @map("queue_name") @db.VarChar(80)
+  jobId               String             @map("job_id") @db.VarChar(200)
+  jobName             String             @map("job_name") @db.VarChar(160)
+  jobVersion          Int                @map("job_version")
+  aggregateVersion    BigInt             @map("aggregate_version")
+  status              JobExecutionStatus
+  attemptCount        Int                @default(0) @map("attempt_count")
+  leaseOwner          String?            @map("lease_owner") @db.VarChar(160)
+  leaseExpiresAt      DateTime?          @map("lease_expires_at") @db.Timestamptz(6)
+  servicePrincipal    String             @map("service_principal") @db.VarChar(120)
+  correlationId       String             @map("correlation_id") @db.VarChar(200)
+  startedAt           DateTime?          @map("started_at") @db.Timestamptz(6)
+  completedAt         DateTime?          @map("completed_at") @db.Timestamptz(6)
+  deadLetteredAt      DateTime?          @map("dead_lettered_at") @db.Timestamptz(6)
+  attentionOwner      AttentionOwner?    @map("attention_owner")
+  attentionStatus     AttentionStatus?   @map("attention_status")
+  attentionDeadlineAt DateTime?          @map("attention_deadline_at") @db.Timestamptz(6)
+  recoveryAction      String?            @map("recovery_action") @db.VarChar(80)
+  lastFailureCode     String?            @map("last_failure_code") @db.VarChar(120)
+  lastFailureMessage  String?            @map("last_failure_message") @db.VarChar(500)
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+  outboxEvent         OutboxEvent?       @relation(fields: [outboxEventId], references: [id], onDelete: Restrict)
+  attempts            JobExecutionAttempt[]
+
+  @@unique([queueName, jobId], map: "job_executions_queue_job_key")
+  @@index([outboxEventId], map: "job_executions_outbox_event_idx")
+  @@map("job_executions")
+}
+
+model JobExecutionAttempt {
+  id                 BigInt           @id @default(autoincrement())
+  jobExecutionId     String           @map("job_execution_id") @db.Uuid
+  attemptNumber      Int              @map("attempt_number")
+  status             JobAttemptStatus
+  workerIdentity     String           @map("worker_identity") @db.VarChar(160)
+  startedAt          DateTime         @map("started_at") @db.Timestamptz(6)
+  finishedAt         DateTime?        @map("finished_at") @db.Timestamptz(6)
+  failureCode        String?          @map("failure_code") @db.VarChar(120)
+  failureMessage     String?          @map("failure_message") @db.VarChar(500)
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  jobExecution       JobExecution     @relation(fields: [jobExecutionId], references: [id], onDelete: Restrict)
+
+  @@unique([jobExecutionId, attemptNumber], map: "job_execution_attempts_execution_attempt_key")
+  @@index([jobExecutionId, createdAt], map: "job_execution_attempts_history_idx")
+  @@map("job_execution_attempts")
+}

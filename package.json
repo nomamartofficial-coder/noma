@@ -32,6 +32,13 @@
     "db:verify": "pnpm db:validate && pnpm db:self-test && pnpm db:generate && pnpm db:test && pnpm db:migration-test",
     "db:up": "docker compose up -d --wait database",
     "db:down": "docker compose down",
+    "queue:foundation:validate": "node scripts/validate-queue-foundation.mjs",
+    "queue:self-test": "node scripts/validate-queue-foundation.mjs --self-test",
+    "queue:test": "pnpm --filter @noma/contracts test && pnpm --filter @noma/integrations test && pnpm --filter @noma/worker test",
+    "queue:integration-test": "pnpm build && node scripts/test-queue-foundation.mjs",
+    "queue:verify": "pnpm queue:foundation:validate && pnpm queue:self-test && pnpm queue:test && pnpm queue:integration-test",
+    "queue:up": "docker compose up -d --wait database redis",
+    "queue:down": "docker compose down",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "build": "turbo run build",
@@ -43,7 +50,7 @@
     "start:api": "pnpm --filter @noma/api start",
     "start:worker": "pnpm --filter @noma/worker start",
     "smoke:runtimes": "pnpm build && node scripts/smoke-runtimes.mjs",
-    "check": "pnpm workspace:validate && pnpm runtimes:validate && pnpm env:validate && pnpm db:validate && pnpm lint && pnpm typecheck && pnpm build",
+    "check": "pnpm workspace:validate && pnpm runtimes:validate && pnpm env:validate && pnpm db:validate && pnpm queue:foundation:validate && pnpm lint && pnpm typecheck && pnpm build",
     "clean": "turbo run clean && node scripts/clean-workspace.mjs"
   },
   "devDependencies": {

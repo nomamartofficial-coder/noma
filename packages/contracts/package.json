@@ -18,6 +18,7 @@
     "lint": "node ../../scripts/lint-package.mjs .",
     "typecheck": "node ../../scripts/run-tsc.mjs --noEmit",
     "build": "node ../../scripts/run-tsc.mjs",
+    "test": "pnpm build && node --test tests/*.test.mjs",
     "clean": "node ../../scripts/clean-package.mjs ."
   }
 }

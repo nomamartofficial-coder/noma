@@ -41,6 +41,8 @@ Unknown `NEXT_PUBLIC_*` values fail validation. Secret-like public names are pro
 | `DATABASE_URL` | secret | required in production; PostgreSQL URL |
 | `REDIS_URL` | secret | required in production; `rediss://` encrypted transport |
 
+Worker queue mode requires `DATABASE_URL` and `REDIS_URL` together in every environment. Both absent preserves the local scaffold with `not-configured` readiness; exactly one is a startup error. When both are configured, the Worker probes each dependency and never serializes either URL into logs or health responses.
+
 Provider-specific secrets remain optional until their adapter tasks. Live Paystack keys are rejected outside production, and test Paystack keys are rejected in production.
 
 ## Loading and access
@@ -63,7 +65,7 @@ DEV-004 adds a server-only Prisma command boundary. Local schema validation and 
 
 Reset is a separate fail-closed boundary. `pnpm db:reset:local` requires explicit local/test environment markers, an explicit loopback PostgreSQL target, an approved Noma local/test database name, and the non-secret confirmation marker documented in [`DATABASE.md`](DATABASE.md). The same check runs inside `prisma.config.ts`, so invoking Prisma directly does not bypass it.
 
-API and Worker receive the runtime database URL only from their validated server configuration. DEV-004 does not connect those runtimes or change readiness; later owning-module work must create and close the client through `@noma/database` without exposing the URL or Prisma client to Web.
+API and Worker receive runtime dependency URLs only from validated server configuration. DEV-005 connects the Worker through `@noma/database` and `@noma/integrations`, closes both on shutdown, and reports only safe dependency state. The API does not publish directly to Redis.
 
 ## Canonical verification
 

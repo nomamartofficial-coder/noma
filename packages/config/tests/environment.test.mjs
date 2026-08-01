@@ -72,6 +72,21 @@ test('invalid explicit runtime ports fail instead of silently defaulting', () =>
   );
 });
 
+test('Worker database and Redis dependencies must be configured together', () => {
+  assert.throws(
+    () => loadServerEnvironment('worker', {
+      DATABASE_URL: 'postgresql://noma:synthetic@127.0.0.1:55432/noma',
+    }),
+    EnvironmentValidationError,
+  );
+  assert.throws(
+    () => loadServerEnvironment('worker', {
+      REDIS_URL: 'redis://default:synthetic@127.0.0.1:56379',
+    }),
+    EnvironmentValidationError,
+  );
+});
+
 test('production fails closed when critical configuration is missing', () => {
   assert.throws(
     () => loadServerEnvironment('api', {

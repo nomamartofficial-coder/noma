@@ -102,6 +102,14 @@ Preview, staging, production, remote hosts, missing confirmation, or ambiguous d
 
 The test-only probe is representative preservation evidence, not a Noma domain table or production fixture. The baseline step is explicit because Prisma correctly refuses an untracked non-empty schema.
 
+## DEV-005 technical persistence
+
+The third forward migration adds `outbox_events`, `job_executions`, and `job_execution_attempts`. These are reliability records rather than business entities. They include deterministic queue/job uniqueness, processing and publication leases, aggregate versions, safe failure classification, completion/dead-letter evidence, owned attention deadlines, append-only attempts, and partial claim/recovery/attention indexes.
+
+`createOutboxEvent` accepts only Prisma's transaction client so an owning module cannot accidentally create a publication obligation after its source transaction. The Worker uses PostgreSQL `FOR UPDATE SKIP LOCKED` claims and publishes only after the claim transaction finishes. Job handlers commit their business database effect, execution completion, attempt result, and outbox processing evidence in one transaction.
+
+`pnpm db:migration-test` now proves the merged DEV-004 schema upgrades through the DEV-005 migration while preserving prior data. Queue-specific crash, Redis-loss, and idempotency verification is documented in [`QUEUE.md`](QUEUE.md).
+
 ## Compatibility and recovery
 
 The baseline is additive, so the previous API and Worker builds remain schema-compatible. Ordinary recovery is forward-fix or isolated restore, not destructive migration rollback. This task does not provision production PostgreSQL, configure backups/PITR, prove provider restoration, or satisfy the paid-pilot recovery gate.

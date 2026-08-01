@@ -23,6 +23,7 @@ const REQUIRED_FILES = [
   'packages/database/prisma/migrations/migration_lock.toml',
   'packages/database/prisma/migrations/20260801000000_pre_prisma_baseline/migration.sql',
   'packages/database/prisma/migrations/20260801000100_postgresql_foundation/migration.sql',
+  'packages/database/prisma/migrations/20260801000200_queue_outbox_foundation/migration.sql',
   'packages/database/src/client.ts',
   'packages/database/src/transaction.ts',
   'packages/database/tests/client.test.mjs',
@@ -44,7 +45,7 @@ const fail = (message) => {
 };
 const read = (path) => readFile(resolve(ROOT, path), 'utf8');
 const readJson = async (path) => JSON.parse(await read(path));
-const sha256 = (value) => createHash('sha256').update(value).digest('hex');
+const sha256 = (value) => createHash('sha256').update(value.replace(/\r\n/g, '\n')).digest('hex');
 
 function validateMigrationSql(path, sql) {
   for (const pattern of DESTRUCTIVE_SQL) {
@@ -138,7 +139,13 @@ async function validate() {
   if (!schema.includes('provider = "postgresql"')) fail('Prisma PostgreSQL datasource missing');
   if (!schema.includes('provider            = "prisma-client"')) fail('Prisma client generator missing');
   if (/previewFeatures\s*=/.test(schema)) fail('preview Prisma features are prohibited');
-  if (/^\s*model\s+/m.test(schema)) fail('DEV-004 must not introduce business models');
+  const models = [...schema.matchAll(/^\s*model\s+([A-Za-z][A-Za-z0-9]*)/gm)]
+    .map((match) => match[1])
+    .sort();
+  const expectedModels = ['JobExecution', 'JobExecutionAttempt', 'OutboxEvent'];
+  if (JSON.stringify(models) !== JSON.stringify(expectedModels)) {
+    fail('only the DEV-005 technical outbox and job-execution models are permitted');
+  }
 
   const prismaConfig = await read('packages/database/prisma.config.ts');
   if (!prismaConfig.includes('isPrismaResetCommand(process.argv)')) {

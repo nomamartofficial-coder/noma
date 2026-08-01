@@ -8,6 +8,7 @@ import {
 } from '@noma/config/server';
 import { WorkerModule } from './app.module.js';
 import { startHealthServer } from './health-server.js';
+import { QueueRuntimeService } from './queue-runtime.service.js';
 
 const REMOTE_ENVIRONMENTS = new Set(['preview', 'staging', 'production']);
 
@@ -28,19 +29,26 @@ function loadOptionalLocalEnvironment(): void {
 async function bootstrap(): Promise<void> {
   loadOptionalLocalEnvironment();
   const config = loadServerEnvironment('worker', process.env);
-  let ready = false;
-  const app = await NestFactory.createApplicationContext(WorkerModule, { bufferLogs: true });
+  let shuttingDown = false;
+  const app = await NestFactory.createApplicationContext(WorkerModule.register(config), { bufferLogs: true });
   app.enableShutdownHooks();
+  const queueRuntime = app.get(QueueRuntimeService);
 
-  const healthServer = startHealthServer(config.address.host, config.address.port, () => ready);
-  ready = true;
+  const healthServer = startHealthServer(
+    config.address.host,
+    config.address.port,
+    () => shuttingDown
+      ? { ready: false, dependencies: queueRuntime.dependencies() }
+      : queueRuntime.health(),
+  );
   console.log(JSON.stringify({
     event: 'runtime.started',
     ...describeServerEnvironment(config),
   }));
 
   const shutdown = async (): Promise<void> => {
-    ready = false;
+    if (shuttingDown) return;
+    shuttingDown = true;
     await new Promise<void>((resolve) => healthServer.close(() => resolve()));
     await app.close();
   };

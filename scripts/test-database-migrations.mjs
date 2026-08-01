@@ -9,9 +9,11 @@ const ROOT = resolve(import.meta.dirname, '..');
 const COMPOSE_FILE = resolve(ROOT, 'compose.yaml');
 const BASELINE_MIGRATION_NAME = '20260801000000_pre_prisma_baseline';
 const FOUNDATION_MIGRATION_NAME = '20260801000100_postgresql_foundation';
+const QUEUE_MIGRATION_NAME = '20260801000200_queue_outbox_foundation';
 const EXPECTED_MIGRATION_CHECKSUMS = new Map([
   [BASELINE_MIGRATION_NAME, '9d9e22e2c4bb2d93831c62911ff5d0bdaecc039472d368ed1b1aad59408ee013'],
   [FOUNDATION_MIGRATION_NAME, 'a70a95dfa7c200d25b62a7ccb97e6a6cee970389431795b8b928d17c5dd9ddc9'],
+  [QUEUE_MIGRATION_NAME, 'b87e89e1398212db5e950a2343bef0695b04417d8bd7a89e9e5973201b5b56df'],
 ]);
 const projectName = `noma-dev004-${process.pid}`;
 const databasePassword = randomBytes(24).toString('hex');
@@ -190,6 +192,17 @@ async function assertMigratedDatabase(database, environment, expectedProbe) {
     ([name, checksum]) => `${name}|${checksum}`,
   );
   assert.deepEqual(migrations.stdout.trim().split(/\r?\n/), expectedMigrations);
+
+  const technicalTables = await psql(
+    database,
+    "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename IN ('outbox_events', 'job_executions', 'job_execution_attempts') ORDER BY tablename;",
+    environment,
+  );
+  assert.deepEqual(technicalTables.stdout.trim().split(/\r?\n/), [
+    'job_execution_attempts',
+    'job_executions',
+    'outbox_events',
+  ]);
 
   if (expectedProbe) {
     const probe = await psql(
