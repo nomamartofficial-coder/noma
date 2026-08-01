@@ -6,6 +6,8 @@ const runtimes = [
   { name: 'worker', filter: '@noma/worker', port: 3102 },
 ];
 const children = [];
+const HEALTH_TIMEOUT_MS = 60_000;
+const PROBE_TIMEOUT_MS = 2_000;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function spawnPnpm(args, options) {
@@ -42,14 +44,15 @@ function cleanup() {
 
 async function waitFor(runtime, path) {
   const url = `http://127.0.0.1:${runtime.port}${path}`;
+  const deadline = Date.now() + HEALTH_TIMEOUT_MS;
 
-  for (let attempt = 0; attempt < 40; attempt += 1) {
+  while (Date.now() < deadline) {
     if (runtime.child.exitCode !== null) {
       throw new Error(`${runtime.name} exited before becoming healthy with code ${runtime.child.exitCode}`);
     }
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, { signal: AbortSignal.timeout(PROBE_TIMEOUT_MS) });
       if (response.ok) return;
     } catch {}
 

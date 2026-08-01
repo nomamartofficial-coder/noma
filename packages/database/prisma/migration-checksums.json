@@ -1,0 +1,7 @@
+{
+  "algorithm": "sha256",
+  "migrations": {
+    "20260801000000_pre_prisma_baseline/migration.sql": "9d9e22e2c4bb2d93831c62911ff5d0bdaecc039472d368ed1b1aad59408ee013",
+    "20260801000100_postgresql_foundation/migration.sql": "a70a95dfa7c200d25b62a7ccb97e6a6cee970389431795b8b928d17c5dd9ddc9"
+  }
+}

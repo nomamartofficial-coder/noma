@@ -1,0 +1,38 @@
+name: noma
+
+services:
+  database:
+    image: postgres:18.4-alpine3.23@sha256:996d0920e4ff9df1fc19dacb904492f3c1ec0ec1cc338f0ad7123be7731c5f5e
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${NOMA_POSTGRES_DATABASE:-noma}
+      POSTGRES_USER: ${NOMA_POSTGRES_USER:-noma}
+      POSTGRES_PASSWORD: ${NOMA_POSTGRES_PASSWORD:-noma-local-dev-only}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --data-checksums --encoding=UTF8 --locale=C.UTF-8
+    command:
+      - postgres
+      - -c
+      - timezone=UTC
+      - -c
+      - log_timezone=UTC
+      - -c
+      - password_encryption=scram-sha-256
+    ports:
+      - 127.0.0.1:${NOMA_POSTGRES_PORT:-55432}:5432
+    volumes:
+      - noma_postgres_data:/var/lib/postgresql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'test "$$(head -n 1 "$${PGDATA}/postmaster.pid")" = "1" && pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"'
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+    security_opt:
+      - no-new-privileges:true
+    shm_size: 256mb
+    stop_grace_period: 30s
+
+volumes:
+  noma_postgres_data:

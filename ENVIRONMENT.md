@@ -57,6 +57,14 @@ Invalid mandatory configuration fails startup before the runtime accepts traffic
 
 Structured logs and evidence must use the safe summary and redaction helpers. Never log `process.env`, a full configuration object from an unreviewed source, provider payloads, authorization headers, or credential URLs.
 
+## Database command environment
+
+DEV-004 adds a server-only Prisma command boundary. Local schema validation and client generation use the documented loopback-only Compose default when `DATABASE_URL` is absent. Preview, staging, and production database commands require an explicit provider-managed `DATABASE_URL`; production also requires encrypted PostgreSQL transport.
+
+Reset is a separate fail-closed boundary. `pnpm db:reset:local` requires explicit local/test environment markers, an explicit loopback PostgreSQL target, an approved Noma local/test database name, and the non-secret confirmation marker documented in [`DATABASE.md`](DATABASE.md). The same check runs inside `prisma.config.ts`, so invoking Prisma directly does not bypass it.
+
+API and Worker receive the runtime database URL only from their validated server configuration. DEV-004 does not connect those runtimes or change readiness; later owning-module work must create and close the client through `@noma/database` without exposing the URL or Prisma client to Web.
+
 ## Canonical verification
 
 ```bash
@@ -64,6 +72,8 @@ pnpm env:validate
 pnpm env:self-test
 pnpm env:test
 pnpm env:startup-test
+pnpm db:validate
+pnpm db:self-test
 pnpm lint
 pnpm typecheck
 pnpm build

@@ -245,18 +245,15 @@ Clone the approved Noma repository using the actual organisation-controlled repo
 corepack enable
 pnpm install --frozen-lockfile
 
-cp .env.example .env
-
-docker compose up -d
-
+pnpm db:up
 pnpm db:validate
+pnpm db:generate
 pnpm db:migrate:dev
-pnpm db:seed
 
 pnpm dev
 ```
 
-The repository must print or document the local Web, API, Worker, database, queue, mail-capture, and observability endpoints configured for that environment. This README deliberately does not invent fixed ports before the scaffold is inspected.
+The PostgreSQL foundation and local endpoint are documented in [`DATABASE.md`](DATABASE.md). Redis/queue, mail-capture, and full observability endpoints are introduced only by their dependency-ordered tasks.
 
 If the repository uses a bootstrap script, it must remain transparent and equivalent to the documented steps rather than hiding destructive or production actions.
 
@@ -321,8 +318,11 @@ pnpm db:validate
 pnpm db:generate
 pnpm db:migrate:dev
 pnpm db:migrate:deploy
-pnpm db:seed
-pnpm db:studio
+pnpm db:migrate:status
+pnpm db:migration-test
+pnpm db:verify
+pnpm db:up
+pnpm db:down
 
 # API/contracts
 pnpm contracts:generate

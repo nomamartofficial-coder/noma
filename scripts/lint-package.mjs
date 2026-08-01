@@ -2,6 +2,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { resolve, relative, sep } from 'node:path';
 
 const base = resolve(process.argv[2] ?? '.');
+const ignoredPaths = new Set(process.argv.slice(3).map((path) => resolve(base, path)));
 const allowedExtensions = new Set(['.ts', '.js', '.mjs', '.json', '.md', '.yaml', '.yml']);
 const ignoredDirectories = new Set(['node_modules', 'dist', '.turbo', '.next']);
 const failures = [];
@@ -16,6 +17,7 @@ async function walk(directory) {
     if (ignoredDirectories.has(entry.name)) continue;
 
     const path = resolve(directory, entry.name);
+    if (ignoredPaths.has(path)) continue;
     if (entry.isDirectory()) {
       await walk(path);
       continue;
