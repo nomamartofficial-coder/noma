@@ -12,6 +12,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/provider-simulators.d.ts",
+      "default": "./dist/provider-simulators.js"
     }
   },
   "scripts": {
