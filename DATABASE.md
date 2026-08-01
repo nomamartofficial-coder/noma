@@ -102,6 +102,8 @@ Preview, staging, production, remote hosts, missing confirmation, or ambiguous d
 
 The test-only probe is representative preservation evidence, not a Noma domain table or production fixture. The baseline step is explicit because Prisma correctly refuses an untracked non-empty schema.
 
+DEV-006 additionally provides `@noma/testing/containers` for new reusable integration suites. It starts the same reviewed PostgreSQL image, accepts an explicit migration-preparation callback, and destroys the disposable container/volume instead of exporting a destructive row-reset shortcut. The focused DEV-004 migration/restore Compose rehearsal remains unchanged.
+
 ## DEV-005 technical persistence
 
 The third forward migration adds `outbox_events`, `job_executions`, and `job_execution_attempts`. These are reliability records rather than business entities. They include deterministic queue/job uniqueness, processing and publication leases, aggregate versions, safe failure classification, completion/dead-letter evidence, owned attention deadlines, append-only attempts, and partial claim/recovery/attention indexes.

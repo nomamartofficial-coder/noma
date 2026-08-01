@@ -1,14 +1,10 @@
 import 'reflect-metadata';
-import { NestFactory } from '@nestjs/core';
 import { loadEnvFile } from 'node:process';
 import {
   describeServerEnvironment,
   loadServerEnvironment,
   toSafeStartupError,
 } from '@noma/config/server';
-import { WorkerModule } from './app.module.js';
-import { startHealthServer } from './health-server.js';
-import { QueueRuntimeService } from './queue-runtime.service.js';
 
 const REMOTE_ENVIRONMENTS = new Set(['preview', 'staging', 'production']);
 
@@ -29,6 +25,17 @@ function loadOptionalLocalEnvironment(): void {
 async function bootstrap(): Promise<void> {
   loadOptionalLocalEnvironment();
   const config = loadServerEnvironment('worker', process.env);
+  const [
+    { NestFactory },
+    { WorkerModule },
+    { startHealthServer },
+    { QueueRuntimeService },
+  ] = await Promise.all([
+    import('@nestjs/core'),
+    import('./app.module.js'),
+    import('./health-server.js'),
+    import('./queue-runtime.service.js'),
+  ]);
   let shuttingDown = false;
   const app = await NestFactory.createApplicationContext(WorkerModule.register(config), { bufferLogs: true });
   app.enableShutdownHooks();

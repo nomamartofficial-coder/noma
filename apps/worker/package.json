@@ -24,7 +24,7 @@
     "lint": "node ../../scripts/lint-package.mjs .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build": "tsc -p tsconfig.build.json",
-    "test": "pnpm build && node --test tests/*.test.mjs",
+    "test": "pnpm build && pnpm --dir ../.. exec vitest run --config vitest.config.ts --project unit apps/worker/tests",
     "clean": "node ../../scripts/clean-package.mjs .",
     "dev": "tsx watch src/main.ts",
     "start": "node dist/main.js"

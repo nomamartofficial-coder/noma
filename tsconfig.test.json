@@ -1,0 +1,20 @@
+{
+  "extends": "./packages/tsconfig/base.json",
+  "compilerOptions": {
+    "declaration": false,
+    "declarationMap": false,
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "types": ["node", "vitest/globals", "@testing-library/jest-dom"]
+  },
+  "include": [
+    "vitest.config.ts",
+    "scripts/vitest-component-setup.ts",
+    "packages/testing/tests/**/*.ts",
+    "tests/component/**/*.ts",
+    "tests/component/**/*.tsx"
+  ]
+}
