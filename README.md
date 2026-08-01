@@ -397,6 +397,14 @@ The implemented deterministic runner, fixture, and container contract is documen
 
 ## Provider development
 
+DEV-007 adds provider-neutral ports and deterministic local simulators without activating a provider. Read [`PROVIDERS.md`](PROVIDERS.md) for authority, result/finality, environment, privacy, and financial controls, and [`SIMULATORS.md`](SIMULATORS.md) for scripting, replay, deadlines, inspection, reset, and conformance.
+
+```bash
+pnpm providers:verify
+```
+
+Real Paystack, S3, Postmark, Web Push, Sentry, PostHog, Grafana, Cloudflare, Vercel, and Render adapters remain deferred to their owning tasks.
+
 Provider integrations use deterministic local simulators and sandbox accounts.
 
 Never require production provider access to run ordinary unit, integration, component, contract, or most end-to-end tests.

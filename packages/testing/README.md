@@ -6,5 +6,6 @@ Only public exports may be imported. Deep imports are prohibited.
 
 - `@noma/testing` is pure test support and does not start infrastructure.
 - `@noma/testing/containers` is Node-only and starts isolated PostgreSQL/Redis Testcontainers.
+- `@noma/testing/providers` composes deterministic provider simulators and shared conformance evidence using DEV-006 primitives.
 
 Production source and dependencies must never import this package. Read [`TESTING.md`](../../TESTING.md) for commands, safety rules, cleanup, and fixture governance.

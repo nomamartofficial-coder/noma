@@ -40,10 +40,13 @@ Unknown `NEXT_PUBLIC_*` values fail validation. Secret-like public names are pro
 | `SESSION_SECRET` | secret | required in production; at least 32 non-placeholder characters |
 | `DATABASE_URL` | secret | required in production; PostgreSQL URL |
 | `REDIS_URL` | secret | required in production; `rediss://` encrypted transport |
+| `NOMA_PROVIDER_MODE` | internal control | `disabled` by default; explicit `simulator` is prohibited in production; `real` fails closed until owning adapter tasks |
 
 Worker queue mode requires `DATABASE_URL` and `REDIS_URL` together in every environment. Both absent preserves the local scaffold with `not-configured` readiness; exactly one is a startup error. When both are configured, the Worker probes each dependency and never serializes either URL into logs or health responses.
 
 Provider-specific secrets remain optional until their adapter tasks. Live Paystack keys are rejected outside production, and test Paystack keys are rejected in production.
+
+DEV-007 adds no provider credential. Simulator selection is explicit and server-only. Local/test/preview/staging may request `simulator`; production rejects it. `real` currently fails with a safe `NOMA_PROVIDER_MODE` issue because no production adapter exists. Public Web configuration remains unchanged.
 
 ## Loading and access
 
