@@ -11,10 +11,12 @@ export class ScriptedOutcomeAbortedError extends Error {
 }
 
 export class ScriptedOutcomeController<T> {
+  readonly #initialOutcomes: readonly ScriptedOutcome<T>[];
   readonly #outcomes: ScriptedOutcome<T>[];
   #consumed = 0;
 
   constructor(outcomes: readonly ScriptedOutcome<T>[]) {
+    this.#initialOutcomes = [...outcomes];
     this.#outcomes = [...outcomes];
   }
 
@@ -37,5 +39,10 @@ export class ScriptedOutcomeController<T> {
     return new Promise<T>((_resolve, reject) => {
       signal.addEventListener('abort', () => reject(new ScriptedOutcomeAbortedError()), { once: true });
     });
+  }
+
+  reset(): void {
+    this.#outcomes.splice(0, this.#outcomes.length, ...this.#initialOutcomes);
+    this.#consumed = 0;
   }
 }

@@ -7,6 +7,8 @@ export const APPLICATION_ENVIRONMENTS = [
 ] as const;
 
 export type ApplicationEnvironment = (typeof APPLICATION_ENVIRONMENTS)[number];
+export const PROVIDER_ADAPTER_MODES = ['disabled', 'simulator', 'real'] as const;
+export type ProviderAdapterMode = (typeof PROVIDER_ADAPTER_MODES)[number];
 export type RuntimeName = 'web' | 'api' | 'worker';
 export type EnvironmentSource = Readonly<Record<string, string | undefined>>;
 

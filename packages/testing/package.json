@@ -16,6 +16,10 @@
     "./containers": {
       "types": "./dist/containers.d.ts",
       "default": "./dist/containers.js"
+    },
+    "./providers": {
+      "types": "./dist/providers.d.ts",
+      "default": "./dist/providers.js"
     }
   },
   "scripts": {
@@ -27,6 +31,8 @@
   },
   "dependencies": {
     "@noma/contracts": "workspace:*",
+    "@noma/integrations": "workspace:*",
+    "@noma/platform": "workspace:*",
     "@testcontainers/postgresql": "12.0.4",
     "@testcontainers/redis": "12.0.4",
     "testcontainers": "12.0.4"

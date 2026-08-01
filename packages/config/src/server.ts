@@ -3,9 +3,11 @@ import type {
   ApplicationEnvironment,
   EnvironmentSource,
   EnvironmentValidationIssue,
+  ProviderAdapterMode,
   RuntimeAddress,
   RuntimeName,
 } from './model.js';
+import { PROVIDER_ADAPTER_MODES } from './model.js';
 import {
   readApplicationEnvironment,
   readRequiredString,
@@ -29,7 +31,28 @@ export interface ServerRuntimeConfig {
   readonly publicWebOrigin: string;
   readonly apiPublicUrl: string;
   readonly releaseSha?: string;
+  readonly providerAdapterMode: ProviderAdapterMode;
   readonly secrets: ServerSecrets;
+}
+
+function readProviderAdapterMode(
+  source: EnvironmentSource,
+  applicationEnvironment: ApplicationEnvironment,
+  issues: EnvironmentValidationIssue[],
+): ProviderAdapterMode {
+  const raw = source.NOMA_PROVIDER_MODE?.trim() || 'disabled';
+  if (!PROVIDER_ADAPTER_MODES.includes(raw as ProviderAdapterMode)) {
+    issues.push({ key: 'NOMA_PROVIDER_MODE', code: 'invalid', message: 'must be disabled, simulator, or real' });
+    return 'disabled';
+  }
+  const mode = raw as ProviderAdapterMode;
+  if (applicationEnvironment === 'production' && mode === 'simulator') {
+    issues.push({ key: 'NOMA_PROVIDER_MODE', code: 'environment-mismatch', message: 'simulator mode is prohibited in production' });
+  }
+  if (mode === 'real') {
+    issues.push({ key: 'NOMA_PROVIDER_MODE', code: 'invalid', message: 'real provider adapters are not implemented by DEV-007' });
+  }
+  return mode;
 }
 
 function createSecretContainer(values: ServerSecrets): ServerSecrets {
@@ -119,6 +142,7 @@ export function loadServerEnvironment(
   );
   const credentialEnvironment = detectCredentialEnvironment(source, applicationEnvironment, issues);
   validateEnvironmentIsolation(source, applicationEnvironment, credentialEnvironment, issues);
+  const providerAdapterMode = readProviderAdapterMode(source, applicationEnvironment, issues);
 
   const remote = ['preview', 'staging', 'production'].includes(applicationEnvironment);
   const production = applicationEnvironment === 'production';
@@ -189,6 +213,7 @@ export function loadServerEnvironment(
     applicationEnvironment,
     credentialEnvironment,
     runtime,
+    providerAdapterMode,
     address,
     publicWebOrigin,
     apiPublicUrl,
@@ -213,6 +238,7 @@ export function describeServerEnvironment(config: ServerRuntimeConfig): Readonly
     applicationEnvironment: config.applicationEnvironment,
     credentialEnvironment: config.credentialEnvironment,
     runtime: config.runtime,
+    providerAdapterMode: config.providerAdapterMode,
     address: config.address,
     publicWebOrigin: config.publicWebOrigin,
     apiPublicUrl: config.apiPublicUrl,
@@ -238,4 +264,5 @@ export type {
   EnvironmentSource,
   RuntimeAddress,
   RuntimeName,
+  ProviderAdapterMode,
 } from './model.js';

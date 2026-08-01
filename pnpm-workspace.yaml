@@ -1,6 +1,7 @@
 packages:
   - apps/*
   - packages/*
+verifyDepsBeforeRun: false
 allowBuilds:
   '@prisma/engines': true
   cpu-features: false

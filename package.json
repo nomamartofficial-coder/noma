@@ -48,6 +48,10 @@
     "testing:validate": "node scripts/validate-testing-foundation.mjs",
     "testing:self-test": "node scripts/validate-testing-foundation.mjs --self-test",
     "testing:verify": "pnpm testing:validate && pnpm testing:self-test && pnpm test:typecheck && pnpm test && pnpm test:integration",
+    "providers:validate": "node scripts/validate-provider-foundation.mjs",
+    "providers:self-test": "node scripts/validate-provider-foundation.mjs --self-test",
+    "providers:test": "pnpm build && vitest run --project unit packages/platform/tests/providers.test.ts packages/testing/tests/providers.test.ts",
+    "providers:verify": "pnpm providers:validate && pnpm providers:self-test && pnpm providers:test",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "build": "turbo run build",
@@ -59,7 +63,7 @@
     "start:api": "pnpm --filter @noma/api start",
     "start:worker": "pnpm --filter @noma/worker start",
     "smoke:runtimes": "pnpm build && node scripts/smoke-runtimes.mjs",
-    "check": "pnpm workspace:validate && pnpm runtimes:validate && pnpm env:validate && pnpm db:validate && pnpm queue:foundation:validate && pnpm testing:validate && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "check": "pnpm workspace:validate && pnpm runtimes:validate && pnpm env:validate && pnpm db:validate && pnpm queue:foundation:validate && pnpm testing:validate && pnpm providers:validate && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "clean": "turbo run clean && node scripts/clean-workspace.mjs"
   },
   "devDependencies": {

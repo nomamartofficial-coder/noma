@@ -63,6 +63,19 @@ test('development server configuration has safe defaults', () => {
   assert.deepEqual(config.address, { host: '0.0.0.0', port: 3001 });
   assert.equal(config.publicWebOrigin, 'http://127.0.0.1:3000');
   assert.equal(config.apiPublicUrl, 'http://127.0.0.1:3001');
+  assert.equal(config.providerAdapterMode, 'disabled');
+});
+
+test('provider adapter selection is explicit and fails closed', () => {
+  assert.equal(loadServerEnvironment('api', { NOMA_PROVIDER_MODE: 'simulator' }).providerAdapterMode, 'simulator');
+  assert.throws(
+    () => loadServerEnvironment('api', { NOMA_PROVIDER_MODE: 'real' }),
+    (error) => error instanceof EnvironmentValidationError && error.issues.some((issue) => issue.key === 'NOMA_PROVIDER_MODE'),
+  );
+  assert.throws(
+    () => loadServerEnvironment('api', { ...productionEnvironment, NOMA_PROVIDER_MODE: 'simulator' }),
+    (error) => error instanceof EnvironmentValidationError && error.issues.some((issue) => issue.code === 'environment-mismatch'),
+  );
 });
 
 test('invalid explicit runtime ports fail instead of silently defaulting', () => {
@@ -128,6 +141,7 @@ test('valid production configuration is typed and serialises without secrets', (
   assert.equal(config.secrets.sessionSecret, productionEnvironment.SESSION_SECRET);
   assert.equal(config.secrets.databaseUrl?.startsWith('postgresql://'), true);
   assert.equal(config.address.port, 3002);
+  assert.equal(config.providerAdapterMode, 'disabled');
 
   const serialised = JSON.stringify(config);
   assert.equal(serialised.includes(productionEnvironment.SESSION_SECRET), false);

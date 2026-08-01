@@ -6,3 +6,4 @@ export * from './fixtures.js';
 export * from './outcomes.js';
 export * from './personas.js';
 export * from './random.js';
+export * from './scheduler.js';

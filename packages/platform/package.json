@@ -12,6 +12,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./providers": {
+      "types": "./dist/providers/index.d.ts",
+      "default": "./dist/providers/index.js"
     }
   },
   "scripts": {
@@ -22,5 +26,8 @@
   },
   "dependencies": {
     "@noma/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "24.12.4"
   }
 }
