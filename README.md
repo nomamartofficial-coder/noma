@@ -338,6 +338,19 @@ pnpm repo:check
 
 Use only scripts that exist in the inspected repository. Missing required scripts are foundation work, not permission to claim the checks passed.
 
+DEV-008 adds the reproducible GitHub Actions command surface:
+
+```bash
+pnpm ci:validate
+pnpm ci:self-test
+pnpm ci:quality
+pnpm ci:integration
+pnpm ci:security
+pnpm ci:verify
+```
+
+The exact workflow graph, immutable action pins, evidence contract, security limitations, and administrator-controlled required-check setup are documented in [`CI.md`](CI.md).
+
 ---
 
 ## Recommended first verification

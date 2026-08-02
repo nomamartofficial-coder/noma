@@ -1,0 +1,144 @@
+# GitHub Actions quality pipeline
+
+> **Task:** `DEV-008`
+> **Risk:** `P0-RECOVERY`
+> **Status:** implemented for review; branch-protection acceptance remains administrator-controlled
+
+## Scope and safety boundary
+
+The pipeline converts Noma's existing deterministic local commands into four GitHub Actions workflows. It does not deploy, publish packages, request production secrets, create an environment, provision infrastructure, call a provider, or activate a marketplace capability.
+
+All workflows run on pull requests targeting `main`, pushes to `main`, merge-group checks, and manual dispatch. They deliberately omit path filters so required checks do not disappear for documentation, migration, workflow, or traceability changes. Pull-request workflows never use `pull_request_target`.
+
+## Workflow and job graph
+
+| Workflow | Mandatory jobs | Stable gate |
+|---|---|---|
+| `ci-quality.yml` | policy; lint/typecheck/build; unit/component/coverage; runtime smoke | `Noma / CI Policy`; `Noma / Quality Gate` |
+| `ci-integration.yml` | environment startup; PostgreSQL migration/restore; Redis/BullMQ/outbox recovery; Testcontainers isolation; provider conformance | `Noma / Integration Gate` |
+| `ci-security.yml` | repository secret/redaction controls; dependency review; CodeQL JavaScript/TypeScript | `Noma / Security Gate` |
+| `ci-windows.yml` | exact toolchain; paths; frozen install; validation; lint/typecheck/build; runtime launch/probes/process cleanup | `Noma / Windows Compatibility` |
+
+Each stable gate uses `if: always()` and the checked-in `scripts/evaluate-ci-gate.mjs`. A mandatory upstream result other than `success`, including unexpected `skipped` or `cancelled`, fails the gate. Dynamic job names are never required directly.
+
+Workflow concurrency is isolated by workflow plus pull request, merge-group head, or ref. A newer pull-request commit cancels only the superseded run of the same workflow. Pushes to `main`, merge-group checks, and manual evidence runs are not automatically cancelled.
+
+## Permissions and checkout
+
+Default permissions are:
+
+```yaml
+permissions:
+  contents: read
+```
+
+Only the CodeQL job receives the additional job-scoped `security-events: write` permission. No job receives write access to contents, packages, deployments, actions, administration, checks, pull requests, or OIDC. Checkout always uses `persist-credentials: false`.
+
+No workflow reads `secrets.*`, selects a GitHub environment, or receives production/provider credentials. Synthetic local PostgreSQL and Redis values remain inside the existing isolated test harnesses.
+
+## Immutable actions
+
+Every external action was resolved from its official, non-fork repository to the release's underlying commit on 2 August 2026.
+
+| Action | Release | Full commit SHA |
+|---|---|---|
+| `actions/checkout` | `v7.0.1` | `3d3c42e5aac5ba805825da76410c181273ba90b1` |
+| `actions/setup-node` | `v7.0.0` | `820762786026740c76f36085b0efc47a31fe5020` |
+| `actions/cache` | `v6.1.0` | `55cc8345863c7cc4c66a329aec7e433d2d1c52a9` |
+| `actions/upload-artifact` | `v7.0.1` | `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` |
+| `actions/dependency-review-action` | `v5.0.0` | `a1d282b36b6f3519aa1f3fc636f609c47dddb294` |
+| `github/codeql-action` | `codeql-bundle-v2.26.2` | `18420e3271f74589575af831a523c833acda327f` |
+| `pnpm/action-setup` | `v6.0.9` | `0ebf47130e4866e96fce0953f49152a61190b271` |
+
+The repository validator rejects an unknown action, tag, branch, shortened SHA, or missing human-readable release comment. Repository settings currently allow all actions and do not require SHA pinning; Security should enable repository or organisation SHA enforcement after reviewing compatibility.
+
+## Toolchain and cache
+
+The local composite setup action installs exactly Node `24.18.0` and pnpm `11.17.0`, records Node/pnpm/Git and applicable Docker versions, restores only the pnpm content-addressable store, and then performs `pnpm install --frozen-lockfile`.
+
+The cache key includes runner OS, architecture, Node version, pnpm version, and `pnpm-lock.yaml` hash. A cache miss changes performance only. `node_modules`, environment files, database/Redis volumes, simulator state, process state, credentials, and logs are never cached. Frozen installation remains authoritative and dependency metadata mutation fails immediately.
+
+## Local commands
+
+```bash
+pnpm ci:validate
+pnpm ci:self-test
+pnpm ci:quality
+pnpm ci:integration
+pnpm ci:security
+pnpm ci:windows       # Windows compatibility segment
+pnpm ci:evidence -- --suite <suite> --segment <segment> --job-result success
+pnpm ci:verify        # Linux-capable canonical aggregate; excludes the Windows-only segment
+```
+
+`ci:quality`, `ci:integration`, `ci:security`, and `ci:windows` execute the same checked-in command catalog used by Actions. Results are written under ignored `.artifacts/ci/`. The repository has no approved formatter dependency, so DEV-008 does not invent one; lint plus tracked-diff validation is the current formatting/integrity gate.
+
+## Test and infrastructure policy
+
+- Vitest retains seed `6006`, UTC, zero retries, no focused tests, and no unauthorised skips.
+- Linux `ubuntu-24.04` is authoritative for PostgreSQL, Redis, Docker Compose, and Testcontainers.
+- Windows `windows-2025` validates pnpm invocation, paths, builds, runtime process spawning, probes, and tree cleanup without attempting Linux-container integration.
+- Database, queue, and Testcontainers jobs use synthetic credentials, ephemeral/disposable resources, and existing real migration/recovery suites.
+- `ci:cleanup` is guarded by both `CI=true` and `GITHUB_ACTIONS=true`; it removes only DEV-004/005 or Testcontainers-labelled resources on the disposable runner and fails on an unexpected container.
+- Cleanup steps use `if: always()` and cleanup failure is a job failure.
+
+## Evidence and artifacts
+
+Every execution segment writes a result record and a schema-versioned manifest. The manifest includes repository, exact SHA/ref, event, workflow/run/attempt, runner OS/image, Node/pnpm/Git/Docker versions, lockfile SHA-256, seed, command outcomes/durations, coverage summary where available, migration count/checksum, reviewed container digests, traceability status, artifact name, timestamps, and limitations.
+
+The collector rejects credential URLs, keys, tokens, private keys, credential-bearing fields, and unsafe declarations before upload. It never serializes the process environment.
+
+Artifacts use names such as `noma-quality-tests-<run>-<attempt>` and retain:
+
+- safe JSON results and evidence manifest;
+- JUnit XML;
+- V8 JSON summary, LCOV, and HTML coverage; and
+- bounded task-specific result summaries.
+
+Retention is 90 days, matching the Build Pack recommendation for PR unit/integration evidence. Upload uses `if: always()`, `if-no-files-found: error`, and never includes `.env`, `node_modules`, repository copies, database dumps/volumes, Redis volumes, provider payloads, or environment dumps. Artifact attestations remain deferred until a later task creates a deployable artifact with a consumer verification contract.
+
+## Security availability at implementation time
+
+Read-only inspection on 2 August 2026 found:
+
+| Control | State |
+|---|---|
+| Actions | enabled; default workflow token is read-only |
+| Action SHA enforcement | disabled |
+| CodeQL | supported; default setup not configured; DEV-008 uses pinned advanced setup |
+| Dependency review / dependency graph | dependency-graph SBOM endpoint returned unavailable; the real PR action must prove availability or remain failed/blocked |
+| Secret scanning | disabled |
+| Push protection | disabled |
+| Dependabot security updates | disabled |
+| Branch protection / repository rulesets | absent |
+| Merge queue | not configured |
+
+Repository-local high-confidence secret scanning and governed-evidence redaction remain mandatory, but they are not presented as replacements for native secret scanning or push protection.
+
+## Manual deliberate-failure proof
+
+Only `ci-quality.yml` exposes deliberate-failure controls. The manual-dispatch Boolean `force_ci_failure` defaults to `false`. Before this new workflow exists on the default branch, the equivalent pre-merge proof is an explicit `ci-force-failure` label event; synchronization, reopen, and ordinary label states cannot activate it. Either authorized control makes the tests segment exit with the reserved deliberate-failure code after normal tests, evidence collection/upload still runs, and `Noma / Quality Gate` must fail. Removing the label triggers a normal recovery run.
+
+```bash
+gh workflow run ci-quality.yml \
+  --ref dev-008-github-actions-quality-pipeline \
+  -f force_ci_failure=true
+```
+
+After inspecting that failure and its artifact, run the workflow again with the default input and record both run IDs in the draft PR. Never prove this control with an intentionally broken commit.
+
+## Failure triage and reruns
+
+Inspect the first failing command, its exact seed, job log, result manifest, and upstream gate result. Correct deterministic code, test, runner-image, or repository-setting causes before rerunning. A retry that turns a P0 failure green without an explained change is not acceptable evidence. No required suite uses automatic retry or `continue-on-error`.
+
+Superseded pull-request runs may be cancelled by concurrency. Main, merge-group, and manual evidence runs are preserved. A gate treats an upstream cancellation as failure; a fully cancelled workflow is not green evidence.
+
+## Branch protection
+
+The workflow implementation can be reviewed and executed without modifying governance settings. DEV-008's acceptance statement that a protected branch cannot merge on failed checks remains **blocked** until an authorised owner applies and verifies the rules in [`runbooks/github-required-checks.md`](runbooks/github-required-checks.md).
+
+## Rollback and exclusions
+
+Rollback is a source revert of the workflows, scripts, documentation, and traceability changes. There is no migration or external state to undo.
+
+DEV-009 deployment/environment work, DEV-010 exporter/observability work, production infrastructure, credentials, providers, DNS, releases, business routes/entities, and paid-pilot activation remain excluded.
