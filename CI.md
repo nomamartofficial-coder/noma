@@ -78,7 +78,7 @@ pnpm ci:verify        # Linux-capable canonical aggregate; excludes the Windows-
 - Vitest retains seed `6006`, UTC, zero retries, no focused tests, and no unauthorised skips.
 - Linux `ubuntu-24.04` is authoritative for PostgreSQL, Redis, Docker Compose, and Testcontainers.
 - Windows `windows-2025` validates pnpm invocation, paths, builds, runtime process spawning, probes, and tree cleanup without attempting Linux-container integration.
-- Database, queue, and Testcontainers jobs use synthetic credentials, ephemeral/disposable resources, and existing real migration/recovery suites.
+- Database, queue, and Testcontainers jobs first build their workspace dependencies on each clean runner, then use synthetic credentials, ephemeral/disposable resources, and the existing real migration/recovery suites.
 - `ci:cleanup` is guarded by both `CI=true` and `GITHUB_ACTIONS=true`; it removes only DEV-004/005 or Testcontainers-labelled resources on the disposable runner and fails on an unexpected container.
 - Cleanup steps use `if: always()` and cleanup failure is a job failure.
 

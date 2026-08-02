@@ -37,12 +37,15 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('environment-verify', 'Run typed environment verification', 'pnpm', ['env:verify']),
     ]),
     database: Object.freeze([
+      command('build-for-database', 'Build database workspace dependencies on the clean runner', 'pnpm', ['build']),
       command('database-verify', 'Run PostgreSQL migration and restore verification', 'pnpm', ['db:verify']),
     ]),
     queue: Object.freeze([
+      command('build-for-queue', 'Build queue workspace dependencies on the clean runner', 'pnpm', ['build']),
       command('queue-verify', 'Run Redis, BullMQ, and outbox recovery verification', 'pnpm', ['queue:verify']),
     ]),
     harness: Object.freeze([
+      command('build-for-harness', 'Build harness workspace dependencies on the clean runner', 'pnpm', ['build']),
       command('testing-verify', 'Run deterministic testing and Testcontainers verification', 'pnpm', ['testing:verify']),
     ]),
     providers: Object.freeze([
