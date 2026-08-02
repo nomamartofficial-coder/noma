@@ -13,8 +13,8 @@ DEV-003,EP01,Implement typed environment configuration and secret validation,P0,
 DEV-004,EP01,Create Prisma/PostgreSQL foundation and migration discipline,P0,P0-RECOVERY,COMPLETE,Engineering/Data
 DEV-005,EP01,Create Redis/BullMQ queue and transactional-outbox foundation,P0,P0-RECOVERY,COMPLETE,Engineering
 DEV-006,EP01,Create deterministic testing package and Testcontainers harness,P0,P0-RECOVERY,COMPLETE,QA/Engineering
-DEV-007,EP01,Create provider ports and local simulators,P0,P0-FINANCIAL,IN_REVIEW,Engineering/QA
-DEV-008,EP01,Create GitHub Actions quality pipeline,P0,P0-RECOVERY,NOT_STARTED,Engineering/QA/Security
+DEV-007,EP01,Create provider ports and local simulators,P0,P0-FINANCIAL,COMPLETE,Engineering/QA
+DEV-008,EP01,Create GitHub Actions quality pipeline,P0,P0-RECOVERY,IN_REVIEW,Engineering/QA/Security
 DEV-009,EP01,Create preview/staging deployment skeleton,P0,P1-OPERATIONS,NOT_STARTED,DevOps/Engineering
 DEV-010,EP01,"Bootstrap OpenTelemetry, structured logging, correlation, and health",P0,P0-RECOVERY,NOT_STARTED,Engineering/DevOps
 UI-001,EP02,Implement core and semantic design tokens,P0,P2-PRESENTATION,NOT_STARTED,Design/Web
