@@ -1,0 +1,195 @@
+name: Noma CI Quality
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  push:
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
+  workflow_dispatch:
+    inputs:
+      force_ci_failure:
+        description: Deliberately fail the tests segment to verify gate and evidence behaviour
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: noma-quality-${{ github.event.pull_request.number || github.event.merge_group.head_sha || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NOMA_TEST_SEED: "6006"
+
+jobs:
+  policy:
+    name: CI policy and repository contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Run policy segment
+        id: suite
+        run: pnpm ci:quality -- --segment policy
+      - name: Collect safe policy evidence
+        if: always()
+        env:
+          NOMA_CI_JOB_RESULT: ${{ steps.suite.outcome }}
+          NOMA_CI_ARTIFACT_NAME: noma-quality-policy-${{ github.run_id }}-${{ github.run_attempt }}
+        run: pnpm ci:evidence -- --suite quality --segment policy --job-result "$NOMA_CI_JOB_RESULT"
+      - name: Upload policy evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: noma-quality-policy-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/ci/quality-policy/
+          if-no-files-found: error
+          retention-days: 90
+
+  static:
+    name: Lint, typecheck, and production build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Run static segment
+        id: suite
+        run: pnpm ci:quality -- --segment static
+      - name: Collect safe static evidence
+        if: always()
+        env:
+          NOMA_CI_JOB_RESULT: ${{ steps.suite.outcome }}
+          NOMA_CI_ARTIFACT_NAME: noma-quality-static-${{ github.run_id }}-${{ github.run_attempt }}
+        run: pnpm ci:evidence -- --suite quality --segment static --job-result "$NOMA_CI_JOB_RESULT"
+      - name: Upload static evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: noma-quality-static-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/ci/quality-static/
+          if-no-files-found: error
+          retention-days: 90
+
+  tests:
+    name: Unit, component, and coverage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Run test segment
+        id: suite
+        env:
+          NOMA_FORCE_CI_FAILURE: ${{ ((github.event_name == 'workflow_dispatch' && inputs.force_ci_failure) || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'ci-force-failure')) && 'true' || 'false' }}
+          NOMA_CI_FAILURE_AUTHORITY: ${{ github.event_name == 'workflow_dispatch' && inputs.force_ci_failure && 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'ci-force-failure' && 'pull_request_label') || 'none' }}
+        run: pnpm ci:quality -- --segment tests
+      - name: Collect safe test evidence
+        if: always()
+        env:
+          NOMA_CI_JOB_RESULT: ${{ steps.suite.outcome }}
+          NOMA_CI_ARTIFACT_NAME: noma-quality-tests-${{ github.run_id }}-${{ github.run_attempt }}
+        run: pnpm ci:evidence -- --suite quality --segment tests --job-result "$NOMA_CI_JOB_RESULT"
+      - name: Upload test evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: noma-quality-tests-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .artifacts/ci/quality-tests/
+            coverage/
+          if-no-files-found: error
+          retention-days: 90
+
+  runtime:
+    name: Production runtime smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Run runtime segment
+        id: suite
+        run: pnpm ci:quality -- --segment runtime
+      - name: Collect safe runtime evidence
+        if: always()
+        env:
+          NOMA_CI_JOB_RESULT: ${{ steps.suite.outcome }}
+          NOMA_CI_ARTIFACT_NAME: noma-quality-runtime-${{ github.run_id }}-${{ github.run_attempt }}
+        run: pnpm ci:evidence -- --suite quality --segment runtime --job-result "$NOMA_CI_JOB_RESULT"
+      - name: Upload runtime evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: noma-quality-runtime-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/ci/quality-runtime/
+          if-no-files-found: error
+          retention-days: 90
+
+  ci-policy-gate:
+    name: Noma / CI Policy
+    if: always()
+    needs: [policy]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          check-latest: false
+      - name: Evaluate mandatory policy result
+        env:
+          NOMA_CI_REQUIRED_RESULTS: ${{ toJSON(needs) }}
+        run: node scripts/evaluate-ci-gate.mjs
+
+  quality-gate:
+    name: Noma / Quality Gate
+    if: always()
+    needs: [policy, static, tests, runtime]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          check-latest: false
+      - name: Evaluate mandatory quality results
+        env:
+          NOMA_CI_REQUIRED_RESULTS: ${{ toJSON(needs) }}
+        run: node scripts/evaluate-ci-gate.mjs
