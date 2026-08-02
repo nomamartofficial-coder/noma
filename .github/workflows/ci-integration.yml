@@ -1,0 +1,202 @@
+name: Noma CI Integration
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: noma-integration-${{ github.event.pull_request.number || github.event.merge_group.head_sha || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NOMA_TEST_SEED: "6006"
+
+jobs:
+  environment:
+    name: Environment startup integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Run environment integration
+        id: suite
+        run: pnpm ci:integration -- --segment environment
+      - name: Collect safe environment evidence
+        if: always()
+        env:
+          NOMA_CI_JOB_RESULT: ${{ steps.suite.outcome }}
+          NOMA_CI_ARTIFACT_NAME: noma-integration-environment-${{ github.run_id }}-${{ github.run_attempt }}
+        run: pnpm ci:evidence -- --suite integration --segment environment --job-result "$NOMA_CI_JOB_RESULT"
+      - name: Upload environment evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: noma-integration-environment-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/ci/integration-environment/
+          if-no-files-found: error
+          retention-days: 90
+
+  database:
+    name: PostgreSQL migration and restore
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Run database integration
+        id: suite
+        run: pnpm ci:integration -- --segment database
+      - name: Remove disposable infrastructure
+        if: always()
+        run: pnpm ci:cleanup
+      - name: Collect safe database evidence
+        if: always()
+        env:
+          NOMA_CI_JOB_RESULT: ${{ steps.suite.outcome }}
+          NOMA_CI_ARTIFACT_NAME: noma-integration-database-${{ github.run_id }}-${{ github.run_attempt }}
+        run: pnpm ci:evidence -- --suite integration --segment database --job-result "$NOMA_CI_JOB_RESULT"
+      - name: Upload database evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: noma-integration-database-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/ci/integration-database/
+          if-no-files-found: error
+          retention-days: 90
+
+  queue:
+    name: Redis, BullMQ, and outbox recovery
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Run queue integration
+        id: suite
+        run: pnpm ci:integration -- --segment queue
+      - name: Remove disposable infrastructure
+        if: always()
+        run: pnpm ci:cleanup
+      - name: Collect safe queue evidence
+        if: always()
+        env:
+          NOMA_CI_JOB_RESULT: ${{ steps.suite.outcome }}
+          NOMA_CI_ARTIFACT_NAME: noma-integration-queue-${{ github.run_id }}-${{ github.run_attempt }}
+        run: pnpm ci:evidence -- --suite integration --segment queue --job-result "$NOMA_CI_JOB_RESULT"
+      - name: Upload queue evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: noma-integration-queue-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/ci/integration-queue/
+          if-no-files-found: error
+          retention-days: 90
+
+  harness:
+    name: Testcontainers isolation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Run reusable infrastructure harness
+        id: suite
+        run: pnpm ci:integration -- --segment harness
+      - name: Remove disposable infrastructure
+        if: always()
+        run: pnpm ci:cleanup
+      - name: Collect safe harness evidence
+        if: always()
+        env:
+          NOMA_CI_JOB_RESULT: ${{ steps.suite.outcome }}
+          NOMA_CI_ARTIFACT_NAME: noma-integration-harness-${{ github.run_id }}-${{ github.run_attempt }}
+        run: pnpm ci:evidence -- --suite integration --segment harness --job-result "$NOMA_CI_JOB_RESULT"
+      - name: Upload harness evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: noma-integration-harness-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/ci/integration-harness/
+          if-no-files-found: error
+          retention-days: 90
+
+  providers:
+    name: Provider contract conformance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Run provider conformance
+        id: suite
+        run: pnpm ci:integration -- --segment providers
+      - name: Collect safe provider evidence
+        if: always()
+        env:
+          NOMA_CI_JOB_RESULT: ${{ steps.suite.outcome }}
+          NOMA_CI_ARTIFACT_NAME: noma-integration-providers-${{ github.run_id }}-${{ github.run_attempt }}
+        run: pnpm ci:evidence -- --suite integration --segment providers --job-result "$NOMA_CI_JOB_RESULT"
+      - name: Upload provider evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: noma-integration-providers-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/ci/integration-providers/
+          if-no-files-found: error
+          retention-days: 90
+
+  integration-gate:
+    name: Noma / Integration Gate
+    if: always()
+    needs: [environment, database, queue, harness, providers]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          check-latest: false
+      - name: Evaluate mandatory integration results
+        env:
+          NOMA_CI_REQUIRED_RESULTS: ${{ toJSON(needs) }}
+        run: node scripts/evaluate-ci-gate.mjs
+

@@ -1,0 +1,151 @@
+name: Noma CI Security
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: noma-security-${{ github.event.pull_request.number || github.event.merge_group.head_sha || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NOMA_TEST_SEED: "6006"
+
+jobs:
+  repository-controls:
+    name: Secret, redaction, and supply-chain controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Run repository security controls
+        id: suite
+        run: pnpm ci:security -- --segment repository
+      - name: Collect safe repository-control evidence
+        if: always()
+        env:
+          NOMA_CI_JOB_RESULT: ${{ steps.suite.outcome }}
+          NOMA_CI_ARTIFACT_NAME: noma-security-repository-${{ github.run_id }}-${{ github.run_attempt }}
+        run: pnpm ci:evidence -- --suite security --segment repository --job-result "$NOMA_CI_JOB_RESULT"
+      - name: Upload repository-control evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: noma-security-repository-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/ci/security-repository/
+          if-no-files-found: error
+          retention-days: 90
+
+  dependency-review:
+    name: Dependency review
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Review pull-request dependency changes
+        id: dependency
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+      - name: Record non-pull-request applicability
+        if: github.event_name != 'pull_request'
+        run: node --version
+      - name: Collect safe dependency-review evidence
+        if: always()
+        env:
+          NOMA_CI_JOB_RESULT: ${{ steps.dependency.outcome || 'success' }}
+          NOMA_CI_ARTIFACT_NAME: noma-security-dependencies-${{ github.run_id }}-${{ github.run_attempt }}
+        run: pnpm ci:evidence -- --suite security --segment dependency-review --job-result "$NOMA_CI_JOB_RESULT" --platform-command actions/dependency-review-action
+      - name: Upload dependency-review evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: noma-security-dependencies-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/ci/security-dependency-review/
+          if-no-files-found: error
+          retention-days: 90
+
+  codeql:
+    name: CodeQL JavaScript and TypeScript
+    permissions:
+      contents: read
+      security-events: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@18420e3271f74589575af831a523c833acda327f # codeql-bundle-v2.26.2
+        with:
+          languages: javascript-typescript
+          queries: security-extended
+      - name: Build analyzable workspace
+        run: pnpm build
+      - name: Analyze JavaScript and TypeScript
+        id: analyze
+        uses: github/codeql-action/analyze@18420e3271f74589575af831a523c833acda327f # codeql-bundle-v2.26.2
+        with:
+          category: /language:javascript-typescript
+      - name: Collect safe CodeQL evidence
+        if: always()
+        env:
+          NOMA_CI_JOB_RESULT: ${{ steps.analyze.outcome || 'failure' }}
+          NOMA_CI_ARTIFACT_NAME: noma-security-codeql-${{ github.run_id }}-${{ github.run_attempt }}
+        run: pnpm ci:evidence -- --suite security --segment codeql --job-result "$NOMA_CI_JOB_RESULT" --platform-command github/codeql-action
+      - name: Upload CodeQL evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: noma-security-codeql-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/ci/security-codeql/
+          if-no-files-found: error
+          retention-days: 90
+
+  security-gate:
+    name: Noma / Security Gate
+    if: always()
+    needs: [repository-controls, dependency-review, codeql]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          check-latest: false
+      - name: Evaluate mandatory security results
+        env:
+          NOMA_CI_REQUIRED_RESULTS: ${{ toJSON(needs) }}
+        run: node scripts/evaluate-ci-gate.mjs
+

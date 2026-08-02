@@ -1,0 +1,73 @@
+name: Noma CI Windows
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: noma-windows-${{ github.event.pull_request.number || github.event.merge_group.head_sha || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NOMA_TEST_SEED: "6006"
+
+jobs:
+  compatibility:
+    name: Windows pnpm, paths, build, and runtime smoke
+    runs-on: windows-2025
+    timeout-minutes: 35
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Run Windows compatibility suite
+        id: suite
+        run: pnpm ci:windows
+      - name: Collect safe Windows evidence
+        if: always()
+        env:
+          NOMA_CI_JOB_RESULT: ${{ steps.suite.outcome }}
+          NOMA_CI_ARTIFACT_NAME: noma-windows-${{ github.run_id }}-${{ github.run_attempt }}
+        run: pnpm ci:evidence -- --suite windows --segment compatibility --job-result $env:NOMA_CI_JOB_RESULT
+      - name: Upload Windows evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: noma-windows-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/ci/windows-compatibility/
+          if-no-files-found: error
+          retention-days: 90
+
+  windows-gate:
+    name: Noma / Windows Compatibility
+    if: always()
+    needs: [compatibility]
+    runs-on: windows-2025
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          check-latest: false
+      - name: Evaluate mandatory Windows result
+        env:
+          NOMA_CI_REQUIRED_RESULTS: ${{ toJSON(needs) }}
+        run: node scripts/evaluate-ci-gate.mjs
+

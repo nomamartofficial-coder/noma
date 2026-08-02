@@ -57,6 +57,12 @@ Each integration harness owns a disposable database and Redis instance. Cleanup 
 - Close clients before stopping containers and treat cleanup failure as a test defect.
 - Keep diagnostics, coverage, traces, and screenshots free of secrets and personal data.
 
-Docker Desktop or another [Testcontainers-supported runtime](https://node.testcontainers.org/supported-container-runtimes/) is required only for integration tests. DEV-008 will attach these commands to the protected-branch CI and evidence pipeline.
+Docker Desktop or another [Testcontainers-supported runtime](https://node.testcontainers.org/supported-container-runtimes/) is required only for integration tests. DEV-008 attaches these commands to the Linux GitHub Actions integration gate. Windows remains authoritative for pnpm, path, build, runtime process-launch, health-probe, and process-tree cleanup compatibility without attempting Linux-container integration.
 
 The optional native build scripts from `cpu-features`, `protobufjs`, and `ssh2` are explicitly denied in `pnpm-workspace.yaml`; the testing foundation uses their supported JavaScript paths and does not require native compilation.
+
+## CI reporting
+
+The checked-in CI command catalog runs with the same UTC/seed/zero-retry contract. Unit and component jobs emit human-readable output, JUnit XML, V8 JSON summary, LCOV, and HTML coverage. Coverage remains diagnostic: DEV-008 records the repository baseline and provider-contract source separately and does not introduce an unapproved threshold that the current foundation cannot meet.
+
+Safe command results and evidence manifests are written under ignored `.artifacts/ci/` and retained by GitHub for 90 days. They contain exact commit/run/toolchain metadata, not environment dumps, URLs, credentials, provider payloads, database/Redis volumes, or personal data. See [`CI.md`](CI.md).

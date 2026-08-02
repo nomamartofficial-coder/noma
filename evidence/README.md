@@ -21,4 +21,4 @@ Every evidence item must include:
 
 `PASS` is valid only for the exact release/environment tested and expires after material changes or the recorded expiry. Screenshots may supplement evidence but do not prove backend, provider, financial, custody, or authorization truth alone.
 
-GitHub Actions artefacts may later carry large build/test outputs with explicit retention, while repository records remain the durable index. Artifact attestations and immutable releases are future release-hardening controls, not claims established by this foundation task.
+DEV-008 GitHub Actions artefacts carry bounded CI result manifests, JUnit, and coverage evidence for 90 days. Repository records remain the durable index. The CI-specific schema is `evidence/schemas/ci-evidence-manifest.schema.json`; generated manifests remain ignored and are uploaded only after credential-safe validation. Artifact attestations and immutable releases remain future release-hardening controls because DEV-008 creates no deployable artifact.
