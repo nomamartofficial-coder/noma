@@ -119,13 +119,20 @@ Repository-local high-confidence secret scanning and governed-evidence redaction
 
 Only `ci-quality.yml` exposes deliberate-failure controls. The manual-dispatch Boolean `force_ci_failure` defaults to `false`. Before this new workflow exists on the default branch, the equivalent pre-merge proof is an explicit `ci-force-failure` label event; synchronization, reopen, and ordinary label states cannot activate it. Either authorized control makes the tests segment exit with the reserved deliberate-failure code after normal tests, evidence collection/upload still runs, and `Noma / Quality Gate` must fail. Removing the label triggers a normal recovery run.
 
+Before merge, apply the dedicated label to the draft PR, inspect the failing run, then remove it to trigger the normal recovery run:
+
 ```bash
-gh workflow run ci-quality.yml \
-  --ref dev-008-github-actions-quality-pipeline \
-  -f force_ci_failure=true
+gh pr edit <PR_NUMBER> --add-label ci-force-failure
+gh pr edit <PR_NUMBER> --remove-label ci-force-failure
 ```
 
-After inspecting that failure and its artifact, run the workflow again with the default input and record both run IDs in the draft PR. Never prove this control with an intentionally broken commit.
+After the workflow exists on the default branch, the equivalent manual dispatch is:
+
+```bash
+gh workflow run ci-quality.yml --ref main -f force_ci_failure=true
+```
+
+Record both run IDs in the draft PR. Never prove this control with an intentionally broken commit.
 
 ## Failure triage and reruns
 
