@@ -1,0 +1,146 @@
+# yaml-language-server: $schema=https://json.schemastore.org/render.json
+previews:
+  generation: off
+
+projects:
+  - name: noma
+    environments:
+      - name: staging
+        networking:
+          isolation: enabled
+        permissions:
+          protection: enabled
+        services:
+          - type: web
+            name: noma-api-staging
+            runtime: node
+            plan: starter
+            region: frankfurt
+            branch: main
+            autoDeployTrigger: checksPass
+            buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm turbo run build --filter=@noma/api...
+            preDeployCommand: pnpm deploy:migrate
+            startCommand: pnpm deploy:start:api
+            healthCheckPath: /health/ready
+            maxShutdownDelaySeconds: 30
+            previews:
+              generation: off
+            buildFilter:
+              paths:
+                - apps/api/**
+                - packages/config/**
+                - packages/contracts/**
+                - packages/database/**
+                - packages/integrations/**
+                - packages/observability/**
+                - packages/platform/**
+                - packages/security/**
+                - scripts/run-deployed-command.mjs
+                - package.json
+                - pnpm-lock.yaml
+                - pnpm-workspace.yaml
+                - turbo.json
+                - render.yaml
+              ignoredPaths:
+                - docs/**
+                - delivery/**
+            envVars:
+              - key: NODE_VERSION
+                value: 24.18.0
+              - key: NOMA_ENV
+                value: staging
+              - key: NOMA_CREDENTIAL_ENVIRONMENT
+                value: staging
+              - key: NOMA_PROVIDER_MODE
+                value: disabled
+              - key: PUBLIC_WEB_ORIGIN
+                sync: false
+              - key: API_PUBLIC_URL
+                value: https://noma-api-staging.onrender.com
+              - key: SESSION_SECRET
+                sync: false
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: noma-postgres-staging
+                  property: connectionString
+              - key: REDIS_URL
+                fromService:
+                  type: keyvalue
+                  name: noma-key-value-staging
+                  property: connectionString
+
+          - type: worker
+            name: noma-worker-staging
+            runtime: node
+            plan: starter
+            region: frankfurt
+            branch: main
+            autoDeployTrigger: checksPass
+            buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm turbo run build --filter=@noma/worker...
+            startCommand: pnpm deploy:start:worker
+            maxShutdownDelaySeconds: 60
+            previews:
+              generation: off
+            buildFilter:
+              paths:
+                - apps/worker/**
+                - packages/config/**
+                - packages/contracts/**
+                - packages/database/**
+                - packages/integrations/**
+                - packages/observability/**
+                - packages/platform/**
+                - packages/security/**
+                - scripts/run-deployed-command.mjs
+                - package.json
+                - pnpm-lock.yaml
+                - pnpm-workspace.yaml
+                - turbo.json
+                - render.yaml
+              ignoredPaths:
+                - docs/**
+                - delivery/**
+            envVars:
+              - key: NODE_VERSION
+                value: 24.18.0
+              - key: NOMA_ENV
+                value: staging
+              - key: NOMA_CREDENTIAL_ENVIRONMENT
+                value: staging
+              - key: NOMA_PROVIDER_MODE
+                value: disabled
+              - key: PUBLIC_WEB_ORIGIN
+                fromService:
+                  type: web
+                  name: noma-api-staging
+                  envVarKey: PUBLIC_WEB_ORIGIN
+              - key: API_PUBLIC_URL
+                value: https://noma-api-staging.onrender.com
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: noma-postgres-staging
+                  property: connectionString
+              - key: REDIS_URL
+                fromService:
+                  type: keyvalue
+                  name: noma-key-value-staging
+                  property: connectionString
+
+          - name: noma-key-value-staging
+            type: keyvalue
+            plan: starter
+            region: frankfurt
+            ipAllowList: []
+            maxmemoryPolicy: noeviction
+            persistenceMode: journal-snapshot
+
+        databases:
+          - name: noma-postgres-staging
+            plan: basic-256mb
+            region: frankfurt
+            postgresMajorVersion: "18"
+            databaseName: noma_staging
+            user: noma_staging
+            connectionPool: none
+            ipAllowList: []
+            storageAutoscalingEnabled: false

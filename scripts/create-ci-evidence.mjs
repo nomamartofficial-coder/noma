@@ -208,7 +208,7 @@ function traceabilityStatus(commands) {
   return {
     executed: relevant.length > 0,
     passed: relevant.length > 0 && relevant.every((command) => command.exit_code === 0),
-    lookups: relevant.filter((command) => command.id === 'traceability-dev007' || command.id === 'traceability-dev008')
+    lookups: relevant.filter((command) => command.id === 'traceability-dev008' || command.id === 'traceability-dev009')
       .map((command) => command.id.replace('traceability-', '').toUpperCase()),
   };
 }
