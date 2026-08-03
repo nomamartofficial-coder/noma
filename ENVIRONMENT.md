@@ -1,7 +1,7 @@
 # Noma environment and secret contract
 
 > **Task:** `DEV-003`  
-> **Scope:** typed environment configuration, startup validation, public/server separation, environment isolation, redaction, and deterministic test overrides
+> **Scope:** typed environment configuration, startup validation, public/server separation, environment isolation, redaction, deterministic test overrides, and DEV-009 preview/staging deployment ownership
 
 ## Environment model
 
@@ -36,13 +36,13 @@ Unknown `NEXT_PUBLIC_*` values fail validation. Secret-like public names are pro
 | `PORT`, `API_PORT`, `WORKER_PORT` | internal | explicit invalid values fail; safe local defaults remain available |
 | `PUBLIC_WEB_ORIGIN` | internal URL | required and HTTPS in preview/staging/production |
 | `API_PUBLIC_URL` | internal URL | required and HTTPS in preview/staging/production |
-| `NOMA_RELEASE_SHA` | internal evidence | required in production; 7–40 hexadecimal characters |
-| `SESSION_SECRET` | secret | required in production; at least 32 non-placeholder characters |
-| `DATABASE_URL` | secret | required in production; PostgreSQL URL |
-| `REDIS_URL` | secret | required in production; `rediss://` encrypted transport |
+| `NOMA_RELEASE_SHA` | internal evidence | required in staging and production; deployed staging supplies the full Render commit |
+| `SESSION_SECRET` | secret | required by staging API and production; at least 32 non-placeholder characters; not supplied to staging Worker |
+| `DATABASE_URL` | secret | required in staging and production; PostgreSQL URL with encrypted transport |
+| `REDIS_URL` | secret | required in staging and production; staging uses authenticated internal Render Key Value; production requires `rediss://` |
 | `NOMA_PROVIDER_MODE` | internal control | `disabled` by default; explicit `simulator` is prohibited in production; `real` fails closed until owning adapter tasks |
 
-Worker queue mode requires `DATABASE_URL` and `REDIS_URL` together in every environment. Both absent preserves the local scaffold with `not-configured` readiness; exactly one is a startup error. When both are configured, the Worker probes each dependency and never serializes either URL into logs or health responses.
+API and Worker dependency mode requires `DATABASE_URL` and `REDIS_URL` together in every environment. Both absent preserves local scaffold compatibility with `not-configured` readiness; exactly one is a startup error. Staging requires both. When configured, each runtime probes both dependencies, becomes unready on dependency loss, and never serializes either URL into logs or health responses.
 
 Provider-specific secrets remain optional until their adapter tasks. Live Paystack keys are rejected outside production, and test Paystack keys are rejected in production.
 
@@ -68,7 +68,11 @@ DEV-004 adds a server-only Prisma command boundary. Local schema validation and 
 
 Reset is a separate fail-closed boundary. `pnpm db:reset:local` requires explicit local/test environment markers, an explicit loopback PostgreSQL target, an approved Noma local/test database name, and the non-secret confirmation marker documented in [`DATABASE.md`](DATABASE.md). The same check runs inside `prisma.config.ts`, so invoking Prisma directly does not bypass it.
 
-API and Worker receive runtime dependency URLs only from validated server configuration. DEV-005 connects the Worker through `@noma/database` and `@noma/integrations`, closes both on shutdown, and reports only safe dependency state. The API does not publish directly to Redis.
+API and Worker receive runtime dependency URLs only from validated server configuration. DEV-005 connects the Worker through `@noma/database` and `@noma/integrations`, closes both on shutdown, and reports only safe dependency state. DEV-009 gives the API health-only PostgreSQL and Redis probes; the API still does not publish directly to Redis.
+
+## Preview and staging deployment
+
+DEV-009 keeps Vercel Web in `preview` and Render backend services in `staging`. Vercel stores only the two approved public values. Render stores server values and secrets. `PUBLIC_WEB_ORIGIN` is one exact protected preview origin; generic `*.vercel.app` credentialed CORS is prohibited. `scripts/run-deployed-command.mjs` derives `NOMA_RELEASE_SHA` from Render's immutable `RENDER_GIT_COMMIT` and permits staging only. Production is not provisioned or activated. See [`DEPLOYMENT.md`](DEPLOYMENT.md) and the [environment-isolation runbook](runbooks/environment-isolation.md).
 
 ## Canonical verification
 

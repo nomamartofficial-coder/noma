@@ -11,10 +11,12 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('environment-self-test', 'Run environment negative tests', 'pnpm', ['env:self-test']),
       command('providers-validate', 'Validate provider boundaries', 'pnpm', ['providers:validate']),
       command('providers-self-test', 'Run provider boundary negative tests', 'pnpm', ['providers:self-test']),
+      command('deployment-validate', 'Validate preview and staging deployment policy', 'pnpm', ['deploy:validate']),
+      command('deployment-self-test', 'Run deployment policy negative tests', 'pnpm', ['deploy:self-test']),
       command('traceability-validate', 'Validate traceability registers', 'python', ['scripts/validate_traceability.py']),
       command('traceability-self-test', 'Run traceability negative test', 'python', ['scripts/validate_traceability.py', '--self-test']),
-      command('traceability-dev007', 'Resolve DEV-007 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'DEV-007']),
       command('traceability-dev008', 'Resolve DEV-008 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'DEV-008']),
+      command('traceability-dev009', 'Resolve DEV-009 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'DEV-009']),
     ]),
     static: Object.freeze([
       command('lint', 'Lint all workspace packages', 'pnpm', ['lint']),

@@ -53,6 +53,14 @@
     "providers:self-test": "node scripts/validate-provider-foundation.mjs --self-test",
     "providers:test": "pnpm build && vitest run --project unit packages/platform/tests/providers.test.ts packages/testing/tests/providers.test.ts",
     "providers:verify": "pnpm providers:validate && pnpm providers:self-test && pnpm providers:test",
+    "deploy:validate": "node scripts/validate-deployment.mjs",
+    "deploy:self-test": "node scripts/validate-deployment.mjs --self-test",
+    "deploy:smoke": "node scripts/smoke-deployment.mjs",
+    "deploy:evidence": "node scripts/create-deployment-evidence.mjs",
+    "deploy:verify": "pnpm deploy:validate && pnpm deploy:self-test",
+    "deploy:migrate": "node scripts/run-deployed-command.mjs migrate",
+    "deploy:start:api": "node scripts/run-deployed-command.mjs api",
+    "deploy:start:worker": "node scripts/run-deployed-command.mjs worker",
     "ci:validate": "node scripts/validate-github-actions.mjs",
     "ci:self-test": "node scripts/validate-github-actions.mjs --self-test",
     "ci:quality": "node scripts/run-ci-suite.mjs quality",
@@ -73,7 +81,7 @@
     "start:api": "pnpm --filter @noma/api start",
     "start:worker": "pnpm --filter @noma/worker start",
     "smoke:runtimes": "pnpm build && node scripts/smoke-runtimes.mjs",
-    "check": "pnpm workspace:validate && pnpm runtimes:validate && pnpm env:validate && pnpm db:validate && pnpm queue:foundation:validate && pnpm testing:validate && pnpm providers:validate && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "check": "pnpm workspace:validate && pnpm runtimes:validate && pnpm env:validate && pnpm db:validate && pnpm queue:foundation:validate && pnpm testing:validate && pnpm providers:validate && pnpm deploy:validate && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "clean": "turbo run clean && node scripts/clean-workspace.mjs"
   },
   "devDependencies": {

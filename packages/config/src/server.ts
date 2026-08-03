@@ -146,6 +146,7 @@ export function loadServerEnvironment(
 
   const remote = ['preview', 'staging', 'production'].includes(applicationEnvironment);
   const production = applicationEnvironment === 'production';
+  const deployedBackend = ['staging', 'production'].includes(applicationEnvironment);
   const address = resolveRuntimeAddress(runtime, source, issues);
   const publicWebOrigin = readUrl(source, 'PUBLIC_WEB_ORIGIN', issues, {
     required: remote,
@@ -161,29 +162,32 @@ export function loadServerEnvironment(
   });
 
   const sessionSecret = readSecret(source, 'SESSION_SECRET', issues, {
-    required: production,
+    required: production || (applicationEnvironment === 'staging' && runtime === 'api'),
     minimumLength: 32,
   });
   const databaseUrl = readUrl(source, 'DATABASE_URL', issues, {
-    required: production,
+    required: deployedBackend,
     protocols: ['postgres:', 'postgresql:'],
     requireTls: false,
   });
   const redisUrl = readUrl(source, 'REDIS_URL', issues, {
-    required: production,
+    required: deployedBackend,
     protocols: ['redis:', 'rediss:'],
     requireTls: production,
   });
 
-  if (runtime === 'worker' && Boolean(databaseUrl) !== Boolean(redisUrl)) {
+  if (
+    (runtime === 'worker' && Boolean(databaseUrl) !== Boolean(redisUrl))
+    || (runtime === 'api' && Boolean(databaseUrl) !== Boolean(redisUrl))
+  ) {
     issues.push({
       key: databaseUrl ? 'REDIS_URL' : 'DATABASE_URL',
       code: 'missing',
-      message: 'must be configured together with the Worker database and queue dependency',
+      message: `must be configured together with the ${runtime} database and queue dependency`,
     });
   }
 
-  if (production && databaseUrl) {
+  if (deployedBackend && databaseUrl) {
     const database = new URL(databaseUrl);
     const sslMode = database.searchParams.get('sslmode');
     const ssl = database.searchParams.get('ssl');
@@ -191,18 +195,25 @@ export function loadServerEnvironment(
       issues.push({
         key: 'DATABASE_URL',
         code: 'insecure',
-        message: 'must require encrypted PostgreSQL transport in production',
+        message: 'must require encrypted PostgreSQL transport in staging and production',
       });
     }
   }
 
   const releaseSha = source.NOMA_RELEASE_SHA?.trim();
-  if (releaseSha && !/^[a-f0-9]{7,40}$/i.test(releaseSha)) {
-    issues.push({ key: 'NOMA_RELEASE_SHA', code: 'invalid', message: 'must be a 7 to 40 character Git commit SHA' });
+  const releaseShaPattern = deployedBackend ? /^[a-f0-9]{40}$/i : /^[a-f0-9]{7,40}$/i;
+  if (releaseSha && !releaseShaPattern.test(releaseSha)) {
+    issues.push({
+      key: 'NOMA_RELEASE_SHA',
+      code: 'invalid',
+      message: deployedBackend
+        ? 'must be a full 40 character Git commit SHA in staging and production'
+        : 'must be a 7 to 40 character Git commit SHA',
+    });
   }
 
-  if (production) {
-    readRequiredString(source, 'NOMA_RELEASE_SHA', issues, 7);
+  if (deployedBackend) {
+    readRequiredString(source, 'NOMA_RELEASE_SHA', issues, 40);
   }
 
   if (issues.length > 0 || !publicWebOrigin || !apiPublicUrl) {

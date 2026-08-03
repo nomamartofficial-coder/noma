@@ -12,6 +12,7 @@ export interface WorkerHealthSnapshot {
 export function startHealthServer(
   host: string,
   port: number,
+  deployment: { readonly environment: string; readonly releaseSha?: string },
   readHealth: () => WorkerHealthSnapshot,
 ): Server {
   const server = createServer((request, response) => {
@@ -33,6 +34,8 @@ export function startHealthServer(
       runtime: 'worker',
       check,
       ready,
+      environment: deployment.environment,
+      ...(deployment.releaseSha === undefined ? {} : { releaseSha: deployment.releaseSha }),
       dependencies: health.dependencies,
     });
 

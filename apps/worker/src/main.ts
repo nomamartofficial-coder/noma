@@ -44,6 +44,10 @@ async function bootstrap(): Promise<void> {
   const healthServer = startHealthServer(
     config.address.host,
     config.address.port,
+    {
+      environment: config.applicationEnvironment,
+      ...(config.releaseSha === undefined ? {} : { releaseSha: config.releaseSha }),
+    },
     () => shuttingDown
       ? { ready: false, dependencies: queueRuntime.dependencies() }
       : queueRuntime.health(),
