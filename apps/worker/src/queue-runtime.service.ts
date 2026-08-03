@@ -29,6 +29,7 @@ export class QueueRuntimeService implements OnApplicationBootstrap, OnApplicatio
   #dispatcher: OutboxDispatcher | undefined;
   #workers: ReturnType<typeof createBullMqWorkers> = [];
   #probeTimer: NodeJS.Timeout | undefined;
+  #shuttingDown = false;
   #databaseHealth: DependencyHealth = 'not-configured';
   #queueHealth: DependencyHealth = 'not-configured';
 
@@ -123,6 +124,7 @@ export class QueueRuntimeService implements OnApplicationBootstrap, OnApplicatio
   }
 
   async onApplicationShutdown(): Promise<void> {
+    this.#shuttingDown = true;
     if (this.#probeTimer) clearTimeout(this.#probeTimer);
     await this.#dispatcher?.stop();
     await Promise.all(this.#workers.map((worker) => worker.close()));
@@ -133,8 +135,11 @@ export class QueueRuntimeService implements OnApplicationBootstrap, OnApplicatio
   }
 
   #scheduleProbe(): void {
+    if (this.#shuttingDown) return;
     this.#probeTimer = setTimeout(() => {
-      void this.#probe().finally(() => this.#scheduleProbe());
+      void this.#probe().finally(() => {
+        if (!this.#shuttingDown) this.#scheduleProbe();
+      });
     }, 1_000);
     this.#probeTimer.unref();
   }

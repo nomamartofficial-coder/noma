@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import type { RuntimeHealthResponse } from '@noma/contracts';
 import { HealthService } from './health.service.js';
 
@@ -13,6 +13,8 @@ export class HealthController {
 
   @Get('ready')
   readiness(): RuntimeHealthResponse {
-    return this.healthService.readiness();
+    const health = this.healthService.readiness();
+    if (health.status !== 'ok') throw new ServiceUnavailableException(health);
+    return health;
   }
 }
