@@ -84,6 +84,8 @@ pnpm smoke:runtimes
 
 DEV-006 now provides `@noma/testing/containers` for new reusable integration suites with the same reviewed image digests, authenticated Redis policy, real PostgreSQL migrations, synthetic credentials, and disposable resource cleanup. The focused DEV-005 crash/data-loss Compose rehearsal remains intact.
 
+DEV-009 maps this contract to `noma-key-value-staging` in Render Frankfurt with the paid `starter` plan, `journal-snapshot` persistence, `noeviction`, disabled external access, and internal authentication configured by the environment owner. API and Worker use the same authenticated staging connection; a complete Key Value loss is still recovered from PostgreSQL outbox records. The deployment skeleton does not create a production queue or activate a business job.
+
 ## Production boundary
 
 DEV-005 does not provision, deploy, or activate production Redis. A managed production service must use encrypted transport, environment-isolated credentials, access controls, persistence and backup policy, alerting, tested recovery, and capacity settings reviewed by Engineering, Security, QA, Data, and DevOps.

@@ -9,3 +9,9 @@ Runbooks must state detection, authority, containment, evidence preservation, co
 Do not embed credentials, personal phone numbers, private emails, customer details, bank information, or direct secret-bearing dashboard links. Contact and escalation information must use roles or approved internal directory references.
 
 A runbook is not ready merely because the file exists; it must be rehearsed and evidenced by the intended operators.
+
+Deployment runbooks:
+
+- [`staging-deployment.md`](staging-deployment.md)
+- [`staging-rollback.md`](staging-rollback.md)
+- [`environment-isolation.md`](environment-isolation.md)

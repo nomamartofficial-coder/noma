@@ -351,6 +351,26 @@ pnpm ci:verify
 
 The exact workflow graph, immutable action pins, evidence contract, security limitations, and administrator-controlled required-check setup are documented in [`CI.md`](CI.md).
 
+DEV-009 adds the non-production deployment command surface:
+
+```bash
+pnpm deploy:validate
+pnpm deploy:self-test
+pnpm deploy:verify
+```
+
+Remote smoke is separate because it requires explicitly authorized provider resources:
+
+```bash
+WEB_PREVIEW_URL=https://<approved-preview>.vercel.app \
+API_STAGING_URL=https://noma-api-staging.onrender.com \
+EXPECTED_RELEASE_SHA=<reviewed-40-character-commit> \
+pnpm deploy:smoke
+pnpm deploy:evidence
+```
+
+See [`DEPLOYMENT.md`](DEPLOYMENT.md). No production deployment or feature activation is performed by these commands.
+
 ---
 
 ## Recommended first verification
