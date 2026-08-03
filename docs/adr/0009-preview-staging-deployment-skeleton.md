@@ -4,6 +4,7 @@
 - **Date:** 2026-08-03
 - **Task:** `DEV-009`
 - **Issue:** [#26](https://github.com/nomamartofficial-coder/noma/issues/26)
+- **Draft PR:** [#27](https://github.com/nomamartofficial-coder/noma/pull/27)
 - **Traceability:** `REQ-DEV-009`, `DEC-ARCH-001`, `DEC-SCOPE-014`, `DEC-REPO-001`, `P1-OPERATIONS`
 
 ## Context
