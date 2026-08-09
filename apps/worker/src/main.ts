@@ -5,6 +5,7 @@ import {
   loadServerEnvironment,
   toSafeStartupError,
 } from '@noma/config/server';
+import type { ServerObservability } from '@noma/observability/server';
 
 const REMOTE_ENVIRONMENTS = new Set(['preview', 'staging', 'production']);
 
@@ -30,15 +31,30 @@ async function bootstrap(): Promise<void> {
     { WorkerModule },
     { startHealthServer },
     { QueueRuntimeService },
+    { startServerObservability },
   ] = await Promise.all([
     import('@nestjs/core'),
     import('./app.module.js'),
     import('./health-server.js'),
     import('./queue-runtime.service.js'),
+    import('@noma/observability/server'),
   ]);
+  const observability = await startServerObservability({
+    serviceName: 'noma-worker',
+    environment: config.applicationEnvironment,
+    ...(config.releaseSha ? { releaseSha: config.releaseSha } : {}),
+    mode: config.telemetry.mode,
+    ...(config.telemetry.endpoint ? { endpoint: config.telemetry.endpoint } : {}),
+    ...(config.secrets.telemetryAuthorization ? { authorization: config.secrets.telemetryAuthorization } : {}),
+    traceSampleRatio: config.telemetry.traceSampleRatio,
+    exportIntervalMilliseconds: config.telemetry.exportIntervalMilliseconds,
+    exportTimeoutMilliseconds: config.telemetry.exportTimeoutMilliseconds,
+    shutdownTimeoutMilliseconds: config.telemetry.shutdownTimeoutMilliseconds,
+  });
+  activeObservability = observability;
   let shuttingDown = false;
-  const app = await NestFactory.createApplicationContext(WorkerModule.register(config), { bufferLogs: true });
-  app.enableShutdownHooks();
+  const app = await NestFactory.createApplicationContext(WorkerModule.register(config, observability), { bufferLogs: true });
+  app.useLogger(observability.nestLogger);
   const queueRuntime = app.get(QueueRuntimeService);
 
   const healthServer = startHealthServer(
@@ -51,24 +67,29 @@ async function bootstrap(): Promise<void> {
     () => shuttingDown
       ? { ready: false, dependencies: queueRuntime.dependencies() }
       : queueRuntime.health(),
+    observability,
   );
-  console.log(JSON.stringify({
-    event: 'runtime.started',
-    ...describeServerEnvironment(config),
-  }));
+  observability.logger.info('runtime.started', 'succeeded', describeServerEnvironment(config));
 
-  const shutdown = async (): Promise<void> => {
+  const shutdown = async (signal: string): Promise<void> => {
     if (shuttingDown) return;
     shuttingDown = true;
+    observability.logger.info('runtime.shutdown', 'started', { signal });
     await new Promise<void>((resolve) => healthServer.close(() => resolve()));
     await app.close();
+    await observability.shutdown();
   };
 
-  process.once('SIGINT', () => void shutdown());
-  process.once('SIGTERM', () => void shutdown());
+  process.once('SIGINT', () => void shutdown('SIGINT'));
+  process.once('SIGTERM', () => void shutdown('SIGTERM'));
 }
 
+let activeObservability: ServerObservability | undefined;
 void bootstrap().catch((error: unknown) => {
+  activeObservability?.logger.error('runtime.startup', 'failed', error);
   const diagnostic = `${JSON.stringify(toSafeStartupError(error))}\n`;
-  process.stderr.write(diagnostic, () => process.exit(1));
+  process.stderr.write(diagnostic, () => {
+    void activeObservability?.shutdown().finally(() => process.exit(1));
+    if (!activeObservability) process.exit(1);
+  });
 });

@@ -15,3 +15,11 @@ Deployment runbooks:
 - [`staging-deployment.md`](staging-deployment.md)
 - [`staging-rollback.md`](staging-rollback.md)
 - [`environment-isolation.md`](environment-isolation.md)
+
+Observability and runtime-health runbooks:
+
+- [`observability.md`](observability.md)
+- [`health-and-readiness.md`](health-and-readiness.md)
+- [`trace-correlation.md`](trace-correlation.md)
+- [`observability-exporter-outage.md`](observability-exporter-outage.md)
+- [`dependency-readiness-failure.md`](dependency-readiness-failure.md)

@@ -62,6 +62,21 @@ test('outbox readers tolerate additive optional fields and preserve required fac
   assert.equal(parsed.aggregate.version, '1');
 });
 
+test('outbox telemetry accepts bounded W3C context and rejects malformed propagation', () => {
+  const telemetry = {
+    requestId: 'request_123',
+    traceContext: {
+      traceparent: '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
+      tracestate: 'vendor=value',
+    },
+  };
+  assert.deepEqual(parseOutboxEventEnvelope({ ...event, telemetry }).telemetry, telemetry);
+  assert.throws(
+    () => parseOutboxEventEnvelope({ ...event, telemetry: { traceContext: { traceparent: 'invalid' } } }),
+    /traceparent/,
+  );
+});
+
 test('job envelope uses the outbox UUID as its deterministic BullMQ identity', () => {
   const envelope = createQueueJobEnvelope(contract, event);
   assert.equal(envelope.jobId, event.eventId);

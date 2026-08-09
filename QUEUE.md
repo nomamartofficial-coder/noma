@@ -26,7 +26,7 @@ Stop services while retaining data with `pnpm queue:down`. Removing volumes is r
 
 ## Transactional publication contract
 
-Business code calls `createOutboxEvent` only with the existing Prisma transaction that commits the authoritative state change. It never publishes directly to Redis. The event contains a versioned, minimal JSON envelope, aggregate version, optional institution/resource scope, privacy class, authorised service principal, correlation, and availability time.
+Business code calls `createOutboxEvent` only with the existing Prisma transaction that commits the authoritative state change. It never publishes directly to Redis. The event contains a versioned, minimal JSON envelope, aggregate version, optional institution/resource scope, privacy class, authorised service principal, correlation, optional bounded W3C/request metadata, and availability time.
 
 The Worker claims at most 50 eligible rows with `FOR UPDATE SKIP LOCKED`, using a 30-second lease. It publishes outside the transaction, then marks the row dispatched. Polls run every 250 milliseconds and never overlap.
 
@@ -66,12 +66,13 @@ The foundation records sources for:
 - retry count and processing duration; and
 - open dead letters by Operations, Finance, or Security owner.
 
-DEV-010 will attach OpenTelemetry exporters. Until then these are typed in-process records and PostgreSQL/BullMQ snapshots.
+DEV-010 attaches these sources to low-cardinality OpenTelemetry instruments while retaining the typed in-process records used by recovery tests. Outbox publication and job processing spans inherit the persisted W3C parent; no event, aggregate, request, job, institution, user, or correlation ID becomes a metric label. OTLP export remains disabled unless explicitly configured.
 
 ## Verification
 
 ```bash
 pnpm queue:verify
+pnpm observability:verify
 pnpm db:verify
 pnpm env:verify
 pnpm lint

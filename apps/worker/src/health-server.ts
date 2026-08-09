@@ -3,6 +3,7 @@ import {
   createHealthResponse,
   type DependencyHealth,
 } from '@noma/contracts';
+import type { ServerObservability } from '@noma/observability/server';
 
 export interface WorkerHealthSnapshot {
   readonly ready: boolean;
@@ -14,8 +15,10 @@ export function startHealthServer(
   port: number,
   deployment: { readonly environment: string; readonly releaseSha?: string },
   readHealth: () => WorkerHealthSnapshot,
+  observability?: ServerObservability,
 ): Server {
   const server = createServer((request, response) => {
+    const handle = (): void => {
     const check = request.url === '/health/ready'
       ? 'readiness'
       : request.url === '/health/live'
@@ -41,6 +44,12 @@ export function startHealthServer(
 
     response.writeHead(ready ? 200 : 503, { 'content-type': 'application/json' });
     response.end(JSON.stringify(body));
+    };
+    if (observability) {
+      observability.httpMiddleware(request, response, handle);
+    } else {
+      handle();
+    }
   });
 
   server.listen(port, host);

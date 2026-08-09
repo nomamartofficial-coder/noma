@@ -18,6 +18,7 @@ import {
 } from '@noma/contracts';
 import {
   createNoopQueueMetricRecorder,
+  type ServerObservability,
   type QueueMetricRecorder,
 } from '@noma/observability/server';
 
@@ -128,8 +129,13 @@ export class BullMqPublisher {
   readonly #connection: Redis;
   readonly #queues = new Map<QueueName, Queue>();
   readonly #prefix: string;
+  readonly #telemetry: ServerObservability | undefined;
 
-  constructor(options: { readonly redisUrl: string; readonly applicationEnvironment: string }) {
+  constructor(options: {
+    readonly redisUrl: string;
+    readonly applicationEnvironment: string;
+    readonly telemetry?: ServerObservability;
+  }) {
     this.#prefix = queuePrefix(options.applicationEnvironment);
     this.#connection = new Redis(requireRedisUrl(options.redisUrl), {
       commandTimeout: PRODUCER_OPERATION_TIMEOUT_MILLISECONDS,
@@ -140,6 +146,7 @@ export class BullMqPublisher {
       maxRetriesPerRequest: 1,
     });
     this.#connection.on('error', () => undefined);
+    this.#telemetry = options.telemetry;
   }
 
   async connect(): Promise<void> {
@@ -171,10 +178,15 @@ export class BullMqPublisher {
       removeOnComplete: false,
       removeOnFail: false,
     };
-    const job = await withProducerDeadline(
-      queue.add(contract.jobName, envelope, options),
-      'publication',
-    );
+    const publish = () => withProducerDeadline(queue.add(contract.jobName, envelope, options), 'publication');
+    const job = this.#telemetry
+      ? await this.#telemetry.withSpan(
+          'noma.outbox.publish',
+          { 'messaging.destination.name': contract.queueName, 'messaging.operation.name': contract.jobName },
+          publish,
+          envelope.event.telemetry?.traceContext,
+        )
+      : await publish();
     return job.id ?? envelope.jobId;
   }
 
@@ -225,6 +237,7 @@ export function createBullMqWorkers(options: {
   readonly workerIdentity: string;
   readonly registry: QueueContractRegistry;
   readonly metrics?: QueueMetricRecorder;
+  readonly telemetry?: ServerObservability;
 }): readonly BullMqWorkerHandle[] {
   const prefix = queuePrefix(options.applicationEnvironment);
   const metrics = options.metrics ?? createNoopQueueMetricRecorder();
@@ -261,7 +274,21 @@ export function createBullMqWorkers(options: {
         const started = performance.now();
         const signal = composeAbortSignals(parentSignal, registration.contract.retry.timeoutMilliseconds);
         try {
-          await registration.handler(envelope, { signal, attemptsMade: bullJob.attemptsMade });
+          const processJob = () => registration.handler(envelope, { signal, attemptsMade: bullJob.attemptsMade });
+          if (options.telemetry) {
+            await options.telemetry.withSpan(
+              'noma.queue.process',
+              {
+                'messaging.destination.name': queueName,
+                'messaging.operation.name': registration.contract.jobName,
+                'messaging.operation.type': 'process',
+              },
+              processJob,
+              envelope.event.telemetry?.traceContext,
+            );
+          } else {
+            await processJob();
+          }
           metrics.record({
             name: 'noma.queue.processing.duration_ms',
             value: performance.now() - started,

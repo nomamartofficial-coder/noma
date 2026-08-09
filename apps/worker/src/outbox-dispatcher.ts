@@ -10,7 +10,7 @@ import {
   BullMqPublisher,
   QueueContractRegistry,
 } from '@noma/integrations';
-import type { QueueMetricRecorder } from '@noma/observability/server';
+import type { QueueMetricRecorder, ServerObservability } from '@noma/observability/server';
 
 const DEFAULT_POLL_MILLISECONDS = 250;
 const DEFAULT_BATCH_SIZE = 50;
@@ -32,6 +32,7 @@ export interface OutboxDispatcherOptions {
   readonly random?: () => number;
   readonly onDatabaseHealth?: (ready: boolean) => void;
   readonly onQueueHealth?: (ready: boolean) => void;
+  readonly telemetry?: ServerObservability;
 }
 
 export class OutboxDispatcher {
@@ -57,6 +58,17 @@ export class OutboxDispatcher {
   }
 
   async dispatchOnce(now = new Date()): Promise<number> {
+    if (this.#options.telemetry) {
+      return this.#options.telemetry.withSpan(
+        'noma.outbox.dispatch.batch',
+        { 'noma.runtime': 'worker' },
+        () => this.#dispatchOnce(now),
+      );
+    }
+    return this.#dispatchOnce(now);
+  }
+
+  async #dispatchOnce(now: Date): Promise<number> {
     let events;
     try {
       events = await claimOutboxEvents(this.#options.database, {

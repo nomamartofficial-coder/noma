@@ -53,6 +53,11 @@
     "providers:self-test": "node scripts/validate-provider-foundation.mjs --self-test",
     "providers:test": "pnpm build && vitest run --project unit packages/platform/tests/providers.test.ts packages/testing/tests/providers.test.ts",
     "providers:verify": "pnpm providers:validate && pnpm providers:self-test && pnpm providers:test",
+    "observability:validate": "node scripts/validate-observability.mjs",
+    "observability:self-test": "node scripts/validate-observability.mjs --self-test",
+    "observability:test": "pnpm build && vitest run --project unit packages/observability/tests packages/contracts/tests/queue.test.mjs packages/database/tests/outbox.test.mjs",
+    "observability:integration": "pnpm build && vitest run --project integration packages/testing/tests/observability.integration.test.ts",
+    "observability:verify": "pnpm observability:validate && pnpm observability:self-test && pnpm observability:test && pnpm observability:integration",
     "deploy:validate": "node scripts/validate-deployment.mjs",
     "deploy:self-test": "node scripts/validate-deployment.mjs --self-test",
     "deploy:smoke": "node scripts/smoke-deployment.mjs",
@@ -85,7 +90,7 @@
     "start:api": "pnpm --filter @noma/api start",
     "start:worker": "pnpm --filter @noma/worker start",
     "smoke:runtimes": "pnpm build && node scripts/smoke-runtimes.mjs",
-    "check": "pnpm workspace:validate && pnpm runtimes:validate && pnpm env:validate && pnpm db:validate && pnpm queue:foundation:validate && pnpm testing:validate && pnpm providers:validate && pnpm deploy:validate && pnpm security:dependencies:validate && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "check": "pnpm workspace:validate && pnpm runtimes:validate && pnpm env:validate && pnpm db:validate && pnpm queue:foundation:validate && pnpm testing:validate && pnpm providers:validate && pnpm observability:validate && pnpm deploy:validate && pnpm security:dependencies:validate && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "clean": "turbo run clean && node scripts/clean-workspace.mjs"
   },
   "devDependencies": {

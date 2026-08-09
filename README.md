@@ -254,7 +254,7 @@ pnpm db:migrate:dev
 pnpm dev
 ```
 
-The PostgreSQL foundation and local endpoint are documented in [`DATABASE.md`](DATABASE.md). The Redis/BullMQ and transactional-outbox foundation is documented in [`QUEUE.md`](QUEUE.md). Reviewed dependency floors, audit evidence, and the infrastructure-activation stop-line are documented in [`SECURITY_DEPENDENCIES.md`](SECURITY_DEPENDENCIES.md). Mail capture and full observability exporters remain dependency-ordered work.
+The PostgreSQL foundation and local endpoint are documented in [`DATABASE.md`](DATABASE.md). The Redis/BullMQ and transactional-outbox foundation is documented in [`QUEUE.md`](QUEUE.md). Structured logging, W3C correlation, health, metrics, and optional backend OTLP export are documented in [`OBSERVABILITY.md`](OBSERVABILITY.md). Reviewed dependency floors, audit evidence, and the infrastructure-activation stop-line are documented in [`SECURITY_DEPENDENCIES.md`](SECURITY_DEPENDENCIES.md). Provider activation remains dependency-ordered work.
 
 If the repository uses a bootstrap script, it must remain transparent and equivalent to the documented steps rather than hiding destructive or production actions.
 
@@ -438,6 +438,16 @@ pnpm providers:verify
 ```
 
 Real Paystack, S3, Postmark, Web Push, Sentry, PostHog, Grafana, Cloudflare, Vercel, and Render adapters remain deferred to their owning tasks.
+
+## Observability development
+
+DEV-010 adds the server-only OpenTelemetry, structured logging, correlation, readiness, and shutdown foundation without activating a vendor or exposing browser telemetry.
+
+```bash
+pnpm observability:verify
+```
+
+See [`OBSERVABILITY.md`](OBSERVABILITY.md) for typed modes, redaction, propagation, metric cardinality, health semantics, runbooks, and the real infrastructure rehearsal.
 
 Provider integrations use deterministic local simulators and sandbox accounts.
 

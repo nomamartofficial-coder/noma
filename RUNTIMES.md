@@ -14,4 +14,6 @@ Liveness means the process is running. Readiness means the runtime can safely ac
 
 DEV-009 deploys Web only to Vercel Preview, API as the public Render Web Service, and Worker as a private Render Background Worker. Health responses include only safe environment and release identity plus coarse dependency state. API CORS permits exactly the configured protected preview origin. See [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
+DEV-010 adds structured JSON logging, request/correlation response headers, W3C trace propagation, bounded dependency telemetry, and graceful telemetry shutdown to API and Worker. Liveness remains process truth; readiness remains dependency truth. Exporter availability is diagnostic and never causes an authoritative transaction to fail. See [`OBSERVABILITY.md`](OBSERVABILITY.md).
+
 No provider, database, or Redis secrets belong in Web configuration or bundles. DEV-003 enforces the typed environment boundary; DEV-004/DEV-005 keep Prisma, PostgreSQL, and Redis access server-only.

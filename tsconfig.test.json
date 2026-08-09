@@ -3,6 +3,8 @@
   "compilerOptions": {
     "declaration": false,
     "declarationMap": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
     "jsx": "react-jsx",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",

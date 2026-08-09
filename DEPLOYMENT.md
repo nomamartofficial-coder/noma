@@ -93,6 +93,7 @@ pnpm ci:validate
 pnpm ci:self-test
 pnpm env:verify
 pnpm providers:verify
+pnpm observability:verify
 pnpm db:verify
 pnpm queue:verify
 pnpm testing:verify
