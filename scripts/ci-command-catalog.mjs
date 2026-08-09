@@ -17,6 +17,7 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('traceability-self-test', 'Run traceability negative test', 'python', ['scripts/validate_traceability.py', '--self-test']),
       command('traceability-dev008', 'Resolve DEV-008 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'DEV-008']),
       command('traceability-dev009', 'Resolve DEV-009 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'DEV-009']),
+      command('traceability-sec005', 'Resolve SEC-005 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'SEC-005']),
     ]),
     static: Object.freeze([
       command('lint', 'Lint all workspace packages', 'pnpm', ['lint']),
@@ -56,6 +57,8 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
   }),
   security: Object.freeze({
     repository: Object.freeze([
+      command('dependency-security-validate', 'Validate reviewed dependency security floors', 'pnpm', ['security:dependencies:validate']),
+      command('dependency-security-self-test', 'Prove weakened dependency policies are rejected', 'pnpm', ['security:dependencies:self-test']),
       command('repository-secret-scan', 'Scan tracked repository content for high-confidence secrets', 'node', ['scripts/scan-repository-secrets.mjs']),
       command('repository-secret-self-test', 'Prove secret samples are rejected', 'node', ['scripts/scan-repository-secrets.mjs', '--self-test']),
       command('governance-redaction', 'Validate governed evidence and redaction controls', 'python', ['scripts/validate_governance_foundation.py', '--self-test']),

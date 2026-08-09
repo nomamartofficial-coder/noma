@@ -30,6 +30,7 @@ const REQUIRED_FILES = [
   'packages/database/tests/reset-safety.test.mjs',
   'packages/database/tests/transaction.test.mjs',
   'scripts/reset-database.mjs',
+  'scripts/run-prisma-generate.mjs',
   'scripts/test-database-migrations.mjs',
 ];
 const ALLOWED_EXTENSIONS = new Set(['citext', 'pg_trgm']);
@@ -101,6 +102,9 @@ async function validate() {
   if (databasePackage.devDependencies?.prisma !== EXPECTED_PRISMA_VERSION) {
     fail(`prisma must be pinned to ${EXPECTED_PRISMA_VERSION}`);
   }
+  if (databasePackage.scripts?.['db:generate'] !== 'node ../../scripts/run-prisma-generate.mjs') {
+    fail('Prisma generation must use the bounded cross-process launcher');
+  }
   for (const script of [
     'db:validate',
     'db:generate',
@@ -133,6 +137,11 @@ async function validate() {
   }
   if (/prisma\s+db\s+push/i.test(serializedScripts)) {
     fail('prisma db push is prohibited as a migration workflow');
+  }
+
+  const generationLauncher = await read('scripts/run-prisma-generate.mjs');
+  for (const token of ['WAIT_DEADLINE_MS', 'STALE_LOCK_MS', 'withGenerationLock', 'finally', "windowsHide: true"]) {
+    if (!generationLauncher.includes(token)) fail(`Prisma generation launcher missing ${token}`);
   }
 
   const schema = await read('packages/database/prisma/schema.prisma');

@@ -15,7 +15,7 @@ DEV-005,EP01,Create Redis/BullMQ queue and transactional-outbox foundation,P0,P0
 DEV-006,EP01,Create deterministic testing package and Testcontainers harness,P0,P0-RECOVERY,COMPLETE,QA/Engineering
 DEV-007,EP01,Create provider ports and local simulators,P0,P0-FINANCIAL,COMPLETE,Engineering/QA
 DEV-008,EP01,Create GitHub Actions quality pipeline,P0,P0-RECOVERY,COMPLETE,Engineering/QA/Security
-DEV-009,EP01,Create preview/staging deployment skeleton,P0,P1-OPERATIONS,IN_REVIEW,DevOps/Engineering
+DEV-009,EP01,Create preview/staging deployment skeleton,P0,P1-OPERATIONS,COMPLETE,DevOps/Engineering
 DEV-010,EP01,"Bootstrap OpenTelemetry, structured logging, correlation, and health",P0,P0-RECOVERY,NOT_STARTED,Engineering/DevOps
 UI-001,EP02,Implement core and semantic design tokens,P0,P2-PRESENTATION,NOT_STARTED,Design/Web
 UI-002,EP02,Implement accessible primitive component set,P0,P1-OPERATIONS,NOT_STARTED,Web/Design/QA
@@ -127,6 +127,7 @@ INF-002,EP13,"Implement isolated restore, reconciliation, and re-deletion drill"
 INC-001,EP13,"Implement incident records, emergency feature controls, and stop-the-line actions",P0,P0-RECOVERY,NOT_STARTED,Security/Operations/Admin
 INC-002,EP13,"Create security, privacy, provider, finance, delivery, and recovery runbooks",P0,P0-RECOVERY,NOT_STARTED,Security/Operations/Finance
 SEC-004,EP13,Run privileged-access and provider-account reviews,P0,P0-AUTHORITY,NOT_STARTED,Security/Access Admin
+SEC-005,EP13,Remediate dependency advisories and strengthen dependency gate,P0,P0-RECOVERY,IN_REVIEW,Security/Engineering/QA/DevOps
 QA-001,EP14,"Populate requirement-test, machine-coverage, and journey matrices",P0,P0-RECOVERY,NOT_STARTED,QA/Product
 QA-002,EP14,"Implement API, event, job, and provider contract suites",P0,P0-RECOVERY,NOT_STARTED,QA/Engineering
 QA-003,EP14,"Implement financial, inventory, custody, authority, and idempotency property suites",P0,P0-FINANCIAL,NOT_STARTED,QA/Engineering

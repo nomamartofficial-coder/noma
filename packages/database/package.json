@@ -21,7 +21,7 @@
     "clean": "node ../../scripts/clean-package.mjs . src/generated/prisma",
     "test": "pnpm build && pnpm --dir ../.. exec vitest run --config vitest.config.ts --project unit packages/database/tests",
     "db:validate": "prisma validate",
-    "db:generate": "prisma generate",
+    "db:generate": "node ../../scripts/run-prisma-generate.mjs",
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:migrate:status": "prisma migrate status"

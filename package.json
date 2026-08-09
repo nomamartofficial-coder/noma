@@ -62,6 +62,9 @@
     "deploy:wait-for-migrations": "node scripts/run-deployed-command.mjs wait-for-migrations",
     "deploy:start:api": "node scripts/run-deployed-command.mjs api",
     "deploy:start:worker": "node scripts/run-deployed-command.mjs worker",
+    "security:dependencies:validate": "node scripts/validate-dependency-security.mjs",
+    "security:dependencies:self-test": "node scripts/validate-dependency-security.mjs --self-test",
+    "security:dependencies:verify": "pnpm security:dependencies:validate && pnpm security:dependencies:self-test",
     "ci:validate": "node scripts/validate-github-actions.mjs",
     "ci:self-test": "node scripts/validate-github-actions.mjs --self-test",
     "ci:quality": "node scripts/run-ci-suite.mjs quality",
@@ -82,7 +85,7 @@
     "start:api": "pnpm --filter @noma/api start",
     "start:worker": "pnpm --filter @noma/worker start",
     "smoke:runtimes": "pnpm build && node scripts/smoke-runtimes.mjs",
-    "check": "pnpm workspace:validate && pnpm runtimes:validate && pnpm env:validate && pnpm db:validate && pnpm queue:foundation:validate && pnpm testing:validate && pnpm providers:validate && pnpm deploy:validate && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "check": "pnpm workspace:validate && pnpm runtimes:validate && pnpm env:validate && pnpm db:validate && pnpm queue:foundation:validate && pnpm testing:validate && pnpm providers:validate && pnpm deploy:validate && pnpm security:dependencies:validate && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "clean": "turbo run clean && node scripts/clean-workspace.mjs"
   },
   "devDependencies": {
