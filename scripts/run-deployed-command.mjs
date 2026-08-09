@@ -21,24 +21,44 @@ process.env.NOMA_RELEASE_SHA = releaseSha;
 process.env.DATABASE_URL = requireEncryptedPostgreSqlUrl(process.env.DATABASE_URL);
 if (!process.env.REDIS_URL?.trim()) throw new Error('staging queue configuration is required');
 
-function runPnpm(args, { stdio = 'inherit' } = {}) {
+function runPnpm(args, { stdio = 'inherit', signal } = {}) {
   return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(signal.reason instanceof Error ? signal.reason : new Error('deployment subprocess aborted'));
+      return;
+    }
+
     const child = spawn('pnpm', args, { env: process.env, stdio, shell: false });
-    const forward = (signal) => { if (!child.killed) child.kill(signal); };
-    const cleanup = () => {
-      process.removeListener('SIGTERM', forward);
-      process.removeListener('SIGINT', forward);
-    };
-    process.once('SIGTERM', forward);
-    process.once('SIGINT', forward);
-    child.once('error', (error) => {
+    let settled = false;
+    const finish = (callback, value) => {
+      if (settled) return;
+      settled = true;
       cleanup();
-      reject(error);
+      callback(value);
+    };
+    const terminate = (childSignal = 'SIGTERM') => {
+      if (!child.killed) child.kill(childSignal);
+    };
+    const abort = () => {
+      terminate();
+      finish(reject, signal.reason instanceof Error ? signal.reason : new Error('deployment subprocess aborted'));
+    };
+    const forwardSigterm = () => terminate('SIGTERM');
+    const forwardSigint = () => terminate('SIGINT');
+    const cleanup = () => {
+      process.removeListener('SIGTERM', forwardSigterm);
+      process.removeListener('SIGINT', forwardSigint);
+      signal?.removeEventListener('abort', abort);
+    };
+    process.once('SIGTERM', forwardSigterm);
+    process.once('SIGINT', forwardSigint);
+    signal?.addEventListener('abort', abort, { once: true });
+    child.once('error', (error) => {
+      finish(reject, error);
     });
     child.once('exit', (code, signal) => {
-      cleanup();
-      if (signal) reject(new Error(`deployment subprocess stopped by ${signal}`));
-      else resolve(code ?? 1);
+      if (signal) finish(reject, new Error(`deployment subprocess stopped by ${signal}`));
+      else finish(resolve, code ?? 1);
     });
   });
 }
@@ -47,7 +67,7 @@ if (command === 'migrate') {
   process.exitCode = await runPnpm(['db:migrate:deploy']);
 } else if (command === 'wait-for-migrations') {
   const result = await waitForCommittedMigrations({
-    check: async () => (await runPnpm(['db:migrate:status'], { stdio: 'ignore' })) === 0,
+    check: async ({ signal }) => (await runPnpm(['db:migrate:status'], { stdio: 'ignore', signal })) === 0,
     onRetry: ({ attempts, delayMs }) => {
       console.log(`Migration gate check ${attempts} is not ready; retrying in ${Math.ceil(delayMs / 1_000)} seconds.`);
     },

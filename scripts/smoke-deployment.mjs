@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import {
   validateAutomationBypassSecret,
+  validateCorsResponseHeaders,
   validateDeploymentUrl,
   validateHealthResponse,
   validateReleaseSha,
@@ -27,7 +28,7 @@ async function readBoundedJson(response) {
   }
 }
 
-async function probe(origin, expected) {
+async function probe(origin, expected, requestOrigin) {
   const deadline = Date.now() + READINESS_DEADLINE_MILLISECONDS;
   let lastError;
   while (Date.now() < deadline) {
@@ -37,6 +38,7 @@ async function probe(origin, expected) {
       if (expected.runtime === 'web' && vercelAutomationBypassSecret !== undefined) {
         headers['x-vercel-protection-bypass'] = vercelAutomationBypassSecret;
       }
+      if (expected.runtime === 'api') headers.origin = requestOrigin.origin;
       const response = await fetch(target, {
         redirect: 'error',
         signal: AbortSignal.timeout(PROBE_TIMEOUT_MILLISECONDS),
@@ -44,6 +46,7 @@ async function probe(origin, expected) {
       });
       const value = await readBoundedJson(response);
       if (!response.ok) throw new Error(`health endpoint returned HTTP ${response.status}`);
+      if (expected.runtime === 'api') validateCorsResponseHeaders(response.headers, requestOrigin);
       return validateHealthResponse(value, expected);
     } catch (error) {
       lastError = error;
@@ -59,7 +62,7 @@ for (const [runtime, environment, origin] of [
   ['api', 'staging', api],
 ]) {
   for (const check of ['liveness', 'readiness']) {
-    const value = await probe(origin, { runtime, environment, check, releaseSha });
+    const value = await probe(origin, { runtime, environment, check, releaseSha }, web);
     checks.push(Object.freeze({ runtime, check, status: value.status, checkedAt: value.checkedAt }));
   }
 }

@@ -63,7 +63,7 @@ five stable GitHub gates pass
 → protected Web preview smoke runs
 ```
 
-`scripts/run-deployed-command.mjs` accepts staging only, derives `NOMA_RELEASE_SHA` from Render's immutable commit variable, enforces encrypted PostgreSQL transport before invoking Prisma, requires both data dependencies, and keeps provider mode disabled. The Worker gate polls Prisma's read-only migration status with exponential delay for at most 15 minutes; if the API migration fails or does not finish, the new Worker deployment fails and Render keeps the previous successful deployment. Worker startup performs a final status check and never applies migrations. No start command runs `prisma db push`, reset, seed, watch mode, or a mutable runtime.
+`scripts/run-deployed-command.mjs` accepts staging only, derives `NOMA_RELEASE_SHA` from Render's immutable commit variable, enforces encrypted PostgreSQL transport before invoking Prisma, requires both data dependencies, and keeps provider mode disabled. The Worker gate polls Prisma's read-only migration status with exponential delay for at most 15 minutes; every attempt is bounded by the remaining deadline and aborts its active subprocess when that deadline expires. If the API migration fails or does not finish, the new Worker deployment fails and Render keeps the previous successful deployment. Worker startup performs a final status check and never applies migrations. No start command runs `prisma db push`, reset, seed, watch mode, or a mutable runtime.
 
 ## Health, CORS, and smoke evidence
 
@@ -81,7 +81,7 @@ pnpm deploy:smoke
 pnpm deploy:evidence
 ```
 
-The smoke tool rejects HTTP, credential-bearing URLs, local/private targets, production-looking hosts, missing or mismatched release identity, wrong environments, non-ready responses, redirects, oversized responses, unsafe bypass-secret formatting, and sensitive response fields. The optional protection header is sent only to the validated Vercel Web host and is never printed or recorded. The tool polls to a bounded deadline and writes ignored redacted evidence under `.artifacts/deployment/`.
+The smoke tool rejects HTTP, credential-bearing URLs, local/private targets, production-looking hosts, missing or mismatched release identity, wrong environments, non-ready responses, redirects, oversized responses, unsafe bypass-secret formatting, and sensitive response fields. API probes send the validated protected Web preview as the browser `Origin` and require exact credentialed CORS response headers, proving the deployed API configuration permits that Web surface. The optional protection header is sent only to the validated Vercel Web host and is never printed or recorded. The tool polls to a bounded deadline and writes ignored redacted evidence under `.artifacts/deployment/`.
 
 ## Canonical local verification
 

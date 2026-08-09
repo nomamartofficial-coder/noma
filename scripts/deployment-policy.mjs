@@ -208,12 +208,17 @@ function validateRepositoryBoundaries(issues, files) {
   }
   const runner = files['scripts/run-deployed-command.mjs'] ?? '';
   const commandPolicy = files['scripts/deployment-command-policy.mjs'] ?? '';
+  const smoke = files['scripts/smoke-deployment.mjs'] ?? '';
   const packageManifest = files['package.json'] ?? '';
   requirePattern(issues, runner, /RENDER_GIT_COMMIT/, 'RELEASE_SOURCE', 'deployed runtime must derive release identity from Render');
   requirePattern(issues, runner, /NOMA_RELEASE_SHA/, 'RELEASE_IDENTITY', 'deployed runtime must set NOMA_RELEASE_SHA');
   requirePattern(issues, runner, /db:migrate:status/, 'MIGRATION_STATUS', 'Worker deployment and startup must verify committed migration status');
   requirePattern(issues, commandPolicy, /verify-ca.*verify-full/, 'DATABASE_TLS_ALLOWLIST', 'deployment database validation must allow only encrypted PostgreSQL modes');
   requirePattern(issues, commandPolicy, /waitForCommittedMigrations/, 'MIGRATION_WAIT_POLICY', 'Worker migration gate must use bounded polling');
+  requirePattern(issues, commandPolicy, /Promise\.race\s*\(/, 'MIGRATION_CHECK_DEADLINE', 'each Worker migration status check must race the remaining deployment deadline');
+  requirePattern(issues, runner, /db:migrate:status[\s\S]{0,200}signal/, 'MIGRATION_CHECK_ABORT', 'the Worker migration status subprocess must receive the deadline abort signal');
+  requirePattern(issues, smoke, /headers\.origin\s*=\s*requestOrigin\.origin/, 'DEPLOYMENT_CORS_ORIGIN', 'API deployment smoke must send the validated Web origin');
+  requirePattern(issues, smoke, /validateCorsResponseHeaders\(response\.headers,\s*requestOrigin\)/, 'DEPLOYMENT_CORS_ASSERTION', 'API deployment smoke must verify exact credentialed CORS response headers');
   requirePattern(issues, packageManifest, /"deploy:wait-for-migrations": "node scripts\/run-deployed-command\.mjs wait-for-migrations"/, 'MIGRATION_WAIT_COMMAND', 'root commands must expose the Worker migration gate');
   rejectPattern(issues, runner, PRODUCTION_MARKER_PATTERN, 'RUNNER_PRODUCTION', 'deployed command wrapper must not target production');
 }

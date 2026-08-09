@@ -47,6 +47,18 @@ export function validateDeploymentUrl(value, surface) {
   return new URL(url.origin);
 }
 
+export function validateCorsResponseHeaders(headers, expectedOrigin) {
+  if (!headers || typeof headers.get !== 'function') throw new Error('API CORS response headers are invalid');
+  if (!(expectedOrigin instanceof URL)) throw new Error('validated Web origin is required for API CORS verification');
+  const origin = expectedOrigin.origin;
+  const allowedOrigin = headers.get('access-control-allow-origin');
+  if (allowedOrigin !== origin) throw new Error('API CORS response does not allow the validated Web origin');
+  if (headers.get('access-control-allow-credentials')?.trim().toLowerCase() !== 'true') {
+    throw new Error('API CORS response does not allow credentialed Web requests');
+  }
+  return Object.freeze({ allowedOrigin, credentials: true });
+}
+
 function rejectSensitiveFields(value, path = 'response') {
   if (Array.isArray(value)) {
     value.forEach((item, index) => rejectSensitiveFields(item, `${path}[${index}]`));

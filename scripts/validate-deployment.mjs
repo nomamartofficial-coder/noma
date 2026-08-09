@@ -7,6 +7,7 @@ import {
 } from './deployment-policy.mjs';
 import {
   validateAutomationBypassSecret,
+  validateCorsResponseHeaders,
   validateDeploymentUrl,
   validateHealthResponse,
   validateReleaseSha,
@@ -51,6 +52,10 @@ if (process.argv.includes('--self-test')) {
     ['missing release identity', 'scripts/run-deployed-command.mjs', (value) => value.replaceAll('NOMA_RELEASE_SHA', 'RELEASE')],
     ['missing migration status gate', 'scripts/run-deployed-command.mjs', (value) => value.replaceAll('db:migrate:status', 'db:validate')],
     ['missing encrypted mode allowlist', 'scripts/deployment-command-policy.mjs', (value) => value.replace('verify-full', 'prefer')],
+    ['unbounded migration status check', 'scripts/deployment-command-policy.mjs', (value) => value.replace('Promise.race(', 'Promise.all(')],
+    ['uncancelled migration status subprocess', 'scripts/run-deployed-command.mjs', (value) => value.replace("{ stdio: 'ignore', signal }", "{ stdio: 'ignore' }")],
+    ['missing API CORS origin probe', 'scripts/smoke-deployment.mjs', (value) => value.replace('headers.origin = requestOrigin.origin', "headers.accept = 'application/json'")],
+    ['missing API CORS assertion', 'scripts/smoke-deployment.mjs', (value) => value.replace('validateCorsResponseHeaders(response.headers, requestOrigin)', 'validateHealthResponse(value, expected)')],
     ['missing Worker migration gate command', 'package.json', (value) => value.replace('deploy:wait-for-migrations', 'deploy:wait')],
     ['unsafe API filter', 'render.yaml', (value) => value.replace('                - packages/database/**\n', '')],
     ['unsafe Worker filter', 'render.yaml', (value) => value.replace('                - apps/worker/**\n', '')],
@@ -72,6 +77,7 @@ if (process.argv.includes('--self-test')) {
     }
   }
 
+  const approvedWebOrigin = new URL('https://noma-git-staging.vercel.app');
   const targetCases = [
     () => validateDeploymentUrl('http://noma-git-staging.vercel.app', 'web'),
     () => validateDeploymentUrl('https://user:credential@noma-git-staging.vercel.app', 'web'),
@@ -81,6 +87,11 @@ if (process.argv.includes('--self-test')) {
     () => validateDeploymentUrl('https://api.noma.ng', 'api'),
     () => validateReleaseSha('short-sha'),
     () => validateAutomationBypassSecret('unsafe\r\nheader'),
+    () => validateCorsResponseHeaders(new Headers(), approvedWebOrigin),
+    () => validateCorsResponseHeaders(new Headers({ 'access-control-allow-origin': '*' }), approvedWebOrigin),
+    () => validateCorsResponseHeaders(new Headers({ 'access-control-allow-origin': 'https://wrong-preview.vercel.app', 'access-control-allow-credentials': 'true' }), approvedWebOrigin),
+    () => validateCorsResponseHeaders(new Headers({ 'access-control-allow-origin': approvedWebOrigin.origin, 'access-control-allow-credentials': 'false' }), approvedWebOrigin),
+    () => validateCorsResponseHeaders(new Headers({ 'access-control-allow-origin': approvedWebOrigin.origin, 'access-control-allow-credentials': 'true' }), approvedWebOrigin.origin),
     () => validateHealthResponse({ runtime: 'api', check: 'readiness', status: 'ok', environment: 'production', releaseSha: '0'.repeat(40), checkedAt: new Date().toISOString(), dependencies: {} }, { runtime: 'api', check: 'readiness', environment: 'staging', releaseSha: '0'.repeat(40) }),
     () => validateHealthResponse({ runtime: 'api', check: 'readiness', status: 'ok', environment: 'staging', releaseSha: '0'.repeat(40), checkedAt: new Date().toISOString(), dependencies: {}, databaseUrl: 'forbidden' }, { runtime: 'api', check: 'readiness', environment: 'staging', releaseSha: '0'.repeat(40) }),
     () => validateHealthResponse({ runtime: 'api', check: 'readiness', status: 'not-ready', environment: 'staging', releaseSha: '0'.repeat(40), checkedAt: new Date().toISOString(), dependencies: {} }, { runtime: 'api', check: 'readiness', environment: 'staging', releaseSha: '0'.repeat(40) }),
@@ -88,6 +99,13 @@ if (process.argv.includes('--self-test')) {
   for (const [index, negative] of targetCases.entries()) {
     assert.throws(negative, undefined, `deployment smoke negative test ${index + 1} did not fail`);
   }
+  assert.deepEqual(
+    validateCorsResponseHeaders(new Headers({
+      'access-control-allow-origin': approvedWebOrigin.origin,
+      'access-control-allow-credentials': 'true',
+    }), approvedWebOrigin),
+    { allowedOrigin: approvedWebOrigin.origin, credentials: true },
+  );
 
   const baseDatabaseUrl = 'postgresql://noma:synthetic@db.internal:5432/noma';
   assert.match(requireEncryptedPostgreSqlUrl(baseDatabaseUrl), /sslmode=require/);
@@ -142,5 +160,35 @@ if (process.argv.includes('--self-test')) {
     }),
     /deployment deadline/,
   );
-  console.log(`PASS: ${cases.length} unsafe deployment mutations, ${targetCases.length} unsafe smoke cases, 8 insecure database modes, and bounded migration gating were rejected`);
+
+  let scheduledCheckTimeout;
+  let cancelledCheckTimeout;
+  let observedCheckSignal;
+  let triggerCheckDeadline;
+  const timeoutToken = Object.freeze({ type: 'test-timeout' });
+  await assert.rejects(
+    waitForCommittedMigrations({
+      check: ({ signal, timeoutMs }) => {
+        observedCheckSignal = signal;
+        assert.equal(timeoutMs, 3_000);
+        triggerCheckDeadline();
+        return new Promise(() => undefined);
+      },
+      timeoutMs: 3_000,
+      initialDelayMs: 1_000,
+      maxDelayMs: 2_000,
+      now: () => 0,
+      scheduleCheckTimeout: (callback, milliseconds) => {
+        scheduledCheckTimeout = milliseconds;
+        triggerCheckDeadline = callback;
+        return timeoutToken;
+      },
+      cancelCheckTimeout: (timeout) => { cancelledCheckTimeout = timeout; },
+    }),
+    /deployment deadline/,
+  );
+  assert.equal(scheduledCheckTimeout, 3_000);
+  assert.equal(observedCheckSignal.aborted, true);
+  assert.equal(cancelledCheckTimeout, timeoutToken);
+  console.log(`PASS: ${cases.length} unsafe deployment mutations, ${targetCases.length} unsafe smoke cases, 8 insecure database modes, and bounded migration checks were rejected`);
 }
