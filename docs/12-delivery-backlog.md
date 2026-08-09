@@ -586,6 +586,7 @@ A failed gate moves unfinished dependent work; it does not authorise bypassing t
 | `INC-001` | Implement incident records, emergency feature controls, and stop-the-line actions | P0 | P0-RECOVERY | L | W6 | IAM-008,LOC-002,OBS-002 | Incident severity/owner/timeline, pause checkout/payment/payout/seller/category/tier/institution, containment, restart approvals, and notices. | Pause prevents new obligations while preserving in-flight truth; restart requires independent approval/evidence; all actions audited. | State; race; API; incident exercise | Security/Operations/Admin |
 | `INC-002` | Create security, privacy, provider, finance, delivery, and recovery runbooks | P0 | P0-RECOVERY | M | W7 | INC-001,REC-001,INF-002 | Executable runbooks for compromise, secret leak, provider uncertainty, payout takeover, data breach, lost parcel, outage, restore, and mass error. | Each runbook has detection, authority, containment, evidence, communication, recovery, escalation, and post-incident review. | Tabletop exercises | Security/Operations/Finance |
 | `SEC-004` | Run privileged-access and provider-account reviews | P0 | P0-AUTHORITY | S | W7 | IAM-009,CMP-001 | Review templates, active account inventory, MFA/shared-account checks, excessive scope, revocation, and evidence. | No shared privileged/provider dashboards; stale access revoked; exceptions have owner/expiry. | Access-review evidence | Security/Access Admin |
+| `SEC-005` | Remediate dependency advisories and strengthen dependency gate | P0 | P0-RECOVERY | S | W1 | DEV-008,DEV-009 | Upgrade supported parent dependencies, converge compatible transitive ranges, enforce offline lockfile floors, and block newly introduced Moderate-or-higher vulnerabilities. | Reviewed graph has no Moderate/High/Critical advisory; weakened floors fail the Security Gate; infrastructure activation waits for clean default-branch advisory evidence. | Dependency validator/self-test; live audit; required CI gates | Security/Engineering/QA/DevOps |
 
 ## 38. `EP14` — Quality, performance, accessibility, UAT, and release evidence
 
@@ -642,7 +643,7 @@ A failed gate moves unfinished dependent work; it does not authorise bypassing t
 
 ## 41. Capacity reality check
 
-This document contains **150 atomic task cards**: **139 P0** and **11 P1**. They are acceptance atoms, not a claim that one person can safely review 150 unrelated pull requests in eight weeks. Approved bundling may reduce the practical pull-request count, and independent lanes may proceed in parallel, but the human review, UAT, provider, security, finance, logistics, and readiness workload remains real.
+This document contains **151 atomic task cards**: **140 P0** and **11 P1**. They are acceptance atoms, not a claim that one person can safely review 151 unrelated pull requests in eight weeks. Approved bundling may reduce the practical pull-request count, and independent lanes may proceed in parallel, but the human review, UAT, provider, security, finance, logistics, and readiness workload remains real.
 
 The eight-week target is conditional on all of the following:
 
@@ -665,6 +666,7 @@ This capacity warning is a planning inference from the atomic backlog and does n
 **Primary task pull:**
 - FND-001–FND-008
 - DEV-001–DEV-010
+- SEC-005
 - UI-001–UI-006
 
 **Week exit evidence:**

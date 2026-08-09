@@ -2,8 +2,8 @@
 
 > **Owner:** Repository administrator / Engineering
 > **Reviewers:** QA and Security
-> **Task:** `DEV-008`
-> **Current state:** awaiting authorised configuration and independent verification
+> **Tasks:** `DEV-008`, `SEC-005` dependency-policy amendment
+> **Current state:** the `main` ruleset and dependency graph are active; SEC-005 remediation is pending human review and merge
 
 ## Preconditions
 
@@ -51,6 +51,8 @@ Under repository or organisation security settings:
 5. Keep the default workflow token permission read-only and keep Actions unable to approve pull requests.
 6. Review whether only selected/verified actions should be allowed; the committed validator remains the source-level allow-list.
 
+Dependency Review uses a `moderate` failure threshold. The Security Gate also runs the repository's network-free dependency-floor validator and negative self-test. Do not replace either control with a successful frozen install. Run `pnpm audit --audit-level moderate` as separate current registry evidence, and keep infrastructure activation blocked until the merged default branch has no Moderate, High, or Critical dependency alert.
+
 CodeQL uses the committed advanced workflow. Do not enable duplicate default setup unless Security intentionally changes the ownership model.
 
 ## Verification
@@ -65,7 +67,7 @@ Open a harmless follow-up pull request or use the DEV-008 PR while it remains dr
 - if merge queue is enabled, enqueue and verify the `merge_group` run; and
 - record safe screenshots/identifiers without tokens, private settings, personal data, or unrestricted security details.
 
-Until this verification is complete, report branch protection as `AWAITING_ADMIN_CONFIGURATION`, not `PASS`.
+If any required name disappears or the ruleset no longer blocks a failed gate, report branch protection as `FAIL` and keep the pull request and infrastructure activation blocked.
 
 ## Failure and recovery
 

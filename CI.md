@@ -1,6 +1,6 @@
 # GitHub Actions quality pipeline
 
-> **Task:** `DEV-008`
+> **Tasks:** `DEV-008`, `SEC-005` security amendment
 > **Risk:** `P0-RECOVERY`
 > **Status:** implemented for review; branch-protection acceptance remains administrator-controlled
 
@@ -16,7 +16,7 @@ All workflows run on pull requests targeting `main`, pushes to `main`, merge-gro
 |---|---|---|
 | `ci-quality.yml` | policy; lint/typecheck/build; unit/component/coverage; runtime smoke | `Noma / CI Policy`; `Noma / Quality Gate` |
 | `ci-integration.yml` | environment startup; PostgreSQL migration/restore; Redis/BullMQ/outbox recovery; Testcontainers isolation; provider conformance | `Noma / Integration Gate` |
-| `ci-security.yml` | repository secret/redaction controls; dependency review; CodeQL JavaScript/TypeScript | `Noma / Security Gate` |
+| `ci-security.yml` | offline dependency-floor checks; repository secret/redaction controls; Moderate-or-higher dependency review; CodeQL JavaScript/TypeScript | `Noma / Security Gate` |
 | `ci-windows.yml` | exact toolchain; paths; frozen install; validation; lint/typecheck/build; runtime launch/probes/process cleanup | `Noma / Windows Compatibility` |
 
 Each stable gate uses `if: always()` and the checked-in `scripts/evaluate-ci-gate.mjs`. A mandatory upstream result other than `success`, including unexpected `skipped` or `cancelled`, fails the gate. Dynamic job names are never required directly.
@@ -69,9 +69,10 @@ pnpm ci:security
 pnpm ci:windows       # Windows compatibility segment
 pnpm ci:evidence -- --suite <suite> --segment <segment> --job-result success
 pnpm ci:verify        # Linux-capable canonical aggregate; excludes the Windows-only segment
+pnpm security:dependencies:verify
 ```
 
-`ci:quality`, `ci:integration`, `ci:security`, and `ci:windows` execute the same checked-in command catalog used by Actions. The Quality policy segment also runs DEV-009 deployment validation and its negative self-test; deployment remains part of the existing `Noma / CI Policy` gate rather than adding a sixth required check. Results are written under ignored `.artifacts/ci/`. The repository has no approved formatter dependency, so lint plus tracked-diff validation is the current formatting/integrity gate.
+`ci:quality`, `ci:integration`, `ci:security`, and `ci:windows` execute the same checked-in command catalog used by Actions. The Security repository segment runs the deterministic dependency-floor validator and its negative self-test before secret and redaction controls. Live `pnpm audit --audit-level moderate` remains review evidence rather than a registry-dependent stable gate. The Quality policy segment also runs DEV-009 deployment validation and its negative self-test; deployment remains part of the existing `Noma / CI Policy` gate rather than adding a sixth required check. Results are written under ignored `.artifacts/ci/`. The repository has no approved formatter dependency, so lint plus tracked-diff validation is the current formatting/integrity gate.
 
 CI validates deployment configuration but has no provider credentials, deploy permissions, production environment, or deployment hook. Remote staging smoke remains a separately authorized post-deploy action and its redacted evidence is created under `.artifacts/deployment/`.
 
@@ -99,23 +100,23 @@ Artifacts use names such as `noma-quality-tests-<run>-<attempt>` and retain:
 
 Retention is 90 days, matching the Build Pack recommendation for PR unit/integration evidence. Upload uses `if: always()`, `if-no-files-found: error`, and never includes `.env`, `node_modules`, repository copies, database dumps/volumes, Redis volumes, provider payloads, or environment dumps. Artifact attestations remain deferred until a later task creates a deployable artifact with a consumer verification contract.
 
-## Security availability at implementation time
+## Security availability and dependency policy
 
-Read-only inspection on 2 August 2026 found:
+Read-only inspection on 9 August 2026 found:
 
 | Control | State |
 |---|---|
 | Actions | enabled; default workflow token is read-only |
 | Action SHA enforcement | disabled |
 | CodeQL | supported; default setup not configured; DEV-008 uses pinned advanced setup |
-| Dependency review / dependency graph | dependency-graph SBOM endpoint returned unavailable; the real PR action must prove availability or remain failed/blocked |
+| Dependency review / dependency graph | enabled; the pinned action blocks newly introduced `moderate` or higher vulnerabilities |
 | Secret scanning | disabled |
 | Push protection | disabled |
-| Dependabot security updates | disabled |
-| Branch protection / repository rulesets | absent |
+| Dependabot alerts | enabled; SEC-005 remediates the six synchronized alerts plus the additional High nanoid advisory found by live audit |
+| Branch protection / repository rulesets | active for `main` with the five stable required checks; administrator-controlled |
 | Merge queue | not configured |
 
-Repository-local high-confidence secret scanning and governed-evidence redaction remain mandatory, but they are not presented as replacements for native secret scanning or push protection.
+Repository-local dependency-floor validation, high-confidence secret scanning, and governed-evidence redaction remain mandatory, but they are not presented as replacements for live advisory data, native secret scanning, or push protection. Infrastructure activation remains blocked until a later human merge is followed by a clean default-branch Moderate-or-higher advisory check.
 
 ## Manual deliberate-failure proof
 

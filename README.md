@@ -244,6 +244,7 @@ Clone the approved Noma repository using the actual organisation-controlled repo
 ```bash
 corepack enable
 pnpm install --frozen-lockfile
+pnpm security:dependencies:verify
 
 pnpm db:up
 pnpm db:validate
@@ -253,7 +254,7 @@ pnpm db:migrate:dev
 pnpm dev
 ```
 
-The PostgreSQL foundation and local endpoint are documented in [`DATABASE.md`](DATABASE.md). The Redis/BullMQ and transactional-outbox foundation is documented in [`QUEUE.md`](QUEUE.md). Mail capture and full observability exporters remain dependency-ordered work.
+The PostgreSQL foundation and local endpoint are documented in [`DATABASE.md`](DATABASE.md). The Redis/BullMQ and transactional-outbox foundation is documented in [`QUEUE.md`](QUEUE.md). Reviewed dependency floors, audit evidence, and the infrastructure-activation stop-line are documented in [`SECURITY_DEPENDENCIES.md`](SECURITY_DEPENDENCIES.md). Mail capture and full observability exporters remain dependency-ordered work.
 
 If the repository uses a bootstrap script, it must remain transparent and equivalent to the documented steps rather than hiding destructive or production actions.
 
@@ -509,7 +510,7 @@ Read [`docs/05-design-system.md`](docs/05-design-system.md).
 
 ## Delivery workflow
 
-The Build Pack defines 150 bounded acceptance tasks across 16 epics.
+The Build Pack defines 151 bounded acceptance tasks across 16 epics.
 
 The normal cycle is:
 

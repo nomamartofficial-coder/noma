@@ -87,8 +87,8 @@ def validate(bundle=None):
     tasks=load_ndjson('task-register-*.ndjson.gz.b64') if bundle is None else bundle['tasks']
     reqs=load_ndjson('requirement-register-*.ndjson.gz.b64') if bundle is None else bundle['requirements']
     decs=load_ndjson('decision-register.ndjson') if bundle is None else bundle['decisions']
-    if len(tasks)!=150: raise ValidationError(f'expected 150 tasks, found {len(tasks)}')
-    if sum(t['priority']=='P0' for t in tasks)!=139: raise ValidationError('expected 139 P0 tasks')
+    if len(tasks)!=151: raise ValidationError(f'expected 151 tasks, found {len(tasks)}')
+    if sum(t['priority']=='P0' for t in tasks)!=140: raise ValidationError('expected 140 P0 tasks')
     task_ids=unique_ids(tasks,'tasks'); req_ids=unique_ids(reqs,'requirements'); dec_ids=unique_ids(decs,'decisions')
     refs=canonical_refs(tasks)
     task_map={t['id']:t for t in tasks}
