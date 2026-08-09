@@ -1,6 +1,6 @@
 # Noma observability foundation
 
-> **Task:** `DEV-010`  
+> **Task:** `DEV-010`
 > **Boundary:** backend telemetry only; no provider account, collector, browser SDK, deployment, or capability activation
 
 ## Runtime contract
