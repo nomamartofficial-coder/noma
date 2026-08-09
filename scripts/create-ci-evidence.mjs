@@ -205,11 +205,16 @@ async function migrationSummary() {
 
 function traceabilityStatus(commands) {
   const relevant = commands.filter((command) => command.id?.startsWith('traceability-'));
+  const lookupTargets = Object.freeze({
+    'traceability-dev008': 'DEV-008',
+    'traceability-dev009': 'DEV-009',
+    'traceability-sec005': 'SEC-005',
+  });
   return {
     executed: relevant.length > 0,
     passed: relevant.length > 0 && relevant.every((command) => command.exit_code === 0),
-    lookups: relevant.filter((command) => command.id === 'traceability-dev008' || command.id === 'traceability-dev009')
-      .map((command) => command.id.replace('traceability-', '').toUpperCase()),
+    lookups: relevant.filter((command) => lookupTargets[command.id])
+      .map((command) => lookupTargets[command.id]),
   };
 }
 

@@ -1,4 +1,4 @@
-import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -11,18 +11,21 @@ const WORKFLOWS = Object.freeze([
   '.github/workflows/ci-windows.yml',
 ]);
 const LOCAL_ACTION = '.github/actions/setup-workspace/action.yml';
+const COMMAND_CATALOG = 'scripts/ci-command-catalog.mjs';
 const REQUIRED_FILES = Object.freeze([
   ...WORKFLOWS,
   LOCAL_ACTION,
   'CI.md',
+  'SECURITY_DEPENDENCIES.md',
   'docs/adr/0008-github-actions-quality-pipeline.md',
   'runbooks/github-required-checks.md',
   'evidence/schemas/ci-evidence-manifest.schema.json',
-  'scripts/ci-command-catalog.mjs',
+  COMMAND_CATALOG,
   'scripts/run-ci-suite.mjs',
   'scripts/create-ci-evidence.mjs',
   'scripts/evaluate-ci-gate.mjs',
   'scripts/scan-repository-secrets.mjs',
+  'scripts/validate-dependency-security.mjs',
   'scripts/cleanup-ci-infrastructure.mjs',
 ]);
 const ACTION_PINS = Object.freeze({
@@ -52,7 +55,7 @@ console.log(`PASS: ${result.workflows} workflows, ${result.jobs} bounded jobs, $
 if (process.argv.includes('--self-test')) {
   await runSelfTest();
   selfTestGateEvaluator();
-  console.log('PASS: 24 injected workflow policy violations were rejected in isolated fixtures');
+  console.log('PASS: 26 injected workflow policy violations were rejected in isolated fixtures');
   console.log('PASS: stable gate accepted success and rejected failure, skip, and cancellation');
 }
 
@@ -66,6 +69,16 @@ async function validateRepository(root, { fixture = false } = {}) {
         errors.push(`${path}: required DEV-008 file is missing`);
       }
     }
+  }
+
+  let commandCatalog = '';
+  try {
+    commandCatalog = await readFile(resolve(root, COMMAND_CATALOG), 'utf8');
+  } catch {
+    errors.push(`${COMMAND_CATALOG}: required CI command catalog is missing`);
+  }
+  for (const token of ['security:dependencies:validate', 'security:dependencies:self-test']) {
+    if (!commandCatalog.includes(token)) errors.push(`${COMMAND_CATALOG}: missing dependency security command ${token}`);
   }
 
   const sources = new Map();
@@ -144,7 +157,7 @@ async function validateRepository(root, { fixture = false } = {}) {
     if (!quality.includes(token)) errors.push(`ci-quality.yml: manual deliberate-failure guard missing ${token}`);
   }
   const security = sources.get('.github/workflows/ci-security.yml');
-  for (const token of ['security-events: write', 'fail-on-severity: high', 'javascript-typescript', 'security-extended']) {
+  for (const token of ['security-events: write', 'fail-on-severity: moderate', 'javascript-typescript', 'security-extended']) {
     if (!security.includes(token)) errors.push(`ci-security.yml: security control missing ${token}`);
   }
   if (countOccurrences(combined, 'security-events: write') !== 1) {
@@ -297,8 +310,9 @@ async function runSelfTest() {
   const fixtureRoot = await mkdtemp(resolve(tmpdir(), 'noma-ci-policy-'));
   const githubTarget = resolve(fixtureRoot, '.github');
   await cp(resolve(ROOT, '.github'), githubTarget, { recursive: true });
+  await mkdir(resolve(fixtureRoot, 'scripts'), { recursive: true });
   const originals = new Map();
-  for (const path of [...WORKFLOWS, LOCAL_ACTION]) originals.set(path, await readFile(resolve(ROOT, path), 'utf8'));
+  for (const path of [...WORKFLOWS, LOCAL_ACTION, COMMAND_CATALOG]) originals.set(path, await readFile(resolve(ROOT, path), 'utf8'));
 
   const quality = '.github/workflows/ci-quality.yml';
   const integration = '.github/workflows/ci-integration.yml';
@@ -332,6 +346,8 @@ async function runSelfTest() {
     testCase('live provider endpoint', quality, (s) => `${s}\n# https://api.paystack.co\n`, 'live provider endpoint'),
     testCase('unsafe artifact absence', quality, (s) => s.replace('if-no-files-found: error', 'if-no-files-found: ignore'), 'must fail when files are absent'),
     testCase('missing cleanup', integration, (s) => s.replace('run: pnpm ci:cleanup', 'run: node --version'), 'infrastructure cleanup is required'),
+    testCase('weakened dependency severity', '.github/workflows/ci-security.yml', (s) => s.replace('fail-on-severity: moderate', 'fail-on-severity: high'), 'security control missing fail-on-severity: moderate'),
+    testCase('missing dependency floor command', COMMAND_CATALOG, (s) => s.replace('security:dependencies:validate', 'security:dependencies:removed'), 'missing dependency security command security:dependencies:validate'),
   ];
 
   try {
