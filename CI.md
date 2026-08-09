@@ -15,7 +15,7 @@ All workflows run on pull requests targeting `main`, pushes to `main`, merge-gro
 | Workflow | Mandatory jobs | Stable gate |
 |---|---|---|
 | `ci-quality.yml` | policy; lint/typecheck/build; unit/component/coverage; runtime smoke | `Noma / CI Policy`; `Noma / Quality Gate` |
-| `ci-integration.yml` | environment startup; PostgreSQL migration/restore; Redis/BullMQ/outbox recovery; Testcontainers isolation; provider conformance | `Noma / Integration Gate` |
+| `ci-integration.yml` | environment startup; PostgreSQL migration/restore; Redis/BullMQ/outbox recovery; Testcontainers isolation; real observability/readiness recovery; provider conformance | `Noma / Integration Gate` |
 | `ci-security.yml` | offline dependency-floor checks; repository secret/redaction controls; Moderate-or-higher dependency review; CodeQL JavaScript/TypeScript | `Noma / Security Gate` |
 | `ci-windows.yml` | exact toolchain; paths; frozen install; validation; lint/typecheck/build; runtime launch/probes/process cleanup | `Noma / Windows Compatibility` |
 
@@ -70,9 +70,10 @@ pnpm ci:windows       # Windows compatibility segment
 pnpm ci:evidence -- --suite <suite> --segment <segment> --job-result success
 pnpm ci:verify        # Linux-capable canonical aggregate; excludes the Windows-only segment
 pnpm security:dependencies:verify
+pnpm observability:verify
 ```
 
-`ci:quality`, `ci:integration`, `ci:security`, and `ci:windows` execute the same checked-in command catalog used by Actions. The Security repository segment runs the deterministic dependency-floor validator and its negative self-test before secret and redaction controls. Live `pnpm audit --audit-level moderate` remains review evidence rather than a registry-dependent stable gate. The Quality policy segment also runs DEV-009 deployment validation and its negative self-test; deployment remains part of the existing `Noma / CI Policy` gate rather than adding a sixth required check. Results are written under ignored `.artifacts/ci/`. The repository has no approved formatter dependency, so lint plus tracked-diff validation is the current formatting/integrity gate.
+`ci:quality`, `ci:integration`, `ci:security`, and `ci:windows` execute the same checked-in command catalog used by Actions. The Security repository segment runs the deterministic dependency-floor validator and its negative self-test before secret and redaction controls. Live `pnpm audit --audit-level moderate` remains review evidence rather than a registry-dependent stable gate. The Quality policy segment runs DEV-010 observability validation and negative tests; the Integration harness segment runs its real PostgreSQL/Redis trace and readiness-recovery rehearsal. Windows validates the same static observability policy plus normal runtime startup/shutdown. These remain within the five stable gate names. Results are written under ignored `.artifacts/ci/`.
 
 CI validates deployment configuration but has no provider credentials, deploy permissions, production environment, or deployment hook. Remote staging smoke remains a separately authorized post-deploy action and its redacted evidence is created under `.artifacts/deployment/`.
 
@@ -151,4 +152,4 @@ The workflow implementation can be reviewed and executed without modifying gover
 
 Rollback is a source revert of the workflows, scripts, documentation, and traceability changes. There is no migration or external state to undo.
 
-DEV-009 deployment/environment work, DEV-010 exporter/observability work, production infrastructure, credentials, providers, DNS, releases, business routes/entities, and paid-pilot activation remain excluded.
+Production observability providers, collectors, credentials, dashboards, alerts, deployment, DNS, releases, business routes/entities, and paid-pilot activation remain excluded.

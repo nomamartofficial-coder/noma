@@ -11,6 +11,8 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('environment-self-test', 'Run environment negative tests', 'pnpm', ['env:self-test']),
       command('providers-validate', 'Validate provider boundaries', 'pnpm', ['providers:validate']),
       command('providers-self-test', 'Run provider boundary negative tests', 'pnpm', ['providers:self-test']),
+      command('observability-validate', 'Validate observability, propagation, redaction, and health policy', 'pnpm', ['observability:validate']),
+      command('observability-self-test', 'Run observability policy negative tests', 'pnpm', ['observability:self-test']),
       command('deployment-validate', 'Validate preview and staging deployment policy', 'pnpm', ['deploy:validate']),
       command('deployment-self-test', 'Run deployment policy negative tests', 'pnpm', ['deploy:self-test']),
       command('traceability-validate', 'Validate traceability registers', 'python', ['scripts/validate_traceability.py']),
@@ -18,6 +20,7 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('traceability-dev008', 'Resolve DEV-008 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'DEV-008']),
       command('traceability-dev009', 'Resolve DEV-009 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'DEV-009']),
       command('traceability-sec005', 'Resolve SEC-005 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'SEC-005']),
+      command('traceability-dev010', 'Resolve DEV-010 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'DEV-010']),
     ]),
     static: Object.freeze([
       command('lint', 'Lint all workspace packages', 'pnpm', ['lint']),
@@ -50,6 +53,7 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
     harness: Object.freeze([
       command('build-for-harness', 'Build harness workspace dependencies on the clean runner', 'pnpm', ['build']),
       command('testing-verify', 'Run deterministic testing and Testcontainers verification', 'pnpm', ['testing:verify']),
+      command('observability-integration', 'Run real PostgreSQL, Redis, outbox, trace, and readiness verification', 'pnpm', ['observability:integration']),
     ]),
     providers: Object.freeze([
       command('providers-verify', 'Run provider contract and simulator verification', 'pnpm', ['providers:verify']),
@@ -70,6 +74,8 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('runtimes-validate', 'Validate runtime scaffolds', 'pnpm', ['runtimes:validate']),
       command('environment-validate', 'Validate typed environment contracts', 'pnpm', ['env:validate']),
       command('providers-validate', 'Validate provider boundaries', 'pnpm', ['providers:validate']),
+      command('observability-validate', 'Validate observability boundaries and runtime wiring', 'pnpm', ['observability:validate']),
+      command('observability-self-test', 'Run observability policy negative tests', 'pnpm', ['observability:self-test']),
       command('lint', 'Lint all workspace packages', 'pnpm', ['lint']),
       command('typecheck', 'Type-check all workspace packages', 'pnpm', ['typecheck']),
       command('build', 'Build all workspace packages', 'pnpm', ['build']),

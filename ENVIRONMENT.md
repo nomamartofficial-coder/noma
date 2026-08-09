@@ -41,12 +41,21 @@ Unknown `NEXT_PUBLIC_*` values fail validation. Secret-like public names are pro
 | `DATABASE_URL` | secret | required in staging and production; PostgreSQL URL with encrypted transport |
 | `REDIS_URL` | secret | required in staging and production; staging uses authenticated internal Render Key Value; production requires `rediss://` |
 | `NOMA_PROVIDER_MODE` | internal control | `disabled` by default; explicit `simulator` is prohibited in production; `real` fails closed until owning adapter tasks |
+| `NOMA_TELEMETRY_MODE` | internal control | `disabled`, `in-memory`, or `otlp`; remote environments prohibit `in-memory` |
+| `NOMA_TRACE_SAMPLE_RATIO` | internal control | required in `otlp` mode; bounded from 0 through 1; parent-based sampling is never implicit remotely |
+| `NOMA_OTLP_ENDPOINT` | internal URL | permitted only in `otlp` mode; HTTPS remotely; credentials/query/fragment prohibited |
+| `NOMA_OTLP_AUTHORIZATION` | secret | non-enumerable OTLP authorization; required for staging/production OTLP |
+| `NOMA_TELEMETRY_EXPORT_INTERVAL_MS` | internal bound | 5000–300000; default 30000 |
+| `NOMA_TELEMETRY_EXPORT_TIMEOUT_MS` | internal bound | 500–10000; default 3000 |
+| `NOMA_TELEMETRY_SHUTDOWN_TIMEOUT_MS` | internal bound | 500–15000; default 5000 |
 
 API and Worker dependency mode requires `DATABASE_URL` and `REDIS_URL` together in every environment. Both absent preserves local scaffold compatibility with `not-configured` readiness; exactly one is a startup error. Staging requires both. When configured, each runtime probes both dependencies, becomes unready on dependency loss, and never serializes either URL into logs or health responses.
 
 Provider-specific secrets remain optional until their adapter tasks. Live Paystack keys are rejected outside production, and test Paystack keys are rejected in production.
 
 DEV-007 adds no provider credential. Simulator selection is explicit and server-only. Local/test/preview/staging may request `simulator`; production rejects it. `real` currently fails with a safe `NOMA_PROVIDER_MODE` issue because no production adapter exists. Public Web configuration remains unchanged.
+
+DEV-010 adds optional server telemetry. The default remains disabled; `test` may use deterministic full in-memory capture. OTLP is explicit, requires a reviewed parent-based trace sample ratio, is bounded and HTTPS-only remotely, and keeps authorization in the non-enumerable secret container. Endpoint credentials, query strings, browser-visible variables, implicit remote sampling, and remote in-memory mode fail closed. See [`OBSERVABILITY.md`](OBSERVABILITY.md).
 
 ## Loading and access
 
@@ -81,6 +90,7 @@ pnpm env:validate
 pnpm env:self-test
 pnpm env:test
 pnpm env:startup-test
+pnpm observability:verify
 pnpm db:validate
 pnpm db:self-test
 pnpm lint

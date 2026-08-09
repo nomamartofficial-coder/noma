@@ -18,6 +18,8 @@ The root Vitest configuration defines three non-overlapping projects:
 
 The existing `pnpm db:verify` and `pnpm queue:verify` Compose suites remain focused DEV-004/005 recovery evidence. New reusable infrastructure tests use `@noma/testing/containers`.
 
+DEV-010 adds `pnpm observability:integration`, a bounded sequential Testcontainers rehearsal that applies committed migrations, proves connected API/outbox/BullMQ/Worker trace context and PostgreSQL completion evidence, then pauses authenticated Redis and observes readiness fail and recover while liveness remains healthy. It uses `pollUntil`, not arbitrary wall-clock sleeps.
+
 ## Deterministic utilities
 
 `@noma/testing` exports manual clocks, seeded randomness and identifiers, immutable fixture contexts, schema-neutral synthetic personas, technical outbox/job fixtures, scripted outcomes, barriers, deadline polling, and LIFO cleanup.
