@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { resolve } from 'node:path';
+import { basename, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { defineQueueJobContract } from '@noma/contracts';
 import {
@@ -30,7 +30,11 @@ const harnesses: NomaInfrastructureHarness[] = [];
 const telemetryRuntimes: ServerObservability[] = [];
 
 async function deployMigrations(connection: PostgreSqlTestConnection): Promise<void> {
-  const pnpmCli = process.env.npm_execpath;
+  const pnpmCliFromEnv = process.env.npm_execpath;
+  const pnpmCliBaseName = pnpmCliFromEnv ? basename(pnpmCliFromEnv).toLowerCase() : '';
+  const isTrustedPnpmCli =
+    pnpmCliBaseName === 'pnpm' || pnpmCliBaseName === 'pnpm.cjs' || pnpmCliBaseName === 'pnpm.js';
+  const pnpmCli = isTrustedPnpmCli ? pnpmCliFromEnv : undefined;
   const command = pnpmCli ? process.execPath : process.platform === 'win32' ? 'cmd.exe' : 'pnpm';
   const arguments_ = pnpmCli
     ? [pnpmCli, '--filter', '@noma/database', 'db:migrate:deploy']
