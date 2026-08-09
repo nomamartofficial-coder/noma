@@ -115,3 +115,5 @@ The third forward migration adds `outbox_events`, `job_executions`, and `job_exe
 ## Compatibility and recovery
 
 The baseline is additive, so the previous API and Worker builds remain schema-compatible. Ordinary recovery is forward-fix or isolated restore, not destructive migration rollback. This task does not provision production PostgreSQL, configure backups/PITR, prove provider restoration, or satisfy the paid-pilot recovery gate.
+
+DEV-009 defines a physically separate `noma-postgres-staging` Render PostgreSQL 18 resource in Frankfurt with external ingress disabled and encrypted application transport enforced before any staging migration or runtime connection. The API is the single pre-deploy migration owner and invokes the existing `pnpm db:migrate:deploy` history before the new API starts. Worker never migrates: its pre-deploy command polls the read-only `pnpm db:migrate:status` result to a bounded deadline, and Worker startup checks status once more before processing. No schema, checksum, seed, production database, or production data is added by the deployment skeleton.

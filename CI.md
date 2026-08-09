@@ -71,7 +71,9 @@ pnpm ci:evidence -- --suite <suite> --segment <segment> --job-result success
 pnpm ci:verify        # Linux-capable canonical aggregate; excludes the Windows-only segment
 ```
 
-`ci:quality`, `ci:integration`, `ci:security`, and `ci:windows` execute the same checked-in command catalog used by Actions. Results are written under ignored `.artifacts/ci/`. The repository has no approved formatter dependency, so DEV-008 does not invent one; lint plus tracked-diff validation is the current formatting/integrity gate.
+`ci:quality`, `ci:integration`, `ci:security`, and `ci:windows` execute the same checked-in command catalog used by Actions. The Quality policy segment also runs DEV-009 deployment validation and its negative self-test; deployment remains part of the existing `Noma / CI Policy` gate rather than adding a sixth required check. Results are written under ignored `.artifacts/ci/`. The repository has no approved formatter dependency, so lint plus tracked-diff validation is the current formatting/integrity gate.
+
+CI validates deployment configuration but has no provider credentials, deploy permissions, production environment, or deployment hook. Remote staging smoke remains a separately authorized post-deploy action and its redacted evidence is created under `.artifacts/deployment/`.
 
 ## Test and infrastructure policy
 

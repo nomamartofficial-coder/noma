@@ -29,8 +29,14 @@ async function bootstrap(): Promise<void> {
     import('@nestjs/core'),
     import('./app.module.js'),
   ]);
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create(AppModule.forRoot(config), { bufferLogs: true });
   app.enableShutdownHooks();
+  app.enableCors({
+    origin: config.publicWebOrigin,
+    credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Correlation-Id'],
+  });
 
   await app.listen(config.address.port, config.address.host);
   console.log(JSON.stringify({

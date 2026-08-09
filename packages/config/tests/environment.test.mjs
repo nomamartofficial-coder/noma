@@ -100,6 +100,53 @@ test('Worker database and Redis dependencies must be configured together', () =>
   );
 });
 
+test('API database and Redis dependencies must be configured together', () => {
+  assert.throws(
+    () => loadServerEnvironment('api', {
+      DATABASE_URL: 'postgresql://noma:synthetic@127.0.0.1:55432/noma',
+    }),
+    EnvironmentValidationError,
+  );
+});
+
+test('staging requires release identity, dependencies, API session secret, and encrypted database transport', () => {
+  const base = {
+    NOMA_ENV: 'staging',
+    NOMA_CREDENTIAL_ENVIRONMENT: 'staging',
+    PUBLIC_WEB_ORIGIN: 'https://noma-preview.vercel.app',
+    API_PUBLIC_URL: 'https://noma-api-staging.onrender.com',
+    NOMA_PROVIDER_MODE: 'disabled',
+  };
+  assert.throws(
+    () => loadServerEnvironment('api', base),
+    (error) => {
+      assert.ok(error instanceof EnvironmentValidationError);
+      const keys = new Set(error.issues.map((item) => item.key));
+      for (const key of ['SESSION_SECRET', 'DATABASE_URL', 'REDIS_URL', 'NOMA_RELEASE_SHA']) {
+        assert.ok(keys.has(key), `expected missing staging ${key}`);
+      }
+      return true;
+    },
+  );
+  assert.throws(
+    () => loadServerEnvironment('worker', {
+      ...base,
+      DATABASE_URL: 'postgresql://noma:synthetic@db.internal/noma?sslmode=require',
+      REDIS_URL: 'redis://default:synthetic@redis.internal:6379',
+      NOMA_RELEASE_SHA: '0123456',
+    }),
+    EnvironmentValidationError,
+  );
+  const worker = loadServerEnvironment('worker', {
+    ...base,
+    DATABASE_URL: 'postgresql://noma:synthetic@db.internal/noma?sslmode=require',
+    REDIS_URL: 'redis://default:synthetic@redis.internal:6379',
+    NOMA_RELEASE_SHA: '0123456789abcdef0123456789abcdef01234567',
+  });
+  assert.equal(worker.applicationEnvironment, 'staging');
+  assert.equal(worker.secrets.sessionSecret, undefined);
+});
+
 test('production fails closed when critical configuration is missing', () => {
   assert.throws(
     () => loadServerEnvironment('api', {
