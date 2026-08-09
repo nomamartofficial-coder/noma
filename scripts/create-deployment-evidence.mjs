@@ -25,7 +25,7 @@ const manifest = Object.freeze({
   releaseSha,
   generatedAt: new Date().toISOString(),
   result: 'pass',
-  migration: Object.freeze({ owner: 'noma-api-staging', command: 'pnpm db:migrate:deploy', strategy: 'forward-only' }),
+  migration: Object.freeze({ owner: 'noma-api-staging', command: 'pnpm db:migrate:deploy', workerGate: 'pnpm db:migrate:status', strategy: 'forward-only' }),
   health: Object.freeze({ web: 'pass', api: 'pass', worker: 'provider-deploy-evidence-required' }),
   targets: smoke.targets,
   production: Object.freeze({ provisioned: false, deployed: false, activated: false }),

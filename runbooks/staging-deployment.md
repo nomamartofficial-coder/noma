@@ -17,7 +17,7 @@
 4. In Render, set the exact protected preview URL as API `PUBLIC_WEB_ORIGIN` and a new 32+ character staging-only `SESSION_SECRET`.
 5. Enable internal authentication on `noma-key-value-staging`, resync the Blueprint, and confirm both services' `REDIS_URL` references resolve from that Key Value resource's authenticated private `connectionString`. Confirm external access remains disabled.
 6. Confirm all four Render resources are in Frankfurt and the project environment is `staging`, protected, and network-isolated.
-7. Deploy the reviewed main commit. Verify the API pre-deploy log shows the committed `pnpm db:migrate:deploy` path succeeded before API start. Worker must show no migration command.
+7. Deploy the reviewed main commit. Verify the API pre-deploy log shows the committed `pnpm db:migrate:deploy` path succeeded before API start. Verify the Worker pre-deploy log shows only the bounded read-only migration-status gate and that the gate passes before the new Worker starts; Worker must show no migration-apply command.
 8. Confirm API `/health/live` and `/health/ready`; inspect Worker startup evidence for database and queue readiness without URLs or credentials.
 9. Build the Vercel Preview from the same commit, then run `pnpm deploy:smoke` with the three documented safe inputs and, when protection requires it, the secret `VERCEL_AUTOMATION_BYPASS_SECRET` runtime input. Follow with `pnpm deploy:evidence`; never record the bypass value.
 10. Attach only the redacted manifests and provider deployment identifiers to the review. Do not activate any provider or business feature.

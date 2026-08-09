@@ -17,7 +17,7 @@ DEV-009 defines two non-production deployment surfaces. Vercel builds `@noma/web
 | PostgreSQL | Render `noma-postgres-staging`, Frankfurt | disabled | authoritative technical state |
 | Key Value | Render `noma-key-value-staging`, Frankfurt | disabled | non-authoritative BullMQ delivery |
 
-The Render project is `noma`, the environment is `staging`, private-network isolation and environment protection are enabled, and provider-created preview resources are disabled. API and Worker deploy only after the linked branch checks pass. The API alone owns `pnpm deploy:migrate`, which invokes the committed `pnpm db:migrate:deploy` command. Worker never migrates.
+The Render project is `noma`, the environment is `staging`, private-network isolation and environment protection are enabled, and provider-created preview resources are disabled. API and Worker deploy only after the linked branch checks pass. The API alone owns `pnpm deploy:migrate`, which invokes the committed `pnpm db:migrate:deploy` command. Worker never migrates; its bounded pre-deploy gate runs the read-only `pnpm db:migrate:status` command and cannot release a new Worker build until the API-owned migration history is complete.
 
 ## Provider configuration
 
@@ -25,7 +25,7 @@ Vercel imports the repository root and uses [vercel.json](vercel.json). The proj
 
 Render imports [render.yaml](render.yaml) only after cost approval. Its explicit minimum staging plans are `starter` for API, Worker, and persistent Key Value, plus `basic-256mb` for PostgreSQL. These choices are review inputs, not spend authorization; obtain a current provider quote before import. Render Free cannot run a Background Worker and does not persist Key Value; it is therefore not a truthful substitute for this queue foundation.
 
-Render documents its private PostgreSQL URL as the correct same-region path, while its current connection guidance describes TLS as required for external URLs and not required for the private URL. Noma's staging contract is stricter and requires encrypted application transport. The wrapper therefore adds `sslmode=require` and startup fails closed if the endpoint cannot negotiate TLS. Blueprint import remains blocked until an authenticated provider test proves that combination or Security approves a different architecture that preserves both private routing and encrypted transport; substituting the public database URL is not approved.
+Render documents its private PostgreSQL URL as the correct same-region path, while its current connection guidance describes TLS as required for external URLs and not required for the private URL. Noma's staging contract is stricter and requires encrypted application transport. The wrapper therefore adds `sslmode=require` when no TLS setting is supplied; allows only `require`, `verify-ca`, or `verify-full`; and rejects disabled, permissive, conflicting, duplicated, or ambiguous TLS settings before either migration or startup can connect. Blueprint import remains blocked until an authenticated provider test proves that combination or Security approves a different architecture that preserves both private routing and encrypted transport; substituting the public database URL is not approved.
 
 The environment owner for staging is Engineering/Release. Security owns secret-store and access review. Data owns migration and database classification review. QA owns smoke evidence. DevOps owns provider configuration and rollback execution. Product/Operations own feature activation separately; all business providers remain disabled.
 
@@ -55,6 +55,7 @@ After Blueprint creation, Render must enable internal authentication on the stag
 five stable GitHub gates pass
 → Render build with frozen pnpm install
 → API pre-deploy forward-only migration
+→ Worker pre-deploy read-only migration-status gate
 → API and Worker start from built output
 → API database and Key Value probes pass
 → /health/ready returns the exact staging environment and release SHA
@@ -62,7 +63,7 @@ five stable GitHub gates pass
 → protected Web preview smoke runs
 ```
 
-`scripts/run-deployed-command.mjs` accepts staging only, derives `NOMA_RELEASE_SHA` from Render's immutable commit variable, enforces encrypted PostgreSQL transport, requires both data dependencies, and keeps provider mode disabled. Startup or migration failure blocks the deployment. No start command runs `prisma db push`, reset, seed, watch mode, or a mutable runtime.
+`scripts/run-deployed-command.mjs` accepts staging only, derives `NOMA_RELEASE_SHA` from Render's immutable commit variable, enforces encrypted PostgreSQL transport before invoking Prisma, requires both data dependencies, and keeps provider mode disabled. The Worker gate polls Prisma's read-only migration status with exponential delay for at most 15 minutes; if the API migration fails or does not finish, the new Worker deployment fails and Render keeps the previous successful deployment. Worker startup performs a final status check and never applies migrations. No start command runs `prisma db push`, reset, seed, watch mode, or a mutable runtime.
 
 ## Health, CORS, and smoke evidence
 

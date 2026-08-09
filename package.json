@@ -59,6 +59,7 @@
     "deploy:evidence": "node scripts/create-deployment-evidence.mjs",
     "deploy:verify": "pnpm deploy:validate && pnpm deploy:self-test",
     "deploy:migrate": "node scripts/run-deployed-command.mjs migrate",
+    "deploy:wait-for-migrations": "node scripts/run-deployed-command.mjs wait-for-migrations",
     "deploy:start:api": "node scripts/run-deployed-command.mjs api",
     "deploy:start:worker": "node scripts/run-deployed-command.mjs worker",
     "ci:validate": "node scripts/validate-github-actions.mjs",

@@ -9,6 +9,7 @@ export const DEPLOYMENT_REQUIRED_FILES = Object.freeze([
   'runbooks/staging-deployment.md',
   'runbooks/staging-rollback.md',
   'runbooks/environment-isolation.md',
+  'scripts/deployment-command-policy.mjs',
   'scripts/run-deployed-command.mjs',
   'scripts/smoke-deployment.mjs',
   'scripts/create-deployment-evidence.mjs',
@@ -128,11 +129,13 @@ function validateRender(issues, raw) {
   requirePattern(issues, worker, /runtime: node/, 'WORKER_RUNTIME', 'Worker must use the Node runtime');
   requirePattern(issues, worker, /plan: starter/, 'WORKER_PLAN', 'Worker staging plan must be explicit');
   requirePattern(issues, worker, /autoDeployTrigger: checksPass/, 'WORKER_DEPLOY_GATE', 'Worker deploy must wait for checks');
+  requirePattern(issues, worker, /preDeployCommand: pnpm deploy:wait-for-migrations/, 'WORKER_MIGRATION_GATE', 'Worker deploy must wait for the API-owned migration history');
   requirePattern(issues, worker, /startCommand: pnpm deploy:start:worker/, 'WORKER_START', 'Worker must start the built production runtime');
   for (const path of ['apps/worker/**', 'packages/config/**', 'packages/contracts/**', 'packages/database/**', 'packages/integrations/**', 'render.yaml']) {
     requirePattern(issues, worker, new RegExp(path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), 'WORKER_BUILD_FILTER', `Worker build filter must include ${path}`);
   }
-  rejectPattern(issues, worker, /healthCheckPath:|preDeployCommand:/, 'WORKER_INGRESS_OR_MIGRATION', 'Worker must have no public health ingress and must not run migrations');
+  rejectPattern(issues, worker, /healthCheckPath:/, 'WORKER_INGRESS', 'Worker must have no public health ingress');
+  rejectPattern(issues, worker, /preDeployCommand: pnpm deploy:migrate/, 'WORKER_MIGRATION_OWNER', 'Worker must verify migrations without applying them');
 
   requirePattern(issues, keyValue, /type: keyvalue/, 'KEY_VALUE_TYPE', 'queue storage must use the current keyvalue service type');
   requirePattern(issues, keyValue, /plan: starter/, 'KEY_VALUE_PLAN', 'persistent Key Value requires an explicit paid plan');
@@ -171,7 +174,7 @@ function validateRender(issues, raw) {
   rejectPattern(issues, raw, /NOMA_PROVIDER_MODE\s*\r?\n\s+value: (?:simulator|real)/, 'PROVIDER_MODE', 'staging deployment must keep external providers disabled');
   rejectPattern(issues, raw, /\b(?:latest|lts|node\s*>=|pnpm@\^)/i, 'MUTABLE_VERSION', 'deployment versions must not be mutable');
 
-  const migrationCount = (raw.match(/preDeployCommand:/g) ?? []).length;
+  const migrationCount = (raw.match(/preDeployCommand: pnpm deploy:migrate/g) ?? []).length;
   if (migrationCount !== 1) issues.push(issue('MIGRATION_OWNER', 'exactly one service must own pre-deploy migration'));
   const startCommands = [...raw.matchAll(/startCommand:\s*(.+)$/gm)].map((match) => match[1].trim());
   if (new Set(startCommands).size !== 2) issues.push(issue('START_COMMANDS', 'API and Worker start commands must be distinct'));
@@ -204,8 +207,14 @@ function validateRepositoryBoundaries(issues, files) {
     issues.push(issue('ENVIRONMENT_DOCUMENTATION', 'ENVIRONMENT.md must document staging release identity'));
   }
   const runner = files['scripts/run-deployed-command.mjs'] ?? '';
+  const commandPolicy = files['scripts/deployment-command-policy.mjs'] ?? '';
+  const packageManifest = files['package.json'] ?? '';
   requirePattern(issues, runner, /RENDER_GIT_COMMIT/, 'RELEASE_SOURCE', 'deployed runtime must derive release identity from Render');
   requirePattern(issues, runner, /NOMA_RELEASE_SHA/, 'RELEASE_IDENTITY', 'deployed runtime must set NOMA_RELEASE_SHA');
+  requirePattern(issues, runner, /db:migrate:status/, 'MIGRATION_STATUS', 'Worker deployment and startup must verify committed migration status');
+  requirePattern(issues, commandPolicy, /verify-ca.*verify-full/, 'DATABASE_TLS_ALLOWLIST', 'deployment database validation must allow only encrypted PostgreSQL modes');
+  requirePattern(issues, commandPolicy, /waitForCommittedMigrations/, 'MIGRATION_WAIT_POLICY', 'Worker migration gate must use bounded polling');
+  requirePattern(issues, packageManifest, /"deploy:wait-for-migrations": "node scripts\/run-deployed-command\.mjs wait-for-migrations"/, 'MIGRATION_WAIT_COMMAND', 'root commands must expose the Worker migration gate');
   rejectPattern(issues, runner, PRODUCTION_MARKER_PATTERN, 'RUNNER_PRODUCTION', 'deployed command wrapper must not target production');
 }
 

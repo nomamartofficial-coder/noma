@@ -11,6 +11,10 @@ import {
   validateHealthResponse,
   validateReleaseSha,
 } from './deployment-smoke-policy.mjs';
+import {
+  requireEncryptedPostgreSqlUrl,
+  waitForCommittedMigrations,
+} from './deployment-command-policy.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..');
 
@@ -30,7 +34,8 @@ if (process.argv.includes('--self-test')) {
     ['missing API region', 'render.yaml', (value) => value.replace('            region: frankfurt\n            branch: main', '            branch: main')],
     ['missing API health', 'render.yaml', (value) => value.replace('            healthCheckPath: /health/ready\n', '')],
     ['public Worker', 'render.yaml', (value) => value.replace('- type: worker\n            name: noma-worker-staging', '- type: web\n            name: noma-worker-staging')],
-    ['worker migration owner', 'render.yaml', (value) => value.replace('            startCommand: pnpm deploy:start:worker', '            preDeployCommand: pnpm deploy:migrate\n            startCommand: pnpm deploy:start:worker')],
+    ['missing Worker migration gate', 'render.yaml', (value) => value.replace('            preDeployCommand: pnpm deploy:wait-for-migrations\n', '')],
+    ['worker migration owner', 'render.yaml', (value) => value.replace('pnpm deploy:wait-for-migrations', 'pnpm deploy:migrate')],
     ['database push', 'render.yaml', (value) => value.replace('pnpm deploy:migrate', 'pnpm prisma db push')],
     ['database reset', 'render.yaml', (value) => `${value}\n# prisma migrate reset`],
     ['non-frozen install', 'render.yaml', (value) => value.replaceAll('pnpm install --frozen-lockfile', 'pnpm install')],
@@ -44,6 +49,9 @@ if (process.argv.includes('--self-test')) {
     ['missing rollback', 'DEPLOYMENT.md', (value) => value.replaceAll('rollback', 'recovery')],
     ['missing environment owner', 'DEPLOYMENT.md', (value) => value.replace(/environment owner/gi, 'custodian')],
     ['missing release identity', 'scripts/run-deployed-command.mjs', (value) => value.replaceAll('NOMA_RELEASE_SHA', 'RELEASE')],
+    ['missing migration status gate', 'scripts/run-deployed-command.mjs', (value) => value.replaceAll('db:migrate:status', 'db:validate')],
+    ['missing encrypted mode allowlist', 'scripts/deployment-command-policy.mjs', (value) => value.replace('verify-full', 'prefer')],
+    ['missing Worker migration gate command', 'package.json', (value) => value.replace('deploy:wait-for-migrations', 'deploy:wait')],
     ['unsafe API filter', 'render.yaml', (value) => value.replace('                - packages/database/**\n', '')],
     ['unsafe Worker filter', 'render.yaml', (value) => value.replace('                - apps/worker/**\n', '')],
     ['Key Value eviction', 'render.yaml', (value) => value.replace('maxmemoryPolicy: noeviction', 'maxmemoryPolicy: allkeys-lru')],
@@ -80,5 +88,59 @@ if (process.argv.includes('--self-test')) {
   for (const [index, negative] of targetCases.entries()) {
     assert.throws(negative, undefined, `deployment smoke negative test ${index + 1} did not fail`);
   }
-  console.log(`PASS: ${cases.length} unsafe deployment mutations and ${targetCases.length} unsafe smoke targets/responses were rejected`);
+
+  const baseDatabaseUrl = 'postgresql://noma:synthetic@db.internal:5432/noma';
+  assert.match(requireEncryptedPostgreSqlUrl(baseDatabaseUrl), /sslmode=require/);
+  for (const mode of ['require', 'verify-ca', 'verify-full']) {
+    assert.equal(new URL(requireEncryptedPostgreSqlUrl(`${baseDatabaseUrl}?sslmode=${mode}`)).searchParams.get('sslmode'), mode);
+  }
+  const legacySecureUrl = new URL(requireEncryptedPostgreSqlUrl(`${baseDatabaseUrl}?ssl=true`));
+  assert.equal(legacySecureUrl.searchParams.get('sslmode'), 'require');
+  assert.equal(legacySecureUrl.searchParams.has('ssl'), false);
+  for (const suffix of [
+    '?sslmode=disable',
+    '?sslmode=allow',
+    '?sslmode=prefer',
+    '?sslmode=unknown',
+    '?ssl=false',
+    '?sslmode=require&ssl=false',
+    '?sslmode=require&sslmode=disable',
+    '?SSLMODE=disable',
+  ]) {
+    assert.throws(() => requireEncryptedPostgreSqlUrl(`${baseDatabaseUrl}${suffix}`), undefined, `${suffix} did not fail closed`);
+  }
+
+  let now = 0;
+  let checks = 0;
+  const delays = [];
+  const gate = await waitForCommittedMigrations({
+    check: () => {
+      checks += 1;
+      return checks === 3;
+    },
+    timeoutMs: 10_000,
+    initialDelayMs: 1_000,
+    maxDelayMs: 4_000,
+    now: () => now,
+    delay: async (milliseconds) => {
+      delays.push(milliseconds);
+      now += milliseconds;
+    },
+  });
+  assert.deepEqual(gate, { attempts: 3, elapsedMs: 3_000 });
+  assert.deepEqual(delays, [1_000, 2_000]);
+
+  let timeoutNow = 0;
+  await assert.rejects(
+    waitForCommittedMigrations({
+      check: () => false,
+      timeoutMs: 3_000,
+      initialDelayMs: 1_000,
+      maxDelayMs: 2_000,
+      now: () => timeoutNow,
+      delay: async (milliseconds) => { timeoutNow += milliseconds; },
+    }),
+    /deployment deadline/,
+  );
+  console.log(`PASS: ${cases.length} unsafe deployment mutations, ${targetCases.length} unsafe smoke cases, 8 insecure database modes, and bounded migration gating were rejected`);
 }

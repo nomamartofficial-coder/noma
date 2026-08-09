@@ -10,7 +10,7 @@
 - API CORS equals one protected preview origin and never a wildcard or all Vercel hosts.
 - PostgreSQL and Key Value are staging-only, externally unreachable, and contain no production data.
 - PostgreSQL transport is encrypted; Key Value internal authentication is enabled.
-- API owns migrations; Worker does not.
+- API owns migrations; Worker only waits for and verifies the read-only committed migration status before deployment and startup.
 - `NOMA_PROVIDER_MODE=disabled`; no live or simulator provider traffic is active.
 - Session, database, and queue credentials exist only in Render protected configuration and never in Vercel, Git, logs, evidence, tickets, or chat.
 
