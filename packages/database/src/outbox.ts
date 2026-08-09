@@ -83,6 +83,32 @@ function attentionOwner(owner: AttentionOwner): 'OPERATIONS' | 'FINANCE' | 'SECU
   return owner.toUpperCase() as 'OPERATIONS' | 'FINANCE' | 'SECURITY';
 }
 
+const OUTBOX_PAYLOAD_MARKER = '__noma_outbox_envelope_v1';
+
+function persistedPayload(event: OutboxEventEnvelopeV1): Prisma.InputJsonValue {
+  if (!event.telemetry) return event.payload as Prisma.InputJsonValue;
+  return {
+    [OUTBOX_PAYLOAD_MARKER]: 1,
+    data: event.payload as Prisma.InputJsonValue,
+    telemetry: event.telemetry as Prisma.InputJsonValue,
+  };
+}
+
+function restoredPayload(value: Prisma.JsonValue): {
+  readonly payload: Prisma.JsonValue;
+  readonly telemetry?: OutboxEventEnvelopeV1['telemetry'];
+} {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return { payload: value };
+  const record = value as Prisma.JsonObject;
+  if (record[OUTBOX_PAYLOAD_MARKER] !== 1 || !Object.prototype.hasOwnProperty.call(record, 'data')) {
+    return { payload: value };
+  }
+  return {
+    payload: record.data as Prisma.JsonValue,
+    ...(record.telemetry ? { telemetry: record.telemetry as OutboxEventEnvelopeV1['telemetry'] } : {}),
+  };
+}
+
 export async function createOutboxEvent<TPayload>(
   transaction: DatabaseTransactionClient,
   input: CreateOutboxEventInput<TPayload>,
@@ -103,7 +129,7 @@ export async function createOutboxEvent<TPayload>(
       aggregateVersion: BigInt(event.aggregate.version),
       ...(event.institutionId ? { institutionId: event.institutionId } : {}),
       ...(event.scope ? { scopeType: event.scope.type, scopeId: event.scope.id } : {}),
-      payload: event.payload as Prisma.InputJsonValue,
+      payload: persistedPayload(event),
       privacyClassification: event.privacyClassification,
       servicePrincipal: event.servicePrincipal,
       correlationId: event.correlationId,
@@ -126,6 +152,7 @@ export function createOutboxEventEnvelope<TPayload>(input: {
   readonly privacyClassification: OutboxEventEnvelopeV1['privacyClassification'];
   readonly servicePrincipal: string;
   readonly correlationId: string;
+  readonly telemetry?: OutboxEventEnvelopeV1['telemetry'];
   readonly occurredAt?: Date;
   readonly availableAt?: Date;
   readonly eventId?: string;
@@ -147,6 +174,7 @@ export function createOutboxEventEnvelope<TPayload>(input: {
     privacyClassification: input.privacyClassification,
     servicePrincipal: input.servicePrincipal,
     correlationId: input.correlationId,
+    ...(input.telemetry ? { telemetry: input.telemetry } : {}),
     occurredAt: occurredAt.toISOString(),
     availableAt: (input.availableAt ?? occurredAt).toISOString(),
   };
@@ -210,13 +238,15 @@ export async function claimOutboxEvents(
     `,
   ));
 
-  return rows.map((row) => Object.freeze({
-    id: row.id,
-    queueName: row.queue_name,
-    jobName: row.job_name,
-    jobVersion: row.job_version,
-    dispatchAttempts: row.dispatch_attempts,
-    event: parseOutboxEventEnvelope({
+  return rows.map((row) => {
+    const restored = restoredPayload(row.payload);
+    return Object.freeze({
+      id: row.id,
+      queueName: row.queue_name,
+      jobName: row.job_name,
+      jobVersion: row.job_version,
+      dispatchAttempts: row.dispatch_attempts,
+      event: parseOutboxEventEnvelope({
       schemaVersion: 1,
       eventId: row.id,
       eventType: row.event_type,
@@ -228,14 +258,16 @@ export async function claimOutboxEvents(
       },
       ...(row.institution_id ? { institutionId: row.institution_id } : {}),
       ...(row.scope_type && row.scope_id ? { scope: { type: row.scope_type, id: row.scope_id } } : {}),
-      payload: row.payload,
+      payload: restored.payload,
       privacyClassification: row.privacy_classification,
       servicePrincipal: row.service_principal,
       correlationId: row.correlation_id,
+      ...(restored.telemetry ? { telemetry: restored.telemetry } : {}),
       occurredAt: row.occurred_at.toISOString(),
       availableAt: row.available_at.toISOString(),
-    }),
-  }));
+      }),
+    });
+  });
 }
 
 export async function markOutboxDispatched(

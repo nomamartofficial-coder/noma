@@ -64,6 +64,43 @@ test('development server configuration has safe defaults', () => {
   assert.equal(config.publicWebOrigin, 'http://127.0.0.1:3000');
   assert.equal(config.apiPublicUrl, 'http://127.0.0.1:3001');
   assert.equal(config.providerAdapterMode, 'disabled');
+  assert.equal(config.telemetry.mode, 'disabled');
+  assert.equal(config.telemetry.traceSampleRatio, 0);
+});
+
+test('telemetry configuration is typed, bounded, and environment isolated', () => {
+  const local = loadServerEnvironment('worker', {
+    NOMA_ENV: 'test',
+    NOMA_TELEMETRY_MODE: 'in-memory',
+    NOMA_TELEMETRY_EXPORT_INTERVAL_MS: '5000',
+  });
+  assert.equal(local.telemetry.mode, 'in-memory');
+  assert.equal(local.telemetry.traceSampleRatio, 1);
+  assert.equal(local.telemetry.exportIntervalMilliseconds, 5000);
+  assert.throws(
+    () => loadServerEnvironment('worker', {
+      ...productionEnvironment,
+      NOMA_TELEMETRY_MODE: 'otlp',
+      NOMA_TRACE_SAMPLE_RATIO: '0.25',
+      NOMA_OTLP_ENDPOINT: 'http://collector.internal:4318',
+      NOMA_OTLP_AUTHORIZATION: 'Bearer synthetic-but-long',
+    }),
+    (error) => error instanceof EnvironmentValidationError
+      && error.issues.some((issue) => issue.key === 'NOMA_OTLP_ENDPOINT'),
+  );
+  assert.throws(
+    () => loadServerEnvironment('worker', { NOMA_TELEMETRY_MODE: 'otlp' }),
+    (error) => error instanceof EnvironmentValidationError
+      && error.issues.some((issue) => issue.key === 'NOMA_OTLP_ENDPOINT'),
+  );
+  assert.throws(
+    () => loadServerEnvironment('worker', {
+      NOMA_TELEMETRY_MODE: 'otlp',
+      NOMA_OTLP_ENDPOINT: 'http://127.0.0.1:4318',
+    }),
+    (error) => error instanceof EnvironmentValidationError
+      && error.issues.some((issue) => issue.key === 'NOMA_TRACE_SAMPLE_RATIO'),
+  );
 });
 
 test('provider adapter selection is explicit and fails closed', () => {
@@ -197,6 +234,7 @@ test('valid production configuration is typed and serialises without secrets', (
     sessionSecret: true,
     databaseUrl: true,
     redisUrl: true,
+    telemetryAuthorization: false,
   });
 });
 

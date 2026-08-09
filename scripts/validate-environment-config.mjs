@@ -19,7 +19,7 @@ const requiredFiles = [
   'packages/config/tests/environment.test.mjs',
   'scripts/test-environment-startup.mjs',
 ];
-const secretAssignmentPattern = /^(?!\s*#)\s*(?:SESSION_SECRET|DATABASE_URL|REDIS_URL|PAYSTACK_SECRET_KEY|PRIVATE_KEY|API_KEY|ACCESS_KEY)\s*=\s*\S+/m;
+const secretAssignmentPattern = /^(?!\s*#)\s*(?:SESSION_SECRET|DATABASE_URL|REDIS_URL|NOMA_OTLP_AUTHORIZATION|PAYSTACK_SECRET_KEY|PRIVATE_KEY|API_KEY|ACCESS_KEY)\s*=\s*\S+/m;
 const publicSecretPattern = /NEXT_PUBLIC_[A-Z0-9_]*(?:SECRET|TOKEN|PASSWORD|PRIVATE_KEY|ACCESS_KEY|DATABASE|REDIS|PAYSTACK)/;
 const fail = (message) => { throw new Error(message); };
 const read = (path) => readFile(resolve(ROOT, path), 'utf8');
@@ -58,6 +58,10 @@ async function validate() {
     'DATABASE_URL',
     'REDIS_URL',
     'NOMA_RELEASE_SHA',
+    'NOMA_TELEMETRY_MODE',
+    'NOMA_TRACE_SAMPLE_RATIO',
+    'NOMA_OTLP_ENDPOINT',
+    'NOMA_OTLP_AUTHORIZATION',
   ]) {
     if (!serverSource.includes(token)) fail(`server environment contract missing ${token}`);
   }

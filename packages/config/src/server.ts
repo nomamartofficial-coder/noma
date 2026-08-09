@@ -21,6 +21,48 @@ export interface ServerSecrets {
   readonly sessionSecret?: string;
   readonly databaseUrl?: string;
   readonly redisUrl?: string;
+  readonly telemetryAuthorization?: string;
+}
+
+export type TelemetryMode = 'disabled' | 'in-memory' | 'otlp';
+
+export interface ServerTelemetryConfig {
+  readonly mode: TelemetryMode;
+  readonly endpoint?: string;
+  readonly traceSampleRatio: number;
+  readonly exportIntervalMilliseconds: number;
+  readonly exportTimeoutMilliseconds: number;
+  readonly shutdownTimeoutMilliseconds: number;
+}
+
+function readTraceSampleRatio(
+  source: EnvironmentSource,
+  mode: TelemetryMode,
+  issues: EnvironmentValidationIssue[],
+): number {
+  const raw = source.NOMA_TRACE_SAMPLE_RATIO?.trim();
+  if (mode === 'otlp' && !raw) {
+    issues.push({
+      key: 'NOMA_TRACE_SAMPLE_RATIO',
+      code: 'missing',
+      message: 'is required when NOMA_TELEMETRY_MODE=otlp so remote sampling is never implicit',
+    });
+    return 0;
+  }
+  if (!raw) return mode === 'in-memory' ? 1 : 0;
+  if (mode === 'disabled') {
+    issues.push({
+      key: 'NOMA_TRACE_SAMPLE_RATIO',
+      code: 'invalid',
+      message: 'is allowed only when telemetry capture is enabled',
+    });
+  }
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 0 || value > 1) {
+    issues.push({ key: 'NOMA_TRACE_SAMPLE_RATIO', code: 'invalid', message: 'must be a number from 0 through 1' });
+    return mode === 'in-memory' ? 1 : 0;
+  }
+  return value;
 }
 
 export interface ServerRuntimeConfig {
@@ -32,7 +74,70 @@ export interface ServerRuntimeConfig {
   readonly apiPublicUrl: string;
   readonly releaseSha?: string;
   readonly providerAdapterMode: ProviderAdapterMode;
+  readonly telemetry: ServerTelemetryConfig;
   readonly secrets: ServerSecrets;
+}
+
+function readBoundedInteger(
+  source: EnvironmentSource,
+  key: string,
+  fallback: number,
+  minimum: number,
+  maximum: number,
+  issues: EnvironmentValidationIssue[],
+): number {
+  const raw = source[key]?.trim();
+  if (!raw) return fallback;
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value < minimum || value > maximum) {
+    issues.push({ key, code: 'invalid', message: `must be an integer from ${minimum} to ${maximum}` });
+    return fallback;
+  }
+  return value;
+}
+
+function readTelemetryConfiguration(
+  source: EnvironmentSource,
+  applicationEnvironment: ApplicationEnvironment,
+  issues: EnvironmentValidationIssue[],
+): ServerTelemetryConfig {
+  const rawMode = source.NOMA_TELEMETRY_MODE?.trim() || (applicationEnvironment === 'test' ? 'in-memory' : 'disabled');
+  if (!['disabled', 'in-memory', 'otlp'].includes(rawMode)) {
+    issues.push({ key: 'NOMA_TELEMETRY_MODE', code: 'invalid', message: 'must be disabled, in-memory, or otlp' });
+  }
+  const mode = ['disabled', 'in-memory', 'otlp'].includes(rawMode) ? rawMode as TelemetryMode : 'disabled';
+  const remote = ['preview', 'staging', 'production'].includes(applicationEnvironment);
+  const endpoint = source.NOMA_OTLP_ENDPOINT?.trim();
+  if (mode === 'otlp' && !endpoint) {
+    issues.push({ key: 'NOMA_OTLP_ENDPOINT', code: 'missing', message: 'is required when NOMA_TELEMETRY_MODE=otlp' });
+  }
+  if (endpoint) {
+    try {
+      const url = new URL(endpoint);
+      if (!['http:', 'https:'].includes(url.protocol) || (remote && url.protocol !== 'https:')) {
+        issues.push({ key: 'NOMA_OTLP_ENDPOINT', code: 'insecure', message: 'must use HTTPS outside local development and test' });
+      }
+      if (url.username || url.password || url.search || url.hash) {
+        issues.push({ key: 'NOMA_OTLP_ENDPOINT', code: 'invalid', message: 'must not contain credentials, query parameters, or fragments' });
+      }
+    } catch {
+      issues.push({ key: 'NOMA_OTLP_ENDPOINT', code: 'invalid', message: 'must be a valid HTTP(S) URL' });
+    }
+  }
+  if (mode !== 'otlp' && endpoint) {
+    issues.push({ key: 'NOMA_OTLP_ENDPOINT', code: 'invalid', message: 'is allowed only when NOMA_TELEMETRY_MODE=otlp' });
+  }
+  if (mode === 'in-memory' && remote) {
+    issues.push({ key: 'NOMA_TELEMETRY_MODE', code: 'environment-mismatch', message: 'in-memory telemetry is prohibited in remote environments' });
+  }
+  return Object.freeze({
+    mode,
+    ...(endpoint && mode === 'otlp' ? { endpoint: endpoint.replace(/\/$/, '') } : {}),
+    traceSampleRatio: readTraceSampleRatio(source, mode, issues),
+    exportIntervalMilliseconds: readBoundedInteger(source, 'NOMA_TELEMETRY_EXPORT_INTERVAL_MS', 30_000, 5_000, 300_000, issues),
+    exportTimeoutMilliseconds: readBoundedInteger(source, 'NOMA_TELEMETRY_EXPORT_TIMEOUT_MS', 3_000, 500, 10_000, issues),
+    shutdownTimeoutMilliseconds: readBoundedInteger(source, 'NOMA_TELEMETRY_SHUTDOWN_TIMEOUT_MS', 5_000, 500, 15_000, issues),
+  });
 }
 
 function readProviderAdapterMode(
@@ -143,6 +248,7 @@ export function loadServerEnvironment(
   const credentialEnvironment = detectCredentialEnvironment(source, applicationEnvironment, issues);
   validateEnvironmentIsolation(source, applicationEnvironment, credentialEnvironment, issues);
   const providerAdapterMode = readProviderAdapterMode(source, applicationEnvironment, issues);
+  const telemetry = readTelemetryConfiguration(source, applicationEnvironment, issues);
 
   const remote = ['preview', 'staging', 'production'].includes(applicationEnvironment);
   const production = applicationEnvironment === 'production';
@@ -175,6 +281,13 @@ export function loadServerEnvironment(
     protocols: ['redis:', 'rediss:'],
     requireTls: production,
   });
+  const telemetryAuthorization = readSecret(source, 'NOMA_OTLP_AUTHORIZATION', issues, {
+    required: telemetry.mode === 'otlp' && ['staging', 'production'].includes(applicationEnvironment),
+    minimumLength: 16,
+  });
+  if (telemetry.mode !== 'otlp' && telemetryAuthorization) {
+    issues.push({ key: 'NOMA_OTLP_AUTHORIZATION', code: 'invalid', message: 'is allowed only when NOMA_TELEMETRY_MODE=otlp' });
+  }
 
   if (
     (runtime === 'worker' && Boolean(databaseUrl) !== Boolean(redisUrl))
@@ -225,6 +338,7 @@ export function loadServerEnvironment(
     credentialEnvironment,
     runtime,
     providerAdapterMode,
+    telemetry,
     address,
     publicWebOrigin,
     apiPublicUrl,
@@ -233,6 +347,7 @@ export function loadServerEnvironment(
       ...(sessionSecret ? { sessionSecret } : {}),
       ...(databaseUrl ? { databaseUrl } : {}),
       ...(redisUrl ? { redisUrl } : {}),
+      ...(telemetryAuthorization ? { telemetryAuthorization } : {}),
     }),
   };
 
@@ -250,6 +365,14 @@ export function describeServerEnvironment(config: ServerRuntimeConfig): Readonly
     credentialEnvironment: config.credentialEnvironment,
     runtime: config.runtime,
     providerAdapterMode: config.providerAdapterMode,
+    telemetry: Object.freeze({
+      mode: config.telemetry.mode,
+      traceSampleRatio: config.telemetry.traceSampleRatio,
+      exportIntervalMilliseconds: config.telemetry.exportIntervalMilliseconds,
+      exportTimeoutMilliseconds: config.telemetry.exportTimeoutMilliseconds,
+      shutdownTimeoutMilliseconds: config.telemetry.shutdownTimeoutMilliseconds,
+      endpointConfigured: Boolean(config.telemetry.endpoint),
+    }),
     address: config.address,
     publicWebOrigin: config.publicWebOrigin,
     apiPublicUrl: config.apiPublicUrl,
@@ -258,6 +381,7 @@ export function describeServerEnvironment(config: ServerRuntimeConfig): Readonly
       sessionSecret: Boolean(config.secrets.sessionSecret),
       databaseUrl: Boolean(config.secrets.databaseUrl),
       redisUrl: Boolean(config.secrets.redisUrl),
+      telemetryAuthorization: Boolean(config.secrets.telemetryAuthorization),
     }),
   });
 }

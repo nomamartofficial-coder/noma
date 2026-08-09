@@ -36,6 +36,14 @@ export type PrivacyClassification = (typeof PRIVACY_CLASSIFICATIONS)[number];
 export type AttentionOwner = (typeof ATTENTION_OWNERS)[number];
 export type JobFailureClassification = (typeof JOB_FAILURE_CLASSIFICATIONS)[number];
 
+export interface TelemetryPropagationContext {
+  readonly requestId?: string;
+  readonly traceContext?: {
+    readonly traceparent: string;
+    readonly tracestate?: string;
+  };
+}
+
 export interface OutboxEventEnvelopeV1<TPayload = unknown> {
   readonly schemaVersion: 1;
   readonly eventId: string;
@@ -55,6 +63,7 @@ export interface OutboxEventEnvelopeV1<TPayload = unknown> {
   readonly privacyClassification: PrivacyClassification;
   readonly servicePrincipal: string;
   readonly correlationId: string;
+  readonly telemetry?: TelemetryPropagationContext;
   readonly occurredAt: string;
   readonly availableAt: string;
 }
@@ -121,6 +130,7 @@ const SAFE_IDENTITY_PATTERN = /^[a-z][a-z0-9_-]{1,119}$/i;
 const SAFE_ATTRIBUTE_PATTERN = /^[a-z][a-z0-9_.-]{0,79}$/;
 const SECRET_PAYLOAD_KEY_PATTERN = /(?:password|secret|authorization|credential|private.?key|access.?token|refresh.?token)/i;
 const MAXIMUM_PAYLOAD_BYTES = 32_768;
+const TRACEPARENT_PATTERN = /^[0-9a-f]{2}-([0-9a-f]{32})-([0-9a-f]{16})-([0-9a-f]{2})$/i;
 
 function utf8ByteLength(value: string): number {
   let bytes = 0;
@@ -214,6 +224,36 @@ function safeName(value: unknown, subject: string, maximumLength: number): strin
   return name;
 }
 
+function telemetryContext(value: unknown): TelemetryPropagationContext {
+  const input = record(value, 'outbox event telemetry');
+  const requestId = input.requestId === undefined
+    ? undefined
+    : stringValue(input.requestId, 'outbox event telemetry requestId', 200);
+  if (requestId && !SAFE_IDENTITY_PATTERN.test(requestId)) {
+    fail('outbox event telemetry requestId', 'must be a safe opaque identity');
+  }
+  const traceInput = input.traceContext === undefined
+    ? undefined
+    : record(input.traceContext, 'outbox event telemetry traceContext');
+  let traceContext: TelemetryPropagationContext['traceContext'];
+  if (traceInput) {
+    const traceparent = stringValue(traceInput.traceparent, 'outbox event telemetry traceparent', 55).toLowerCase();
+    const match = TRACEPARENT_PATTERN.exec(traceparent);
+    if (!match || /^0+$/.test(match[1] ?? '') || /^0+$/.test(match[2] ?? '')) {
+      fail('outbox event telemetry traceparent', 'must be valid W3C Trace Context');
+    }
+    const tracestate = traceInput.tracestate === undefined
+      ? undefined
+      : stringValue(traceInput.tracestate, 'outbox event telemetry tracestate', 512);
+    if (tracestate && /[\r\n]/.test(tracestate)) {
+      fail('outbox event telemetry tracestate', 'must not contain line breaks');
+    }
+    traceContext = Object.freeze({ traceparent, ...(tracestate ? { tracestate } : {}) });
+  }
+  if (!requestId && !traceContext) fail('outbox event telemetry', 'must contain requestId or traceContext');
+  return Object.freeze({ ...(requestId ? { requestId } : {}), ...(traceContext ? { traceContext } : {}) });
+}
+
 export function parseOutboxEventEnvelope(value: unknown): OutboxEventEnvelopeV1 {
   const input = record(value, 'outbox event');
   if (input.schemaVersion !== 1) fail('outbox event schemaVersion', 'must equal 1');
@@ -262,6 +302,7 @@ export function parseOutboxEventEnvelope(value: unknown): OutboxEventEnvelopeV1 
       return identity;
     })(),
     correlationId: stringValue(input.correlationId, 'outbox event correlationId', 200),
+    ...(input.telemetry === undefined ? {} : { telemetry: telemetryContext(input.telemetry) }),
     occurredAt: isoTimestamp(input.occurredAt, 'outbox event occurredAt'),
     availableAt: isoTimestamp(input.availableAt, 'outbox event availableAt'),
   });

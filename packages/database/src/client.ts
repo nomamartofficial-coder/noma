@@ -81,6 +81,12 @@ export function createDatabaseClient(options: DatabaseClientOptions): DatabaseCl
       100,
       120_000,
     ),
+    query_timeout: requireIntegerInRange(
+      'statementTimeoutMilliseconds',
+      options.statementTimeoutMilliseconds ?? DEFAULT_STATEMENT_TIMEOUT_MILLISECONDS,
+      100,
+      120_000,
+    ),
   });
 
   return new PrismaClient({ adapter });

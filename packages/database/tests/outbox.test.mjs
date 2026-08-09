@@ -14,12 +14,17 @@ test('outbox envelope creation uses UUID identities and bigint-safe versions', (
     privacyClassification: 'audit',
     servicePrincipal: 'noma_api',
     correlationId: 'correlation-1',
+    telemetry: {
+      requestId: 'request_123',
+      traceContext: { traceparent: '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01' },
+    },
     occurredAt: new Date('2026-08-01T00:00:00.000Z'),
   });
 
   assert.match(event.eventId, /^[0-9a-f-]{36}$/i);
   assert.equal(event.aggregate.version, '9007199254740993');
   assert.equal(event.availableAt, event.occurredAt);
+  assert.equal(event.telemetry.requestId, 'request_123');
 });
 
 test('outbox envelope rejects unsafe service identities and negative versions', () => {

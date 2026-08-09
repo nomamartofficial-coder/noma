@@ -1,10 +1,12 @@
-import { Inject, Injectable, type OnApplicationBootstrap, type OnApplicationShutdown } from '@nestjs/common';
+import { Inject, Injectable, Optional, type OnApplicationBootstrap, type OnApplicationShutdown } from '@nestjs/common';
 import type { ServerRuntimeConfig } from '@noma/config/server';
 import { createDatabaseClient, disconnectDatabaseClient, type DatabaseClient } from '@noma/database';
 import type { DependencyHealth } from '@noma/contracts';
 import { createRedisDependencyProbe, type RedisDependencyProbe } from '@noma/integrations';
+import type { ServerObservability } from '@noma/observability/server';
 
 export const API_RUNTIME_CONFIG = Symbol('API_RUNTIME_CONFIG');
+export const API_OBSERVABILITY = Symbol('API_OBSERVABILITY');
 
 @Injectable()
 export class RuntimeDependenciesService implements OnApplicationBootstrap, OnApplicationShutdown {
@@ -15,7 +17,10 @@ export class RuntimeDependenciesService implements OnApplicationBootstrap, OnApp
   #databaseHealth: DependencyHealth = 'not-configured';
   #queueHealth: DependencyHealth = 'not-configured';
 
-  constructor(@Inject(API_RUNTIME_CONFIG) readonly config: ServerRuntimeConfig) {}
+  constructor(
+    @Inject(API_RUNTIME_CONFIG) readonly config: ServerRuntimeConfig,
+    @Optional() @Inject(API_OBSERVABILITY) private readonly observability?: ServerObservability,
+  ) {}
 
   async onApplicationBootstrap(): Promise<void> {
     const databaseUrl = this.config.secrets.databaseUrl;
@@ -27,6 +32,8 @@ export class RuntimeDependenciesService implements OnApplicationBootstrap, OnApp
       databaseUrl,
       applicationName: `noma_api_${this.config.applicationEnvironment}`,
       maxConnections: 10,
+      connectionTimeoutMilliseconds: 2_000,
+      statementTimeoutMilliseconds: 2_000,
     });
     this.#redis = createRedisDependencyProbe({
       redisUrl,
@@ -80,12 +87,22 @@ export class RuntimeDependenciesService implements OnApplicationBootstrap, OnApp
 
   async #probe(): Promise<void> {
     if (!this.#database || !this.#redis) return;
+    const started = performance.now();
     try {
-      await this.#database.$queryRaw`SELECT 1`;
+      const probeDatabase = () => this.#database!.$queryRaw`SELECT 1`;
+      if (this.observability) {
+        await this.observability.withSpan('noma.dependency.probe', { 'noma.dependency': 'database' }, probeDatabase);
+      } else {
+        await probeDatabase();
+      }
       this.#databaseHealth = 'ready';
+      this.observability?.metrics.record({ name: 'noma.dependency.probe.total', value: 1, attributes: { dependency: 'database', outcome: 'succeeded' } });
     } catch {
       this.#databaseHealth = 'unavailable';
+      this.observability?.metrics.record({ name: 'noma.dependency.probe.total', value: 1, attributes: { dependency: 'database', outcome: 'failed' } });
     }
     this.#queueHealth = (await this.#redis.ping()) ? 'ready' : 'unavailable';
+    this.observability?.metrics.record({ name: 'noma.dependency.probe.total', value: 1, attributes: { dependency: 'queue', outcome: this.#queueHealth === 'ready' ? 'succeeded' : 'failed' } });
+    this.observability?.metrics.record({ name: 'noma.dependency.probe.duration_ms', value: performance.now() - started, attributes: { dependency: 'all', outcome: this.snapshot().ready ? 'succeeded' : 'failed' } });
   }
 }
