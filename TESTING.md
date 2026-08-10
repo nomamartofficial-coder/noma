@@ -20,6 +20,8 @@ The existing `pnpm db:verify` and `pnpm queue:verify` Compose suites remain focu
 
 DEV-010 adds `pnpm observability:integration`, a bounded sequential Testcontainers rehearsal that applies committed migrations, proves connected API/outbox/BullMQ/Worker trace context and PostgreSQL completion evidence, then pauses authenticated Redis and observes readiness fail and recover while liveness remains healthy. It uses `pollUntil`, not arbitrary wall-clock sleeps.
 
+UI-001 adds a Docker-free `@noma/ui` unit suite. It recomputes WCAG relative luminance for required text, status, action, and focus pairs; proves immutable aliases and isolated brand remapping; and verifies deterministic TypeScript/CSS parity, reduced motion, forced colours, and the light-only pilot boundary. `pnpm ui:verify` runs the generated-output check, static policy, 20 negative fixtures, and token tests without network or infrastructure.
+
 ## Deterministic utilities
 
 `@noma/testing` exports manual clocks, seeded randomness and identifiers, immutable fixture contexts, schema-neutral synthetic personas, technical outbox/job fixtures, scripted outcomes, barriers, deadline polling, and LIFO cleanup.
@@ -52,6 +54,7 @@ Each integration harness owns a disposable database and Redis instance. Cleanup 
 ## Adding tests
 
 - Put ordinary package/application tests under their owning `tests/` directory.
+- Keep token contrast and policy tests under `packages/ui/tests`; calculate ratios from the canonical registry rather than asserting copied ratio strings.
 - Suffix DOM tests with `.component.test.tsx` under `tests/component/` until an owning UI package adds its own component project.
 - Suffix real-infrastructure harness tests with `.integration.test.ts`.
 - Query UI by accessible role/name and exercise interaction with user-event.
