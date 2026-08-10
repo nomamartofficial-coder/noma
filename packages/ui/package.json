@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Browser-safe design tokens and UI public contracts.",
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/*.css"
+  ],
   "files": [
     "dist"
   ],
@@ -12,12 +14,19 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    }
+    },
+    "./tokens": {
+      "types": "./dist/tokens.d.ts",
+      "default": "./dist/tokens.js"
+    },
+    "./tokens.css": "./dist/tokens.css",
+    "./foundations.css": "./dist/foundations.css"
   },
   "scripts": {
     "lint": "node ../../scripts/lint-package.mjs .",
     "typecheck": "node ../../scripts/run-tsc.mjs --noEmit",
-    "build": "node ../../scripts/run-tsc.mjs",
+    "build": "node ../../scripts/run-tsc.mjs && node ../../scripts/generate-ui-token-css.mjs",
+    "test": "pnpm --dir ../.. exec vitest run --config vitest.config.ts --project unit packages/ui/tests",
     "clean": "node ../../scripts/clean-package.mjs ."
   }
 }
