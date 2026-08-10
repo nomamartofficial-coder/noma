@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createRef, useState } from 'react';
 import { describe, expect, test, vi } from 'vitest';
@@ -153,7 +153,10 @@ describe('composite keyboard primitives', () => {
     await user.keyboard('{Escape}');
     expect(menuTrigger).toHaveFocus();
     await user.click(menuTrigger);
-    await user.keyboard('{ArrowDown}{Enter}');
+    const copyItem = await screen.findByRole('menuitem', { name: 'Copy' });
+    await user.keyboard('{ArrowDown}{Home}');
+    await waitFor(() => expect(copyItem).toHaveFocus());
+    await user.keyboard('{Enter}');
     expect(menuAction).toHaveBeenCalledOnce();
     await expectNoAxeViolations(container);
   });
