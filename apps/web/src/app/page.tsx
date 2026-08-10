@@ -1,3 +1,5 @@
+import { Link } from '@noma/ui';
+
 export default function HomePage() {
   return (
     <main className="shell">
@@ -8,8 +10,8 @@ export default function HomePage() {
         intentionally unimplemented.
       </p>
       <dl>
-        <div><dt>Liveness</dt><dd><code>/health/live</code></dd></div>
-        <div><dt>Readiness</dt><dd><code>/health/ready</code></dd></div>
+        <div><dt>Liveness</dt><dd><Link href="/health/live"><code>/health/live</code></Link></dd></div>
+        <div><dt>Readiness</dt><dd><Link href="/health/ready"><code>/health/ready</code></Link></dd></div>
       </dl>
     </main>
   );

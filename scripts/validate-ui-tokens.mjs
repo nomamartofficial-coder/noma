@@ -42,10 +42,10 @@ const TEXT_CONTRAST_PAIRS = Object.freeze([
 ]);
 const STATUS_PARTS = Object.freeze(['foreground', 'accent', 'background', 'border']);
 const SOURCE_EXTENSIONS = new Set(['.css', '.js', '.jsx', '.mjs', '.ts', '.tsx']);
-const PROHIBITED_COMPONENTS = Object.freeze([
-  'Button', 'Input', 'Select', 'Checkbox', 'Radio', 'Dialog', 'Drawer', 'Tabs', 'Menu',
-  'Table', 'Pagination', 'Toast', 'FormField', 'Badge', 'StatusChip', 'Card', 'ProductCard',
-  'OfferCard',
+const DEFERRED_COMPONENTS = Object.freeze([
+  'Badge', 'StatusChip', 'Card', 'ProductCard', 'OfferCard', 'SellerCard', 'PromotionCard',
+  'CategoryTile', 'CartItem', 'Combobox', 'Autocomplete', 'DatePicker', 'OtpField', 'Slider',
+  'Switch',
 ]);
 
 function failure(code, message) {
@@ -166,7 +166,7 @@ export function validateUiTokens(fixture) {
       if (/from\s+['"](?:node:|@noma\/(?:database|platform|integrations|security|observability\/server))/.test(source.contents)) {
         failures.push(failure('BROWSER_BOUNDARY', `${source.path} imports a server-only module`));
       }
-      const componentName = PROHIBITED_COMPONENTS.find((name) =>
+      const componentName = DEFERRED_COMPONENTS.find((name) =>
         new RegExp(`(?:export\\s+(?:class|function|const|type|interface)\\s+${name}\\b|/${name.toLowerCase()}\\.)`, 'i')
           .test(`${source.contents}\n/${source.path}`),
       );
@@ -308,7 +308,7 @@ async function runSelfTests(baseline) {
     ['missing forced colours', (f) => { f.foundationsCss = f.foundationsCss.replace('@media (forced-colors: active)', '@media (width > 0px)'); }, 'FORCED_COLORS'],
     ['brand used as success truth', (f) => { f.registry.aliases['color.status.success.foreground'] = 'color.brand.700'; }, 'BRAND_SUCCESS'],
     ['Tailwind dependency', (f) => { f.packageJson.devDependencies.tailwindcss = '4.0.0'; }, 'TAILWIND_DEPENDENCY'],
-    ['component work enters UI-001', (f) => { f.sourceFiles.push({ path: 'packages/ui/src/button.ts', contents: 'export function Button() {}' }); }, 'COMPONENT_SCOPE'],
+    ['deferred component enters UI-002', (f) => { f.sourceFiles.push({ path: 'packages/ui/src/product-card.ts', contents: 'export function ProductCard() {}' }); }, 'COMPONENT_SCOPE'],
     ['arbitrary Web colour', (f) => { f.sourceFiles.push({ path: 'apps/web/src/app/feature.css', contents: '.pending { color: #123456; }' }); }, 'ARBITRARY_STATUS_COLOR'],
   ];
   for (const [name, mutate, code] of cases) expectRejected(name, mutate, code, baseline);
