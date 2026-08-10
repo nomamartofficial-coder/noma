@@ -22,6 +22,8 @@ DEV-010 adds `pnpm observability:integration`, a bounded sequential Testcontaine
 
 UI-001 adds a Docker-free `@noma/ui` unit suite. It recomputes WCAG relative luminance for required text, status, action, and focus pairs; proves immutable aliases and isolated brand remapping; and verifies deterministic TypeScript/CSS parity, reduced motion, forced colours, and the light-only pilot boundary. `pnpm ui:verify` runs the generated-output check, static policy, 20 negative fixtures, and token tests without network or infrastructure.
 
+UI-002 adds Docker-free primitive component coverage under the shared jsdom project. It exercises native semantics, labels/descriptions/errors, disabled/read-only/pending states, error-summary focus, select/choice/tab/menu keyboards, modal Escape/focus restoration, table/pagination semantics, and toast focus/announcement controls. The axe helper runs only rules supported by JSDOM and deliberately disables colour contrast; layout, paint, target geometry, focus visibility, zoom, forced colours, reduced motion, assistive-technology output, and visual quality remain real-browser/human review obligations. `pnpm ui:components:verify` runs component policy, negative fixtures, and the focused component suite.
+
 ## Deterministic utilities
 
 `@noma/testing` exports manual clocks, seeded randomness and identifiers, immutable fixture contexts, schema-neutral synthetic personas, technical outbox/job fixtures, scripted outcomes, barriers, deadline polling, and LIFO cleanup.

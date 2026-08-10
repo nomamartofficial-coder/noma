@@ -17,8 +17,8 @@ DEV-007,EP01,Create provider ports and local simulators,P0,P0-FINANCIAL,COMPLETE
 DEV-008,EP01,Create GitHub Actions quality pipeline,P0,P0-RECOVERY,COMPLETE,Engineering/QA/Security
 DEV-009,EP01,Create preview/staging deployment skeleton,P0,P1-OPERATIONS,COMPLETE,DevOps/Engineering
 DEV-010,EP01,"Bootstrap OpenTelemetry, structured logging, correlation, and health",P0,P0-RECOVERY,COMPLETE,Engineering/DevOps
-UI-001,EP02,Implement core and semantic design tokens,P0,P2-PRESENTATION,IN_REVIEW,Design/Web
-UI-002,EP02,Implement accessible primitive component set,P0,P1-OPERATIONS,NOT_STARTED,Web/Design/QA
+UI-001,EP02,Implement core and semantic design tokens,P0,P2-PRESENTATION,COMPLETE,Design/Web
+UI-002,EP02,Implement accessible primitive component set,P0,P1-OPERATIONS,IN_REVIEW,Web/Design/QA
 UI-003,EP02,"Implement commerce status, money, timeline, evidence, and action patterns",P0,P0-COMMERCE,NOT_STARTED,Web/Design
 UI-004,EP02,Implement Marketplace and Buyer Account shells,P0,P0-COMMERCE,NOT_STARTED,Web
 UI-005,EP02,"Implement Seller, Rider, Operations, and Admin shells",P0,P1-OPERATIONS,NOT_STARTED,Web/QA

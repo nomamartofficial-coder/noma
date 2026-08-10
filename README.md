@@ -314,11 +314,15 @@ pnpm test:accessibility
 pnpm test:security
 pnpm test:performance
 
-# Design tokens
+# Design tokens and accessible primitives
 pnpm ui:validate
 pnpm ui:self-test
 pnpm ui:test
 pnpm ui:verify
+pnpm ui:components:validate
+pnpm ui:components:self-test
+pnpm ui:components:test
+pnpm ui:components:verify
 
 # Production build
 pnpm build
@@ -520,7 +524,7 @@ Active product experiences target WCAG 2.2 Level AA and must support:
 - honest loading, empty, error, stale, denied, paused, uncertain-provider, and offline states; and
 - clear consequences and recovery for destructive or high-impact actions.
 
-Read [`docs/05-design-system.md`](docs/05-design-system.md) for the binding design contract and [`DESIGN_TOKENS.md`](DESIGN_TOKENS.md) for the implemented UI-001 registry, package exports, CSS consumption, contrast evidence, and policy commands.
+Read [`docs/05-design-system.md`](docs/05-design-system.md) for the binding design contract, [`DESIGN_TOKENS.md`](DESIGN_TOKENS.md) for the UI-001 registry, and [`COMPONENTS.md`](COMPONENTS.md) for the UI-002 primitive API, keyboard/focus contract, accessibility limits, and policy commands.
 
 ---
 
