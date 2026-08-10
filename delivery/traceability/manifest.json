@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0.0",
-  "register_version": "2026-08-10.3",
+  "register_version": "2026-08-10.4",
   "authority": "docs/12-delivery-backlog.md FND-007",
-  "generated_at": "2026-08-10T09:38:20+01:00",
+  "generated_at": "2026-08-10T10:25:00+01:00",
   "counts": {
     "tasks": 151,
     "p0_tasks": 140,
