@@ -2782,6 +2782,8 @@ Tests
 
 Feature code should consume components through approved public exports rather than deep internal imports.
 
+UI-001 implements the first three layers through the browser-safe `@noma/ui` package. [`DESIGN_TOKENS.md`](../DESIGN_TOKENS.md) documents its canonical registry, typed and CSS exports, accessibility evidence, remapping contract, and deterministic policy commands without changing this document's authority.
+
 ### 73.1 Component API principles
 
 - Use semantic properties rather than raw style overrides.

@@ -21,7 +21,7 @@
   "scripts": {
     "lint": "node ../../scripts/lint-package.mjs .",
     "typecheck": "tsc --noEmit",
-    "build": "next build",
+    "build": "next build && node ../../scripts/verify-ui-token-build.mjs",
     "clean": "node ../../scripts/clean-package.mjs . && node -e \"import('node:fs/promises').then(fs=>fs.rm('.next',{recursive:true,force:true}))\"",
     "dev": "next dev",
     "start": "next start"
