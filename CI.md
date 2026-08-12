@@ -72,9 +72,12 @@ pnpm ci:verify        # Linux-capable canonical aggregate; excludes the Windows-
 pnpm security:dependencies:verify
 pnpm observability:verify
 pnpm ui:verify
+pnpm ui:commerce:verify
 ```
 
 `ci:quality`, `ci:integration`, `ci:security`, and `ci:windows` execute the same checked-in command catalog used by Actions. The Security repository segment runs the deterministic dependency-floor validator and its negative self-test before secret and redaction controls. Live `pnpm audit --audit-level moderate` remains review evidence rather than a registry-dependent stable gate. The Quality policy segment runs DEV-010 observability validation and UI-001 token validation with their negative tests; unit coverage includes the token/contrast suite. The Integration harness segment runs its real PostgreSQL/Redis trace and readiness-recovery rehearsal. Windows validates the same static observability and token policy plus normal runtime startup/shutdown. These remain within the five stable gate names. Results are written under ignored `.artifacts/ci/`.
+
+The Quality policy and Windows segments include UI-003 commerce truth, exact-money, evidence/privacy, client-boundary, generated-CSS, and negative-policy validation through the existing `ui:*` aggregate. Unit/component coverage includes commerce precision, truth, axe, and keyboard/focus tests. No sixth stable gate is introduced.
 
 CI validates deployment configuration but has no provider credentials, deploy permissions, production environment, or deployment hook. Remote staging smoke remains a separately authorized post-deploy action and its redacted evidence is created under `.artifacts/deployment/`.
 
