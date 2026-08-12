@@ -22,6 +22,11 @@ const requiredFragments = [
   '--noma-motion-duration-page:',
   'prefers-reduced-motion:reduce',
   'forced-colors:active',
+  '--noma-component-control-target:',
+  '--noma-component-button-primary-background:',
+  '.noma-button',
+  '.noma-field',
+  '.noma-dialog-popup',
 ];
 const missing = requiredFragments.filter((fragment) => !productionCss.includes(fragment));
 if (missing.length > 0) {
@@ -36,4 +41,4 @@ for (const legacy of ['#f5f6f8', '#15171a', '#dfe2e7', 'Arial,Helvetica,sans-ser
   }
 }
 
-console.log(`PASS: production Web CSS contains Noma tokens and foundations across ${cssFiles.length} stylesheet(s)`);
+console.log(`PASS: production Web CSS contains Noma tokens, foundations, and component styles across ${cssFiles.length} stylesheet(s)`);

@@ -6,13 +6,13 @@
 
 ## Purpose and layers
 
-UI-001 establishes only the first three Noma design-system layers:
+UI-001 establishes the first three Noma design-system layers:
 
 ```text
 core values → core tokens → semantic tokens
 ```
 
-Component tokens, components, commerce patterns, page compositions, and surface shells remain UI-002 through UI-006 work. Feature code consumes semantic meaning whenever one exists; it does not choose raw neutral, brand, or functional colours for a business state.
+UI-002 now adds component tokens and accessible primitives on top of that immutable foundation. Commerce patterns, page compositions, and surface shells remain UI-003 through UI-006 work. Feature code consumes semantic meaning whenever one exists; it does not choose raw neutral, brand, or functional colours for a business state. See [`COMPONENTS.md`](COMPONENTS.md).
 
 The canonical source is [`packages/ui/src/tokens.ts`](packages/ui/src/tokens.ts). It records each core value once and each semantic token as an inspectable alias identity. The package build deterministically derives typed JavaScript/declarations and two static stylesheets. There is no browser token compiler and no separately maintained CSS value registry.
 
@@ -41,7 +41,7 @@ or, once at the application root:
 import '@noma/ui/foundations.css';
 ```
 
-`foundations.css` includes the variables plus box sizing, body reset, explicit light colour scheme, semantic page/text/font defaults, reduced-motion duration overrides, and narrow forced-colour focus support. It contains no component or page-layout system.
+`foundations.css` includes the variables plus box sizing, body reset, explicit light colour scheme, semantic page/text/font defaults, reduced-motion duration overrides, and narrow forced-colour focus support. UI-002 separately generates `components.css`; applications import it after foundations.
 
 All public custom properties are prefixed:
 
@@ -109,13 +109,13 @@ Noma uses the locked 4px spacing foundation. Density modes change composition, n
 | `compact` | Seller Centre, Operations, Admin | 44px | 16px |
 | `action` | Rider PWA, high-risk confirmation | 64px | 24px |
 
-Minimum target intent is 44px by default and 48px for action contexts. UI-002 owns the actual component hit areas.
+Minimum target intent is 44px by default and 48px for action contexts. UI-002 applies these values through component aliases and labelled hit regions.
 
 Radii remain restrained (`0`, `4px`, `8px`, `12px`, `999px`). Thin borders are the ordinary separation mechanism. Shadows represent real sticky, overlay, or modal elevation and are not a default panel decoration.
 
 ## Focus, forced colours, and motion
 
-Focus uses the neutral information blue, a 2px solid ring, and a 2px offset. The selected colour exceeds 3:1 against page, primary, secondary, and selected light surfaces. UI-002 owns component-specific `:focus-visible` anatomy and may strengthen ring geometry without removing visible focus.
+Focus uses the neutral information blue, a 2px solid ring, and a 2px offset. The selected colour exceeds 3:1 against page, primary, secondary, and selected light surfaces. UI-002 applies this anatomy to every focusable primitive.
 
 The foundation cooperates with operating-system forced colours. It changes only focus variables to the `Highlight` system colour and never applies global `forced-color-adjust: none`.
 
@@ -156,7 +156,7 @@ pnpm ui:test
 pnpm ui:verify
 ```
 
-The build writes no timestamps. A repeated generation is byte-identical. Validation rejects unknown/missing aliases, incomplete status families, contrast or focus regressions, direct status colours, invalid density/target/breakpoint values, unprefixed or drifting CSS, dark-mode exposure, missing accessibility media rules, brand/success conflation, Tailwind, and UI-002+ component work.
+The build writes no timestamps. A repeated generation is byte-identical. Validation rejects unknown/missing aliases, incomplete status families, contrast or focus regressions, direct status colours, invalid density/target/breakpoint values, unprefixed or drifting CSS, dark-mode exposure, missing accessibility media rules, brand/success conflation, Tailwind, deferred component work, and UI-002 dependency/client/public-type boundary regressions.
 
 Every Web production build also inspects the emitted `.next/static` CSS. It fails if the Noma token/foundation rules were tree-shaken or unresolved, or if the previous raw scaffold colours/font stack return as an independent authority.
 
@@ -170,7 +170,7 @@ Policy scanning is restricted to executable and stylesheet source. Governing doc
 - Do not use muted text for required price, deadline, material state, safety, or critical instructions.
 - Do not use disabled styling for an available action.
 - Do not add partial dark mode, remote fonts, runtime token engines, Tailwind, or one-off component styles through UI-001.
-- Do not begin component or commerce-state mapping before their owning tasks.
+- Do not begin commerce-state mapping or surface composition before their owning tasks.
 
 ## Rollback
 

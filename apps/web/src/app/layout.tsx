@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import '@noma/ui/foundations.css';
+import '@noma/ui/components.css';
 import './globals.css';
 
 export const metadata: Metadata = {

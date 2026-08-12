@@ -8,6 +8,7 @@ const outputModule = await import(pathToFileURL(resolve(outputDirectory, 'token-
 const outputs = new Map([
   [resolve(outputDirectory, 'tokens.css'), outputModule.renderTokenCss()],
   [resolve(outputDirectory, 'foundations.css'), outputModule.renderFoundationCss()],
+  [resolve(outputDirectory, 'components.css'), outputModule.renderComponentCss()],
 ]);
 
 if (process.argv.includes('--check')) {
