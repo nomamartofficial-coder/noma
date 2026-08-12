@@ -43,7 +43,7 @@ const TEXT_CONTRAST_PAIRS = Object.freeze([
 const STATUS_PARTS = Object.freeze(['foreground', 'accent', 'background', 'border']);
 const SOURCE_EXTENSIONS = new Set(['.css', '.js', '.jsx', '.mjs', '.ts', '.tsx']);
 const DEFERRED_COMPONENTS = Object.freeze([
-  'Badge', 'StatusChip', 'Card', 'ProductCard', 'OfferCard', 'SellerCard', 'PromotionCard',
+  'Badge', 'Card', 'ProductCard', 'OfferCard', 'SellerCard', 'PromotionCard',
   'CategoryTile', 'CartItem', 'Combobox', 'Autocomplete', 'DatePicker', 'OtpField', 'Slider',
   'Switch',
 ]);

@@ -9,6 +9,7 @@ const outputs = new Map([
   [resolve(outputDirectory, 'tokens.css'), outputModule.renderTokenCss()],
   [resolve(outputDirectory, 'foundations.css'), outputModule.renderFoundationCss()],
   [resolve(outputDirectory, 'components.css'), outputModule.renderComponentCss()],
+  [resolve(outputDirectory, 'commerce.css'), outputModule.renderCommerceCss()],
 ]);
 
 if (process.argv.includes('--check')) {
@@ -30,5 +31,5 @@ if (process.argv.includes('--check')) {
   console.log('PASS: @noma/ui generated stylesheets match the canonical registry');
 } else {
   for (const [path, contents] of outputs) await writeFile(path, contents, 'utf8');
-  console.log('Generated @noma/ui token and foundation stylesheets');
+  console.log('Generated @noma/ui token, foundation, component, and commerce stylesheets');
 }

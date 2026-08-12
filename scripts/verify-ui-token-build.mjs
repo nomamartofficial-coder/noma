@@ -27,6 +27,13 @@ const requiredFragments = [
   '.noma-button',
   '.noma-field',
   '.noma-dialog-popup',
+  '--noma-commerce-status-info-background:',
+  '--noma-commerce-money-font-variant-numeric:',
+  '.noma-commerce-status',
+  '.noma-money-breakdown',
+  '.noma-timeline',
+  '.noma-evidence-card',
+  '.noma-high-risk-summary',
 ];
 const missing = requiredFragments.filter((fragment) => !productionCss.includes(fragment));
 if (missing.length > 0) {

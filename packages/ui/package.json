@@ -21,13 +21,14 @@
     },
     "./tokens.css": "./dist/tokens.css",
     "./foundations.css": "./dist/foundations.css",
-    "./components.css": "./dist/components.css"
+    "./components.css": "./dist/components.css",
+    "./commerce.css": "./dist/commerce.css"
   },
   "scripts": {
     "lint": "node ../../scripts/lint-package.mjs .",
     "typecheck": "node ../../scripts/run-tsc.mjs --noEmit",
     "build": "node ../../scripts/run-tsc.mjs && node ../../scripts/generate-ui-token-css.mjs",
-    "test": "pnpm --dir ../.. exec vitest run --config vitest.config.ts --project unit packages/ui/tests && pnpm --dir ../.. exec vitest run --config vitest.config.ts --project component tests/component/ui-primitives.component.test.tsx",
+    "test": "pnpm --dir ../.. exec vitest run --config vitest.config.ts --project unit packages/ui/tests && pnpm --dir ../.. exec vitest run --config vitest.config.ts --project component tests/component/ui-primitives.component.test.tsx tests/component/ui-commerce.component.test.tsx",
     "clean": "node ../../scripts/clean-package.mjs ."
   },
   "dependencies": {
