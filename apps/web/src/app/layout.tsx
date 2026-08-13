@@ -6,8 +6,11 @@ import '@noma/ui/commerce.css';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Noma',
-  description: 'Controlled Covenant University marketplace pilot runtime scaffold.',
+  title: {
+    default: 'Noma',
+    template: '%s | Noma',
+  },
+  description: 'Noma marketplace for the controlled Covenant University pilot.',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

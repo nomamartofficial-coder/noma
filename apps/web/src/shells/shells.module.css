@@ -1,0 +1,437 @@
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skipLink {
+  position: fixed;
+  z-index: 20;
+  top: var(--noma-space-2);
+  left: var(--noma-space-2);
+  padding: var(--noma-space-3) var(--noma-space-4);
+  color: var(--noma-color-action-primary-foreground);
+  background: var(--noma-color-action-primary-background);
+  border-radius: var(--noma-radius-md);
+  transform: translateY(calc(-100% - var(--noma-space-4)));
+}
+
+.skipLink:focus {
+  transform: translateY(0);
+}
+
+.consumerShell {
+  min-height: 100vh;
+  padding-bottom: calc(var(--noma-space-20) + env(safe-area-inset-bottom, 0px));
+}
+
+.consumerHeader {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--noma-space-3);
+  padding: var(--noma-space-3) var(--noma-space-4);
+  background: var(--noma-color-surface-primary);
+  border-bottom: var(--noma-border-thin) solid var(--noma-color-border-default);
+}
+
+.headerIdentity {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.brand {
+  color: var(--noma-color-text-primary);
+  font-size: var(--noma-type-subsection-title-font-size);
+  font-weight: var(--noma-font-weight-bold);
+  line-height: var(--noma-type-subsection-title-line-height);
+  text-decoration: none;
+}
+
+.institution {
+  color: var(--noma-color-text-secondary);
+  font-size: var(--noma-type-compact-label-font-size);
+  line-height: var(--noma-type-compact-label-line-height);
+  white-space: nowrap;
+}
+
+.headerSearch {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+.searchForm {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+}
+
+.searchInput {
+  min-width: 0;
+  min-height: var(--noma-size-target-default);
+  flex: 1;
+  padding: var(--noma-space-2) var(--noma-space-3);
+  color: var(--noma-color-text-primary);
+  background: var(--noma-color-surface-primary);
+  border: var(--noma-border-thin) solid var(--noma-color-border-strong);
+  border-right: 0;
+  border-radius: var(--noma-radius-md) 0 0 var(--noma-radius-md);
+  font-size: var(--noma-type-body-default-font-size);
+}
+
+.searchButton {
+  min-height: var(--noma-size-target-default);
+  padding: var(--noma-space-2) var(--noma-space-4);
+  color: var(--noma-color-action-primary-foreground);
+  background: var(--noma-color-action-primary-background);
+  border: var(--noma-border-thin) solid var(--noma-color-action-primary-background);
+  border-radius: 0 var(--noma-radius-md) var(--noma-radius-md) 0;
+  font-weight: var(--noma-font-weight-semibold);
+  cursor: pointer;
+}
+
+.searchInput:focus-visible,
+.searchButton:focus-visible,
+.headerLink:focus-visible,
+.mobileNavigationLink:focus-visible,
+.accountNavigationLink:focus-visible,
+.skipLink:focus-visible,
+.returnLink:focus-visible,
+.brand:focus-visible {
+  z-index: 1;
+  outline: var(--noma-focus-ring-width) var(--noma-focus-ring-style) var(--noma-focus-ring-color);
+  outline-offset: var(--noma-focus-ring-offset);
+}
+
+.headerNavigation {
+  display: none;
+  align-items: center;
+  gap: var(--noma-space-2);
+}
+
+.headerLink {
+  display: inline-flex;
+  min-height: var(--noma-size-target-default);
+  align-items: center;
+  padding: 0 var(--noma-space-3);
+  color: var(--noma-color-text-primary);
+  font-weight: var(--noma-font-weight-semibold);
+  text-decoration: none;
+}
+
+.surfaceSwitcher,
+.compactAccountMenu {
+  min-height: var(--noma-size-target-default);
+}
+
+.mainContent {
+  width: min(100%, 1280px);
+  min-height: 55vh;
+  margin: 0 auto;
+  padding: var(--noma-space-8) var(--noma-space-4);
+  scroll-margin-top: var(--noma-space-4);
+}
+
+.placeholderPage {
+  max-width: 720px;
+}
+
+.eyebrow,
+.accountContextLabel,
+.compactAccountLabel {
+  margin: 0 0 var(--noma-space-2);
+  color: var(--noma-color-text-secondary);
+  font-size: var(--noma-type-compact-label-font-size);
+  font-weight: var(--noma-type-compact-label-font-weight);
+  letter-spacing: 0.08em;
+  line-height: var(--noma-type-compact-label-line-height);
+  text-transform: uppercase;
+}
+
+.pageTitle,
+.accountContextTitle {
+  margin: 0;
+  font-size: var(--noma-type-page-title-font-size);
+  font-weight: var(--noma-type-page-title-font-weight);
+  line-height: var(--noma-type-page-title-line-height);
+}
+
+.pageDescription {
+  max-width: 64ch;
+  margin: var(--noma-space-4) 0 0;
+  color: var(--noma-color-text-secondary);
+}
+
+.pageSearch {
+  max-width: 720px;
+  margin-top: var(--noma-space-6);
+}
+
+.contextStatus {
+  margin-top: var(--noma-space-5);
+}
+
+.returnLink {
+  display: inline-flex;
+  min-height: var(--noma-size-target-default);
+  align-items: center;
+  margin-top: var(--noma-space-6);
+}
+
+.publicFooter {
+  display: grid;
+  width: min(100%, 1280px);
+  gap: var(--noma-space-8);
+  margin: 0 auto;
+  padding: var(--noma-space-8) var(--noma-space-4);
+  color: var(--noma-color-text-secondary);
+  border-top: var(--noma-border-thin) solid var(--noma-color-border-default);
+}
+
+.footerBrand,
+.footerHeading {
+  margin: 0;
+  color: var(--noma-color-text-primary);
+  font-weight: var(--noma-font-weight-bold);
+}
+
+.footerCopy {
+  max-width: 32ch;
+  margin: var(--noma-space-2) 0 0;
+}
+
+.footerNavigation {
+  display: grid;
+  gap: var(--noma-space-6);
+}
+
+.footerNavigation div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--noma-space-2);
+}
+
+.mobileNavigation {
+  position: fixed;
+  z-index: 10;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--noma-color-surface-primary);
+  border-top: var(--noma-border-thin) solid var(--noma-color-border-default);
+  box-shadow: var(--noma-elevation-sticky);
+}
+
+.mobileNavigationList,
+.accountNavigationList {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.mobileNavigationList {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.mobileNavigationLink {
+  display: flex;
+  min-width: 0;
+  min-height: var(--noma-size-target-action);
+  align-items: center;
+  justify-content: center;
+  padding: var(--noma-space-2) var(--noma-space-1);
+  color: var(--noma-color-text-secondary);
+  font-size: var(--noma-type-compact-label-font-size);
+  font-weight: var(--noma-font-weight-semibold);
+  line-height: var(--noma-type-compact-label-line-height);
+  text-align: center;
+  text-decoration: none;
+}
+
+.mobileNavigationLink[aria-current='page'] {
+  color: var(--noma-color-text-primary);
+  background: var(--noma-color-surface-selected);
+}
+
+.accountHeader {
+  width: min(100%, 1280px);
+  margin: 0 auto;
+  padding: var(--noma-space-6) var(--noma-space-4) var(--noma-space-4);
+}
+
+.accountContextTitle {
+  font-size: var(--noma-type-section-title-font-size);
+  line-height: var(--noma-type-section-title-line-height);
+}
+
+.accountGrid {
+  display: grid;
+  width: min(100%, 1280px);
+  min-height: 55vh;
+  margin: 0 auto;
+}
+
+.accountRail {
+  display: none;
+}
+
+.compactAccountNavigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--noma-space-4);
+  margin-top: var(--noma-space-4);
+}
+
+.compactAccountLabel {
+  margin: 0;
+}
+
+.accountNavigationList {
+  display: grid;
+  gap: var(--noma-space-1);
+}
+
+.accountNavigationLink {
+  display: flex;
+  min-height: var(--noma-size-target-default);
+  align-items: center;
+  padding: var(--noma-space-2) var(--noma-space-3);
+  color: var(--noma-color-text-secondary);
+  border-left: var(--noma-border-strong) solid transparent;
+  text-decoration: none;
+}
+
+.accountNavigationLink[aria-current='page'] {
+  color: var(--noma-color-text-primary);
+  background: var(--noma-color-surface-selected);
+  border-left-color: var(--noma-color-border-focus);
+  font-weight: var(--noma-font-weight-semibold);
+}
+
+.accountMain {
+  min-width: 0;
+  padding: var(--noma-space-6) var(--noma-space-4) var(--noma-space-10);
+}
+
+.loadingLayout {
+  display: grid;
+  max-width: 720px;
+  gap: var(--noma-space-4);
+}
+
+.skeleton {
+  height: var(--noma-size-target-default);
+  background: var(--noma-color-surface-secondary);
+  border: var(--noma-border-thin) solid var(--noma-color-border-default);
+  border-radius: var(--noma-radius-md);
+}
+
+.skeletonShort {
+  width: 58%;
+}
+
+.errorActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--noma-space-4);
+  margin-top: var(--noma-space-6);
+}
+
+@media (min-width: 480px) {
+  .footerNavigation {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .consumerShell {
+    padding-bottom: 0;
+  }
+
+  .consumerHeader {
+    grid-template-columns: auto minmax(280px, 1fr) auto auto;
+    padding: var(--noma-space-3) var(--noma-space-6);
+  }
+
+  .headerSearch {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .headerNavigation {
+    display: flex;
+  }
+
+  .mainContent {
+    padding: var(--noma-space-12) var(--noma-space-6);
+  }
+
+  .publicFooter {
+    grid-template-columns: minmax(220px, 1fr) 2fr;
+    padding: var(--noma-space-10) var(--noma-space-6);
+  }
+
+  .mobileNavigation {
+    display: none;
+  }
+
+  .accountHeader {
+    padding: var(--noma-space-8) var(--noma-space-6) var(--noma-space-4);
+  }
+
+  .accountMain {
+    padding-right: var(--noma-space-6);
+    padding-left: var(--noma-space-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .accountGrid {
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: var(--noma-space-8);
+    padding: 0 var(--noma-space-6);
+  }
+
+  .accountRail {
+    display: block;
+    padding: var(--noma-space-6) 0 var(--noma-space-10);
+    border-right: var(--noma-border-thin) solid var(--noma-color-border-default);
+  }
+
+  .compactAccountNavigation {
+    display: none;
+  }
+
+  .accountMain {
+    max-width: 860px;
+    padding: var(--noma-space-6) var(--noma-space-6) var(--noma-space-12) 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skipLink {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .mobileNavigationLink[aria-current='page'],
+  .accountNavigationLink[aria-current='page'] {
+    border: var(--noma-border-strong) solid CanvasText;
+  }
+
+  .searchButton {
+    border-color: ButtonText;
+  }
+}

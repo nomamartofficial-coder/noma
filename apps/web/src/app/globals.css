@@ -1,45 +1,35 @@
-.shell {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: var(--noma-space-16) var(--noma-space-6);
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-.eyebrow {
-  color: var(--noma-color-text-secondary);
-  font-size: var(--noma-type-compact-label-font-size);
-  font-weight: var(--noma-type-compact-label-font-weight);
-  letter-spacing: 0.08em;
-  line-height: var(--noma-type-compact-label-line-height);
-  text-transform: uppercase;
+html {
+  min-width: 320px;
+  background: var(--noma-color-surface-page);
 }
 
-h1 {
-  max-width: 20ch;
-  font-size: var(--noma-type-page-title-font-size);
-  font-weight: var(--noma-type-page-title-font-weight);
-  line-height: var(--noma-type-page-title-line-height);
-}
-
-p {
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--noma-color-text-primary);
+  background: var(--noma-color-surface-page);
+  font-family: var(--noma-font-family-sans);
+  font-size: var(--noma-type-body-default-font-size);
   line-height: var(--noma-type-body-default-line-height);
 }
 
-dl {
-  display: grid;
-  gap: var(--noma-space-3);
-  margin-top: var(--noma-space-8);
+button,
+input {
+  font: inherit;
 }
 
-dl div {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--noma-space-6);
-  padding: var(--noma-space-4);
-  background: var(--noma-color-surface-primary);
-  border: var(--noma-border-thin) solid var(--noma-color-border-default);
-  border-radius: var(--noma-radius-md);
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
 }
 
-dt {
-  font-weight: var(--noma-font-weight-bold);
+::selection {
+  color: var(--noma-color-text-primary);
+  background: var(--noma-color-surface-selected);
 }
