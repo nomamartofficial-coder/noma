@@ -39,7 +39,7 @@ async function loadFixture() {
     commerceCss: await read('packages/ui/dist/commerce.css'),
     generator: await read('scripts/generate-ui-token-css.mjs'),
     webLayout: await read('apps/web/src/app/layout.tsx'),
-    webPage: await read('apps/web/src/app/page.tsx'),
+    webPage: await read('apps/web/src/app/(marketplace)/page.tsx'),
     unitTest: await read('packages/ui/tests/commerce.test.ts'),
     componentTest: await read('tests/component/ui-commerce.component.test.tsx'),
     truthFixtures: await read('packages/ui/tests/commerce-truth-fixtures.ts'),
