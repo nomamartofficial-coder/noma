@@ -1,5 +1,6 @@
 import { createCssTokenDeclarations } from './tokens.js';
 import { createComponentTokenDeclarations } from './component-tokens.js';
+export { renderCommerceCss } from './commerce-output.js';
 
 const GENERATED_HEADER = `/* Generated from packages/ui/src/tokens.ts. Do not edit by hand. */`;
 

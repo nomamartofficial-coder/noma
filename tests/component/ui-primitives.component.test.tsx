@@ -151,7 +151,7 @@ describe('composite keyboard primitives', () => {
     const menuTrigger = screen.getByRole('button', { name: /more actions/i });
     await user.click(menuTrigger);
     await user.keyboard('{Escape}');
-    expect(menuTrigger).toHaveFocus();
+    await waitFor(() => expect(menuTrigger).toHaveFocus());
     await user.click(menuTrigger);
     const copyItem = await screen.findByRole('menuitem', { name: 'Copy' });
     await user.keyboard('{ArrowDown}{Home}');

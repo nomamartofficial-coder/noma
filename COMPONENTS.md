@@ -50,6 +50,7 @@ Import the package CSS once at the application root, after foundations:
 ```ts
 import '@noma/ui/foundations.css';
 import '@noma/ui/components.css';
+import '@noma/ui/commerce.css';
 ```
 
 `packages/ui/src/component-tokens.ts` is the component decision registry. Component colour tokens point to UI-001 semantic tokens; they do not repeat raw colour values. The build deterministically creates `dist/components.css`, and the production Web build rejects missing component output.
@@ -76,6 +77,6 @@ Component tests use role/name queries and user-event. The axe helper disables `c
 
 ## Exclusions and rollback
 
-Commerce status patterns, money, timelines, cards, role shells, navigation shells, Storybook, formal screenshot regression, dark mode, product workflows, and UI-003+ remain deferred.
+UI-003 commerce status, money, timeline, evidence, and high-risk patterns are documented in [`COMMERCE_PATTERNS.md`](COMMERCE_PATTERNS.md). Role/navigation shells, Storybook, formal screenshot regression, dark mode, and product workflows remain deferred.
 
 Rollback is a reviewed source revert of UI-002 code, exact dependency/lockfile changes, Web CSS consumption, documentation, and traceability. No database, provider, deployment, or infrastructure state exists to recover.

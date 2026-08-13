@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0.0",
-  "register_version": "2026-08-10.4",
+  "register_version": "2026-08-12.1",
   "authority": "docs/12-delivery-backlog.md FND-007",
-  "generated_at": "2026-08-10T10:25:00+01:00",
+  "generated_at": "2026-08-12T23:34:00+01:00",
   "counts": {
     "tasks": 151,
     "p0_tasks": 140,
@@ -49,7 +49,9 @@
     "python scripts/validate_traceability.py --lookup SEC-005",
     "python scripts/validate_traceability.py --lookup DEV-010",
     "python scripts/validate_traceability.py --lookup UI-001",
-    "python scripts/validate_traceability.py --lookup UI-002"
+    "python scripts/validate_traceability.py --lookup UI-002",
+    "python scripts/validate_traceability.py --lookup UI-003",
+    "python scripts/validate_traceability.py --lookup UI-004"
   ],
   "transport": "Detailed task and requirement NDJSON is gzip-compressed and base64-wrapped for repository-connector transport. The validator decodes it before validation; CSV indexes support direct human review. The first task segment is split into seven smaller deterministic sub-shards for independently verifiable writes.",
   "important_note": "Planned test and evidence references are obligations, not proof that a test ran or evidence exists."
