@@ -173,7 +173,7 @@ async function runSelfTests(baseline) {
     ['fake user', (f) => { f.sources.push({ path: 'apps/web/src/shells/bad.ts', contents: "const user = { name: 'Synthetic' };" }); }, 'FAKE_DATA'],
     ['fake products', (f) => { f.sources.push({ path: 'apps/web/src/shells/bad.ts', contents: 'const products = [{ id: 1 }];' }); }, 'FAKE_DATA'],
     ['raw colour', (f) => { f.styles += '\n.bad { color: #123456; }'; f.sources.push({ path: 'apps/web/src/shells/bad.css', contents: f.styles }); }, 'RAW_COLOR'],
-    ['extra mobile item', (f) => { f.navigation = f.navigation.replace('] as const satisfies readonly ShellDestination[]);\n\nexport const accountDestinations', "  { id: 'account', label: 'Account', href: '/account' },\n] as const satisfies readonly ShellDestination[]);\n\nexport const accountDestinations"); }, 'MOBILE_NAV'],
+    ['extra mobile item', (f) => { f.navigation = f.navigation.replace(/\] as const satisfies readonly ShellDestination\[\]\);\r?\n\r?\nexport const accountDestinations/, "  { id: 'account', label: 'Account', href: '/account' },\n] as const satisfies readonly ShellDestination[]);\n\nexport const accountDestinations"); }, 'MOBILE_NAV'],
     ['missing mobile orders', (f) => { f.navigation = f.navigation.replace("label: 'Orders'", "label: 'Purchases'"); }, 'MOBILE_NAV'],
     ['broken internal link', (f) => { f.sources.push({ path: 'apps/web/src/shells/bad.tsx', contents: '<a href="/missing">Missing</a>' }); }, 'BROKEN_LINK'],
     ['root consumer shell', (f) => { f.rootLayout += '\n<ConsumerHeader />'; }, 'ROOT_LAYOUT'],
