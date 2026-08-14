@@ -1,12 +1,12 @@
 # Dependency security policy
 
-> **Task:** `SEC-005`  
+> **Task:** `SEC-005`, corrected by `SEC-006`
 > **Risk:** `P0-RECOVERY`  
-> **Status:** implemented for review; infrastructure activation remains blocked
+> **Status:** SEC-005 complete; SEC-006 implemented for review; infrastructure activation remains blocked
 
 ## Purpose
 
-Noma treats the committed manifests and `pnpm-lock.yaml` as reviewed supply-chain inputs. A frozen install proves reproducibility, but it does not prove that resolved versions meet the approved security floor. SEC-005 therefore combines an offline lockfile policy with GitHub dependency review and a separately recorded live registry audit.
+Noma treats the committed manifests and `pnpm-lock.yaml` as reviewed supply-chain inputs. A frozen install proves reproducibility, but it does not prove that resolved versions meet the approved security floor. SEC-005 therefore combines an offline lockfile policy with GitHub dependency review and a separately recorded live registry audit. SEC-006 raises the reviewed `nanoid` floor after the live audit began classifying `3.3.17` as vulnerable.
 
 This policy does not deploy, provision infrastructure, contact a business provider, or activate a marketplace capability.
 
@@ -18,7 +18,7 @@ This policy does not deploy, provision infrastructure, contact a business provid
 | `postcss` | `8.5.23`, `8.5.25` | Covers the four open PostCSS advisories while retaining Vite's already-safe graph |
 | `sharp` | `0.35.3` | Exceeds the `0.35.0` patched minimum through Next's supported optional range |
 | `fast-uri` | `3.1.5` | Compatible convergence override for Ajv's `^3.0.1` range |
-| `nanoid` | `3.3.17` | Compatible convergence override for PostCSS's declared range |
+| `nanoid` | `3.3.18` | Current patched floor for GHSA-2v37-7h3g-55p8 within PostCSS's declared range |
 
 The `fast-uri@` and `nanoid@` keys in `pnpm-workspace.yaml` intentionally use pnpm's convergence-only override form. They apply only where the declaring dependency already accepts the selected version. PostCSS and Sharp are not added as direct Web dependencies; their ownership remains with Next.js.
 
@@ -44,7 +44,7 @@ The live `pnpm audit` command is required review evidence but is not embedded in
 5. Run the offline verifier, live audit, affected runtime/database tests, and all five required GitHub gates.
 6. Remove an override only after the resolved parent graph remains patched and the negative fixtures are updated through review.
 
-If a supported upgrade causes an incompatible regression, revert the SEC-005 commits through a reviewed pull request and keep infrastructure activation blocked. Do not restore a vulnerable floor, weaken the Security Gate, or use a preview framework as a workaround.
+If a supported upgrade causes an incompatible regression, revert the affected SEC-005 or SEC-006 commit through a reviewed pull request and keep infrastructure activation blocked. Do not restore a vulnerable floor, weaken the Security Gate, or use a preview framework as a workaround.
 
 ## Activation stop-line
 

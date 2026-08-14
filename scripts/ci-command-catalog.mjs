@@ -22,6 +22,7 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('traceability-dev008', 'Resolve DEV-008 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'DEV-008']),
       command('traceability-dev009', 'Resolve DEV-009 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'DEV-009']),
       command('traceability-sec005', 'Resolve SEC-005 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'SEC-005']),
+      command('traceability-sec006', 'Resolve SEC-006 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'SEC-006']),
       command('traceability-dev010', 'Resolve DEV-010 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'DEV-010']),
       command('traceability-ui001', 'Resolve UI-001 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'UI-001']),
       command('traceability-ui002', 'Resolve UI-002 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'UI-002']),
