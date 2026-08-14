@@ -3,7 +3,7 @@ packages:
   - packages/*
 overrides:
   'fast-uri@': 3.1.5
-  'nanoid@': 3.3.17
+  'nanoid@': 3.3.18
 verifyDepsBeforeRun: false
 allowBuilds:
   '@prisma/engines': true

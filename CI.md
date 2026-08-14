@@ -120,7 +120,7 @@ Read-only inspection on 9 August 2026 found:
 | Dependency review / dependency graph | enabled; the pinned action blocks newly introduced `moderate` or higher vulnerabilities |
 | Secret scanning | disabled |
 | Push protection | disabled |
-| Dependabot alerts | enabled; SEC-005 remediates the six synchronized alerts plus the additional High nanoid advisory found by live audit |
+| Dependabot alerts | enabled; SEC-005 remediated the original alerts, and SEC-006 raises the nanoid floor to 3.3.18 after the live audit identified the stricter patched boundary |
 | Branch protection / repository rulesets | active for `main` with the five stable required checks; administrator-controlled |
 | Merge queue | not configured |
 

@@ -12,7 +12,7 @@ const APPROVED = Object.freeze({
   postcss: Object.freeze(['8.5.23', '8.5.25']),
   sharp: '0.35.3',
   fastUri: '3.1.5',
-  nanoid: '3.3.17',
+  nanoid: '3.3.18',
 });
 
 const sources = await readSources(ROOT);
@@ -146,15 +146,15 @@ function runSelfTest(original) {
   const tests = [
     fixture('downgraded Next manifest', 'web', '"next": "16.3.0"', '"next": "16.2.12"', 'Next.js must be pinned exactly'),
     fixture('removed fast-uri override', 'workspace', "  'fast-uri@': 3.1.5\n", '', 'missing reviewed fast-uri@ convergence override'),
-    fixture('removed nanoid override', 'workspace', "  'nanoid@': 3.3.17\n", '', 'missing reviewed nanoid@ convergence override'),
+    fixture('removed nanoid override', 'workspace', "  'nanoid@': 3.3.18\n", '', 'missing reviewed nanoid@ convergence override'),
     fixture('downgraded fast-uri package', 'lock', 'fast-uri@3.1.5:', 'fast-uri@3.1.4:', 'fast-uri package versions must be'),
-    fixture('downgraded nanoid package', 'lock', 'nanoid@3.3.17:', 'nanoid@3.3.16:', 'nanoid package versions must be'),
+    fixture('downgraded nanoid package', 'lock', 'nanoid@3.3.18:', 'nanoid@3.3.17:', 'nanoid package versions must be'),
     fixture('downgraded PostCSS package', 'lock', 'postcss@8.5.23:', 'postcss@8.4.31:', 'postcss package versions must be'),
     fixture('downgraded Sharp package', 'lock', 'sharp@0.35.3:', 'sharp@0.34.5:', 'sharp package versions must be'),
     fixture('downgraded Next PostCSS edge', 'lock', '      postcss: 8.5.23', '      postcss: 8.4.31', 'Next.js must resolve postcss'),
     fixture('downgraded Next Sharp edge', 'lock', '      sharp: 0.35.3(', '      sharp: 0.34.5(', 'Next.js must resolve sharp'),
     fixture('downgraded Ajv fast-uri edge', 'lock', '      fast-uri: 3.1.5', '      fast-uri: 3.1.4', 'Ajv must resolve fast-uri'),
-    fixture('downgraded PostCSS nanoid edge', 'lock', '      nanoid: 3.3.17', '      nanoid: 3.3.16', 'PostCSS must resolve nanoid'),
+    fixture('downgraded PostCSS nanoid edge', 'lock', '      nanoid: 3.3.18', '      nanoid: 3.3.17', 'PostCSS must resolve nanoid'),
   ];
 
   for (const test of tests) {

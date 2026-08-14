@@ -20,7 +20,7 @@ DEV-010,EP01,"Bootstrap OpenTelemetry, structured logging, correlation, and heal
 UI-001,EP02,Implement core and semantic design tokens,P0,P2-PRESENTATION,COMPLETE,Design/Web
 UI-002,EP02,Implement accessible primitive component set,P0,P1-OPERATIONS,COMPLETE,Web/Design/QA
 UI-003,EP02,"Implement commerce status, money, timeline, evidence, and action patterns",P0,P0-COMMERCE,COMPLETE,Web/Design
-UI-004,EP02,Implement Marketplace and Buyer Account shells,P0,P0-COMMERCE,IN_REVIEW,Web
+UI-004,EP02,Implement Marketplace and Buyer Account shells,P0,P0-COMMERCE,COMPLETE,Web
 UI-005,EP02,"Implement Seller, Rider, Operations, and Admin shells",P0,P1-OPERATIONS,NOT_STARTED,Web/QA
 UI-006,EP02,Create Storybook/component documentation and visual regression,P0,P2-PRESENTATION,NOT_STARTED,Design/Web/QA
 IAM-001,EP03,"Implement User, credential, session, and recovery persistence",P0,P0-AUTHORITY,NOT_STARTED,Identity Engineering
@@ -128,6 +128,7 @@ INC-001,EP13,"Implement incident records, emergency feature controls, and stop-t
 INC-002,EP13,"Create security, privacy, provider, finance, delivery, and recovery runbooks",P0,P0-RECOVERY,NOT_STARTED,Security/Operations/Finance
 SEC-004,EP13,Run privileged-access and provider-account reviews,P0,P0-AUTHORITY,NOT_STARTED,Security/Access Admin
 SEC-005,EP13,Remediate dependency advisories and strengthen dependency gate,P0,P0-RECOVERY,COMPLETE,Security/Engineering/QA/DevOps
+SEC-006,EP13,Raise nanoid advisory floor to 3.3.18,P0,P0-RECOVERY,IN_REVIEW,Security/Engineering/QA/DevOps
 QA-001,EP14,"Populate requirement-test, machine-coverage, and journey matrices",P0,P0-RECOVERY,NOT_STARTED,QA/Product
 QA-002,EP14,"Implement API, event, job, and provider contract suites",P0,P0-RECOVERY,NOT_STARTED,QA/Engineering
 QA-003,EP14,"Implement financial, inventory, custody, authority, and idempotency property suites",P0,P0-FINANCIAL,NOT_STARTED,QA/Engineering
