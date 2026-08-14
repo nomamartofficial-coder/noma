@@ -7,6 +7,10 @@ process.env.NOMA_TEST_SEED = String(seed);
 console.info(`[noma-testing] seed=${seed} timezone=UTC`);
 
 export default defineConfig({
+  esbuild: {
+    jsx: 'automatic',
+  },
+  oxc: false,
   test: {
     allowOnly: false,
     clearMocks: true,

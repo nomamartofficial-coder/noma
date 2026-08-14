@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const required = [
-  'apps/web/src/app/page.tsx',
+  'apps/web/src/app/(marketplace)/page.tsx',
   'apps/web/src/app/health/live/route.ts',
   'apps/web/src/app/health/ready/route.ts',
   'apps/api/src/main.ts',

@@ -49,7 +49,7 @@ async function loadFixture() {
     componentTokens: await text('packages/ui/src/component-tokens.ts'),
     componentsCss: await text('packages/ui/dist/components.css'),
     webLayout: await text('apps/web/src/app/layout.tsx'),
-    webPage: await text('apps/web/src/app/page.tsx'),
+    webPage: await text('apps/web/src/app/(marketplace)/page.tsx'),
     productionVerifier: await text('scripts/verify-ui-token-build.mjs'),
     componentTest: await text('tests/component/ui-primitives.component.test.tsx'),
     axeHelper: await text('tests/component/axe-helper.ts'),

@@ -150,7 +150,9 @@ describe('composite keyboard primitives', () => {
     expect(overview).toHaveAttribute('aria-selected', 'true');
     const menuTrigger = screen.getByRole('button', { name: /more actions/i });
     await user.click(menuTrigger);
+    await screen.findByRole('menuitem', { name: 'Copy' });
     await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('menuitem', { name: 'Copy' })).not.toBeInTheDocument());
     await waitFor(() => expect(menuTrigger).toHaveFocus());
     await user.click(menuTrigger);
     const copyItem = await screen.findByRole('menuitem', { name: 'Copy' });

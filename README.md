@@ -319,6 +319,10 @@ pnpm ui:validate
 pnpm ui:self-test
 pnpm ui:test
 pnpm ui:verify
+pnpm ui:shells:validate
+pnpm ui:shells:self-test
+pnpm ui:shells:test
+pnpm ui:shells:verify
 pnpm ui:commerce:verify
 pnpm ui:components:validate
 pnpm ui:components:self-test
@@ -525,7 +529,7 @@ Active product experiences target WCAG 2.2 Level AA and must support:
 - honest loading, empty, error, stale, denied, paused, uncertain-provider, and offline states; and
 - clear consequences and recovery for destructive or high-impact actions.
 
-Read [`docs/05-design-system.md`](docs/05-design-system.md) for the binding design contract, [`DESIGN_TOKENS.md`](DESIGN_TOKENS.md) for the UI-001 registry, [`COMPONENTS.md`](COMPONENTS.md) for the UI-002 primitive API, and [`COMMERCE_PATTERNS.md`](COMMERCE_PATTERNS.md) for UI-003 status, money, history, evidence, and high-risk presentation boundaries.
+Read [`docs/05-design-system.md`](docs/05-design-system.md) for the binding design contract, [`DESIGN_TOKENS.md`](DESIGN_TOKENS.md) for the UI-001 registry, [`COMPONENTS.md`](COMPONENTS.md) for the UI-002 primitive API, [`COMMERCE_PATTERNS.md`](COMMERCE_PATTERNS.md) for UI-003 status, money, history, evidence, and high-risk presentation boundaries, and [`SHELLS.md`](SHELLS.md) for UI-004 Marketplace and Buyer shell composition.
 
 ---
 
