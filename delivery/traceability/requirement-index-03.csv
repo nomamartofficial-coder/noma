@@ -29,6 +29,7 @@ REQ-INC-002,P0,P0-RECOVERY,PLANNED,"Each runbook has detection, authority, conta
 REQ-SEC-004,P0,P0-AUTHORITY,PLANNED,No shared privileged/provider dashboards; stale access revoked; exceptions have owner/expiry.
 REQ-SEC-005,P0,P0-RECOVERY,PLANNED,No Moderate/High/Critical dependency advisory remains; weakened floors fail the Security Gate; infrastructure activation waits for clean default-branch evidence.
 REQ-SEC-006,P0,P0-RECOVERY,PLANNED,Live Moderate-level audit passes; nanoid and every PostCSS dependency edge resolve 3.3.18; weakened or stale floors fail deterministic dependency policy.
+REQ-SEC-007,P0,P0-RECOVERY,PLANNED,Live Moderate-level audit passes; Prisma configuration resolves only deepmerge-ts 8.0.2; weakened package edge or release-age exception fails deterministic dependency policy.
 REQ-QA-001,P0,P0-RECOVERY,PLANNED,No P0 requirement lacks oracle/owner/test plan; unknown IDs fail CI; progressive activation matrices are separate.
 REQ-QA-002,P0,P0-RECOVERY,PLANNED,Breaking changes fail; provider simulator and production adapter satisfy same port; consumers do not depend on internal persistence.
 REQ-QA-003,P0,P0-FINANCIAL,PLANNED,Properties hold for generated sequences; counterexamples persist as regression fixtures.
