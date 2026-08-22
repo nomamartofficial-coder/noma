@@ -4,6 +4,7 @@ packages:
 overrides:
   'fast-uri@': 3.1.5
   'nanoid@': 3.3.18
+  deepmerge-ts: 8.0.2
 verifyDepsBeforeRun: false
 allowBuilds:
   '@prisma/engines': true
@@ -14,3 +15,5 @@ allowBuilds:
   protobufjs: false
   sharp: true
   ssh2: false
+minimumReleaseAgeExclude:
+  - deepmerge-ts@8.0.2

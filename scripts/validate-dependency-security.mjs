@@ -13,6 +13,7 @@ const APPROVED = Object.freeze({
   sharp: '0.35.3',
   fastUri: '3.1.5',
   nanoid: '3.3.18',
+  deepmergeTs: '8.0.2',
 });
 
 const sources = await readSources(ROOT);
@@ -26,7 +27,7 @@ console.log('PASS: dependency manifests, convergence overrides, lockfile package
 
 if (process.argv.includes('--self-test')) {
   runSelfTest(sources);
-  console.log('PASS: 11 weakened dependency-policy fixtures were rejected');
+  console.log('PASS: 15 weakened dependency-policy fixtures were rejected');
 }
 
 async function readSources(root) {
@@ -57,6 +58,15 @@ function validateSources({ web, workspace, lock }) {
       errors.push(`${FILES.lock}: missing resolved ${name}@ convergence override to ${version}`);
     }
   }
+  if (!workspace.includes(`  deepmerge-ts: ${APPROVED.deepmergeTs}\n`)) {
+    errors.push(`${FILES.workspace}: missing reviewed deepmerge-ts forced override to ${APPROVED.deepmergeTs}`);
+  }
+  if (!lock.includes(`  deepmerge-ts: ${APPROVED.deepmergeTs}\n`)) {
+    errors.push(`${FILES.lock}: missing resolved deepmerge-ts forced override to ${APPROVED.deepmergeTs}`);
+  }
+  if (!workspace.includes(`minimumReleaseAgeExclude:\n  - deepmerge-ts@${APPROVED.deepmergeTs}\n`)) {
+    errors.push(`${FILES.workspace}: missing reviewed deepmerge-ts release-age exception for ${APPROVED.deepmergeTs}`);
+  }
 
   const importers = yamlSection(lock, 'importers');
   const webImporter = yamlEntryBlocks(importers, 'apps/web@').at(0)
@@ -71,6 +81,7 @@ function validateSources({ web, workspace, lock }) {
   assertVersions(errors, packages, 'sharp', [APPROVED.sharp]);
   assertVersions(errors, packages, 'fast-uri', [APPROVED.fastUri]);
   assertVersions(errors, packages, 'nanoid', [APPROVED.nanoid]);
+  assertVersions(errors, packages, 'deepmerge-ts', [APPROVED.deepmergeTs]);
 
   const snapshots = yamlSection(lock, 'snapshots');
   const nextBlocks = yamlEntryBlocks(snapshots, `next@${APPROVED.next}`);
@@ -90,6 +101,10 @@ function validateSources({ web, workspace, lock }) {
     errors.push(`${FILES.lock}: expected ${APPROVED.postcss.length} reviewed PostCSS snapshots, found ${postcssBlocks.length}`);
   }
   for (const block of postcssBlocks) requireDependency(errors, block, 'PostCSS', 'nanoid', APPROVED.nanoid);
+
+  const prismaConfigBlocks = yamlEntryBlocks(snapshots, "'@prisma/config@");
+  if (prismaConfigBlocks.length !== 1) errors.push(`${FILES.lock}: expected one Prisma configuration snapshot, found ${prismaConfigBlocks.length}`);
+  for (const block of prismaConfigBlocks) requireDependency(errors, block, 'Prisma configuration', 'deepmerge-ts', APPROVED.deepmergeTs);
 
   return [...new Set(errors)];
 }
@@ -147,14 +162,18 @@ function runSelfTest(original) {
     fixture('downgraded Next manifest', 'web', '"next": "16.3.0"', '"next": "16.2.12"', 'Next.js must be pinned exactly'),
     fixture('removed fast-uri override', 'workspace', "  'fast-uri@': 3.1.5\n", '', 'missing reviewed fast-uri@ convergence override'),
     fixture('removed nanoid override', 'workspace', "  'nanoid@': 3.3.18\n", '', 'missing reviewed nanoid@ convergence override'),
+    fixture('removed deepmerge-ts override', 'workspace', '  deepmerge-ts: 8.0.2\n', '', 'missing reviewed deepmerge-ts forced override'),
+    fixture('removed deepmerge-ts release-age exception', 'workspace', 'minimumReleaseAgeExclude:\n  - deepmerge-ts@8.0.2\n', '', 'missing reviewed deepmerge-ts release-age exception'),
     fixture('downgraded fast-uri package', 'lock', 'fast-uri@3.1.5:', 'fast-uri@3.1.4:', 'fast-uri package versions must be'),
     fixture('downgraded nanoid package', 'lock', 'nanoid@3.3.18:', 'nanoid@3.3.17:', 'nanoid package versions must be'),
+    fixture('downgraded deepmerge-ts package', 'lock', 'deepmerge-ts@8.0.2:', 'deepmerge-ts@7.1.5:', 'deepmerge-ts package versions must be'),
     fixture('downgraded PostCSS package', 'lock', 'postcss@8.5.23:', 'postcss@8.4.31:', 'postcss package versions must be'),
     fixture('downgraded Sharp package', 'lock', 'sharp@0.35.3:', 'sharp@0.34.5:', 'sharp package versions must be'),
     fixture('downgraded Next PostCSS edge', 'lock', '      postcss: 8.5.23', '      postcss: 8.4.31', 'Next.js must resolve postcss'),
     fixture('downgraded Next Sharp edge', 'lock', '      sharp: 0.35.3(', '      sharp: 0.34.5(', 'Next.js must resolve sharp'),
     fixture('downgraded Ajv fast-uri edge', 'lock', '      fast-uri: 3.1.5', '      fast-uri: 3.1.4', 'Ajv must resolve fast-uri'),
     fixture('downgraded PostCSS nanoid edge', 'lock', '      nanoid: 3.3.18', '      nanoid: 3.3.17', 'PostCSS must resolve nanoid'),
+    fixture('downgraded Prisma configuration edge', 'lock', '      deepmerge-ts: 8.0.2', '      deepmerge-ts: 7.1.5', 'Prisma configuration must resolve deepmerge-ts'),
   ];
 
   for (const test of tests) {
