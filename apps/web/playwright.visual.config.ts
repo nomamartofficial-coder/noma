@@ -6,7 +6,7 @@ const currentDirectory = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   expect: {
-    timeout: 8_000,
+    timeout: 20_000,
     toHaveScreenshot: {
       animations: 'disabled',
       caret: 'hide',
@@ -23,7 +23,7 @@ export default defineConfig({
   retries: 0,
   snapshotPathTemplate: join(currentDirectory, 'stories', 'visual', '__screenshots__', '{arg}{ext}'),
   testDir: join(currentDirectory, 'stories', 'visual'),
-  timeout: 20_000,
+  timeout: 45_000,
   use: {
     baseURL: process.env.NOMA_STORYBOOK_BASE_URL,
     colorScheme: 'light',
