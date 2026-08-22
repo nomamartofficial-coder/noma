@@ -21,7 +21,7 @@ UI-001,EP02,Implement core and semantic design tokens,P0,P2-PRESENTATION,COMPLET
 UI-002,EP02,Implement accessible primitive component set,P0,P1-OPERATIONS,COMPLETE,Web/Design/QA
 UI-003,EP02,"Implement commerce status, money, timeline, evidence, and action patterns",P0,P0-COMMERCE,COMPLETE,Web/Design
 UI-004,EP02,Implement Marketplace and Buyer Account shells,P0,P0-COMMERCE,COMPLETE,Web
-UI-005,EP02,"Implement Seller, Rider, Operations, and Admin shells",P0,P1-OPERATIONS,NOT_STARTED,Web/QA
+UI-005,EP02,"Implement Seller, Rider, Operations, and Admin shells",P0,P1-OPERATIONS,IN_REVIEW,Web/QA
 UI-006,EP02,Create Storybook/component documentation and visual regression,P0,P2-PRESENTATION,NOT_STARTED,Design/Web/QA
 IAM-001,EP03,"Implement User, credential, session, and recovery persistence",P0,P0-AUTHORITY,NOT_STARTED,Identity Engineering
 IAM-002,EP03,"Implement password registration, sign-in, sign-out, and session rotation",P0,P0-AUTHORITY,NOT_STARTED,Identity/Security

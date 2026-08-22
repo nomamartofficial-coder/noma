@@ -1,6 +1,8 @@
-# Noma Marketplace and Buyer Account shells
+# Noma application shells
 
 UI-004 establishes application-owned consumer navigation and layout scaffolding in `apps/web`. It does not implement Marketplace business pages, Buyer data, authentication, sessions, memberships, or authorization.
+
+UI-005 adds distinct Seller Centre, Rider, Operations, and Restricted Administration presentation shells. Every UI-005 production route fails closed before its shell renders because IAM has not yet supplied an authoritative allow decision.
 
 ## Route architecture
 
@@ -26,6 +28,30 @@ Navigation presence is not authorization. A current item is not a capability gra
 
 `SurfaceDestination` is a readonly, serializable presentation model. Production supplies only Shop on Noma and My account. Seller, Rider, Operations, and Admin examples exist only in synthetic tests and review evidence until trusted server policy supplies real memberships.
 
+### Protected role surfaces before IAM
+
+Seller, Rider, Operations, and Admin routes live in separate invisible route groups and call `requireProtectedSurfaceAccess` as the first runtime statement in their nested layout. The server-only resolver always invokes stable `notFound()`. It does not read a query parameter, cookie, header, environment flag, browser state, pathname, development mode, or fake session. Direct links therefore receive the same non-enumerating “Page unavailable” response and never render shell navigation, fixture content, or protected markers.
+
+This boundary is deliberately narrow so IAM can later replace the unconditional denial with authenticated, scoped policy. Navigation is not authorization, destination presence is only presentation input, and no UI-005 component grants a capability.
+
+## Seller Centre
+
+Seller Centre has its own compact operational identity and canonical navigation for Overview, Orders, Listings, Inventory, Fulfilment, Messages, Cases, Earnings, Payouts, Performance, and Store Settings. An optional `SellerContextPresentation` may display a server-supplied seller label and scope, but never selects or authorizes a seller. The mobile/tablet menu becomes a persistent compact rail from 1024 CSS pixels.
+
+## Rider workspace
+
+Rider uses a one-column, touch-forward action posture rather than the Seller or staff layouts. `RiderActionMode` separates supplied context and status from the next action, instructions, and incident/help recovery. Critical actions use the Noma 48-pixel action target.
+
+`RiderConnectivityBanner` distinguishes server-confirmed, cached, local-draft, pending-sync, sync-failed, conflict, and connection-required information. Cached information includes an exact material timestamp. Local or pending state never proves pickup, delivery, custody transfer, or other business completion. UI-005 adds no service worker, background sync, storage, or network-state authority; RDR-003 owns those later capabilities.
+
+## Operations workspaces
+
+Operations accepts an explicit readonly subset of workspace destinations and never infers staff grants from the route. It provides an obligation-oriented queue frame and the existing semantic compact Table and Pagination primitives. Queue rows are safe presentation inputs for reference, status, age or deadline, owner, and a caller-authorised detail link. UI-005 performs no fetch, mutation, sorting, calculation, or bulk action.
+
+## Restricted Administration
+
+Restricted Administration renders only explicitly supplied destinations. Its static review frame separates current value, proposed value, scope, consequence, approval expectation, and reason. It contains no command callbacks, configuration toggles, one-tap emergency controls, or default access to every administration area.
+
 The shell never queries or invents users, products, prices, carts, counts, orders, messages, cases, refunds, reviews, verification, or notifications. Minimal route placeholders explain implementation status and do not represent authoritative empty data or satisfy MKT-001, BUY-001, IAM-010, SRC-002, or CRT-001.
 
 ## Rendering, CSS, and accessibility
@@ -34,8 +60,8 @@ Layouts, pages, header, search, footer, and placeholder content remain Server Co
 
 Web-owned CSS modules consume existing Noma semantic and component tokens. Breakpoints are 768 and 1024 CSS pixels; the supported review range begins at 320 pixels. The shell includes a skip link, named navigation landmarks, one H1 per route state, 44-pixel minimum controls, visible focus, reduced-motion and forced-colour handling, and safe-area bottom padding.
 
-Run `pnpm ui:shells:verify` for deterministic routes, policy self-tests, unit/component interaction, and supported axe checks. Real-browser keyboard, reflow, zoom, target geometry, and assistive-technology review remain required evidence.
+Run `pnpm ui:shells:verify` for UI-004 or `pnpm ui:role-shells:verify` for UI-005. The aggregate `pnpm ui:verify` covers both generations. UI-005 verification includes route and policy negative tests, unit/component interaction, representative axe scans, a production build, and no-JavaScript direct-link probes that prove fail-closed behavior. Real-browser keyboard, reflow, zoom, target geometry, forced-colour, reduced-motion, and assistive-technology review remain required evidence.
 
 ## Deferred integration
 
-UI-005 owns Seller, Rider, Operations, and Admin shells. IAM owns authentication and protected-route authority. Marketplace, Search, Cart, Buyer order, notification, messaging, protection, refund, review, verification, and security tasks replace the relevant shell placeholders only when their dependencies and server controls are implemented.
+IAM owns authentication and protected-route authority. Seller, Rider, Operations, Admin, Marketplace, Search, Cart, Buyer order, notification, messaging, protection, refund, review, verification, and security tasks replace the relevant shell placeholders only when their dependencies and server controls are implemented. UI-006 remains not started and owns Storybook/component documentation and visual regression infrastructure.
