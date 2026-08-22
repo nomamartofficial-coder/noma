@@ -1,0 +1,17 @@
+.shell { min-height: 100vh; background: var(--noma-color-surface-page); }
+.header { display: grid; gap: var(--noma-space-4); padding: var(--noma-space-4); background: var(--noma-color-surface-primary); border-bottom: var(--noma-border-thin) solid var(--noma-color-border-default); }
+.brand, .surface, .context span { margin: 0; }
+.brand { font-weight: var(--noma-font-weight-bold); }
+.surface { color: var(--noma-color-text-secondary); font-size: var(--noma-type-compact-label-font-size); }
+.context { display: flex; flex-direction: column; gap: var(--noma-space-1); min-width: 0; }
+.context span { color: var(--noma-color-text-secondary); }
+.layout { display: grid; width: min(100%, 1440px); margin: 0 auto; }
+.rail { display: none; }
+.navigationList { display: grid; gap: var(--noma-space-1); padding: 0; margin: 0; list-style: none; }
+.navigationLink { display: flex; min-height: var(--noma-size-target-default); align-items: center; padding: var(--noma-space-2) var(--noma-space-3); color: var(--noma-color-text-secondary); border-left: var(--noma-border-strong) solid transparent; text-decoration: none; }
+.navigationLink[aria-current='page'] { color: var(--noma-color-text-primary); background: var(--noma-color-surface-selected); border-left-color: var(--noma-color-border-focus); font-weight: var(--noma-font-weight-semibold); }
+.main { min-width: 0; min-height: 70vh; padding: var(--noma-space-8) var(--noma-space-4); scroll-margin-top: var(--noma-space-4); }
+.navigationLink:focus-visible { outline: var(--noma-focus-ring-width) var(--noma-focus-ring-style) var(--noma-focus-ring-color); outline-offset: var(--noma-focus-ring-offset); }
+@media (min-width: 768px) { .header { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; padding-inline: var(--noma-space-6); } .context { align-items: flex-end; text-align: right; } .main { padding-inline: var(--noma-space-6); } }
+@media (min-width: 1024px) { .header { padding-inline: var(--noma-space-8); } .header > :last-child { display: none; } .layout { grid-template-columns: 250px minmax(0, 1fr); gap: var(--noma-space-8); padding-inline: var(--noma-space-8); } .rail { display: block; padding-block: var(--noma-space-8); border-right: var(--noma-border-thin) solid var(--noma-color-border-default); } .main { max-width: 980px; padding: var(--noma-space-10) var(--noma-space-8) var(--noma-space-12) 0; } }
+@media (forced-colors: active) { .navigationLink[aria-current='page'] { border: var(--noma-border-strong) solid CanvasText; } }
