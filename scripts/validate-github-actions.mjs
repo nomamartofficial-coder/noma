@@ -55,7 +55,7 @@ console.log(`PASS: ${result.workflows} workflows, ${result.jobs} bounded jobs, $
 if (process.argv.includes('--self-test')) {
   await runSelfTest();
   selfTestGateEvaluator();
-  console.log('PASS: 28 injected workflow policy violations were rejected in isolated fixtures');
+  console.log('PASS: 31 injected workflow policy violations were rejected in isolated fixtures');
   console.log('PASS: stable gate accepted success and rejected failure, skip, and cancellation');
 }
 
@@ -77,7 +77,7 @@ async function validateRepository(root, { fixture = false } = {}) {
   } catch {
     errors.push(`${COMMAND_CATALOG}: required CI command catalog is missing`);
   }
-  for (const token of ['security:dependencies:validate', 'security:dependencies:self-test', "'UI-005'", 'scripts/test-protected-role-routes.mjs']) {
+  for (const token of ['security:dependencies:validate', 'security:dependencies:self-test', "'UI-005'", "'UI-006'", 'scripts/test-protected-role-routes.mjs', 'ui:storybook:validate', 'ui:storybook:self-test', 'ui:storybook:test', 'ui:visual:test']) {
     if (!commandCatalog.includes(token)) errors.push(`${COMMAND_CATALOG}: missing required command token ${token}`);
   }
 
@@ -157,6 +157,9 @@ async function validateRepository(root, { fixture = false } = {}) {
     if (!quality.includes(token)) errors.push(`ci-quality.yml: manual deliberate-failure guard missing ${token}`);
   }
   if (countOccurrences(commandCatalog, 'scripts/test-protected-role-routes.mjs') !== 2) errors.push(`${COMMAND_CATALOG}: protected role route smoke must run in Quality runtime and Windows compatibility`);
+  if (!quality.includes('needs: [policy, static, tests, runtime, storybook]')) errors.push('ci-quality.yml: Quality Gate must require the Storybook browser and visual segment');
+  if (countOccurrences(combined, 'playwright install') !== 2) errors.push('Storybook Chromium must be installed only in Linux Quality and Windows Compatibility');
+  if (combined.includes('ui:visual:update')) errors.push('CI workflows must never update reviewed visual baselines');
   const security = sources.get('.github/workflows/ci-security.yml');
   for (const token of ['security-events: write', 'fail-on-severity: moderate', 'javascript-typescript', 'security-extended']) {
     if (!security.includes(token)) errors.push(`ci-security.yml: security control missing ${token}`);
@@ -351,6 +354,9 @@ async function runSelfTest() {
     testCase('missing dependency floor command', COMMAND_CATALOG, (s) => s.replace('security:dependencies:validate', 'security:dependencies:removed'), 'missing required command token security:dependencies:validate'),
     testCase('missing protected route smoke', COMMAND_CATALOG, (s) => s.replaceAll('scripts/test-protected-role-routes.mjs', 'scripts/protected-smoke-removed.mjs'), 'missing required command token scripts/test-protected-role-routes.mjs'),
     testCase('missing UI-005 trace lookup', COMMAND_CATALOG, (s) => s.replace("'UI-005'", "'UI-REMOVED'"), "missing required command token 'UI-005'"),
+    testCase('missing UI-006 trace lookup', COMMAND_CATALOG, (s) => s.replace("'UI-006'", "'UI-REMOVED'"), "missing required command token 'UI-006'"),
+    testCase('missing Storybook browser command', COMMAND_CATALOG, (s) => s.replaceAll('ui:storybook:test', 'ui:storybook:removed'), 'missing required command token ui:storybook:test'),
+    testCase('CI baseline update', quality, (s) => `${s}\n# run: pnpm ui:visual:update\n`, 'must never update reviewed visual baselines'),
   ];
 
   try {

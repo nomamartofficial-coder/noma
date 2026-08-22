@@ -32,6 +32,8 @@ jobs:
           persist-credentials: false
       - name: Set up workspace
         uses: ./.github/actions/setup-workspace
+      - name: Install pinned Playwright Chromium
+        run: pnpm --filter @noma/web exec playwright install chromium
       - name: Run Windows compatibility suite
         id: suite
         run: pnpm ci:windows
