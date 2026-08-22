@@ -6,7 +6,7 @@ import {
   HighRiskConfirmation,
   Link,
   Money,
-  MoneyBreakdown,
+  MoneyBreakdown as MoneyBreakdownComponent,
   ResponsibilityBanner,
   Timeline,
   TimelineItem,
@@ -50,12 +50,10 @@ export const MoneyExtremes: Story = {
   render: () => <CommerceCanvas><div className="noma-story-grid"><article className="noma-story-card"><h2>One minor unit</h2><Money amountMinor="1" currency="NGN" fractionDisplay="always" /></article><article className="noma-story-card"><h2>Large exact amount</h2><Money amountMinor="900719925474099312345" currency="NGN" fractionDisplay="always" /></article><article className="noma-story-card"><h2>Negative adjustment</h2><Money amountMinor="-125050" currency="NGN" fractionDisplay="always" /></article><article className="noma-story-card"><h2>Kuwaiti dinar</h2><Money amountMinor="123456" currency="KWD" fractionDisplay="always" /></article></div></CommerceCanvas>,
 };
 
-export const MoneyBreakdownStory: Story = {
+export const MoneyBreakdown: Story = {
   name: 'Money breakdown',
-  render: () => <CommerceCanvas><MoneyBreakdown currency="NGN" fractionDisplay="always" items={[{ id: 'items', label: 'Items', amountMinor: '1250000', description: 'Caller-calculated subtotal' }, { id: 'delivery', label: 'Delivery', amountMinor: '150000' }]} total={{ label: 'Supplied total', amountMinor: '1400000' }} /></CommerceCanvas>,
+  render: () => <CommerceCanvas><MoneyBreakdownComponent currency="NGN" fractionDisplay="always" items={[{ id: 'items', label: 'Items', amountMinor: '1250000', description: 'Caller-calculated subtotal' }, { id: 'delivery', label: 'Delivery', amountMinor: '150000' }]} total={{ label: 'Supplied total', amountMinor: '1400000' }} /></CommerceCanvas>,
 };
-
-export { MoneyBreakdownStory as MoneyBreakdown };
 
 export const TimelineCorrections: Story = {
   render: () => <CommerceCanvas><Timeline label="Synthetic order history"><TimelineItem actor="buyer" description="The request was recorded." label="Request submitted" recordedAt="2026-01-15T08:15:00+01:00" reference="SYN-HISTORY-001" state="confirmed" /><TimelineItem actor="provider" correctionAction={<Link href="/account/cases">Review correction</Link>} description="This event remains visible and is superseded by the correction below." label="Earlier provider response" recordedAt="2026-01-15T08:30:00+01:00" state="superseded" /><TimelineItem actor="staff" evidenceAction={<Link href="/account/cases">View authorised evidence metadata</Link>} label="Correction recorded" recordedAt={FIXED_STORY_INSTANT} reference="SYN-HISTORY-003" state="confirmed" /></Timeline></CommerceCanvas>,
