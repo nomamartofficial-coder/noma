@@ -1,0 +1,98 @@
+.skipLink {
+  position: fixed;
+  z-index: 30;
+  top: var(--noma-space-2);
+  left: var(--noma-space-2);
+  padding: var(--noma-space-3) var(--noma-space-4);
+  color: var(--noma-color-action-primary-foreground);
+  background: var(--noma-color-action-primary-background);
+  border-radius: var(--noma-radius-md);
+  transform: translateY(calc(-100% - var(--noma-space-4)));
+}
+
+.skipLink:focus {
+  transform: translateY(0);
+}
+
+.compactNavigation {
+  display: grid;
+  align-items: start;
+  gap: var(--noma-space-4);
+  min-width: 0;
+}
+
+.compactLabel,
+.eyebrow {
+  color: var(--noma-color-text-secondary);
+  font-size: var(--noma-type-compact-label-font-size);
+  font-weight: var(--noma-font-weight-semibold);
+  letter-spacing: 0.06em;
+  line-height: var(--noma-type-compact-label-line-height);
+  text-transform: uppercase;
+}
+
+.compactMenu {
+  max-width: 100%;
+  min-height: var(--noma-size-target-default);
+}
+
+@media (min-width: 480px) {
+  .compactNavigation {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+}
+
+.breadcrumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--noma-space-2);
+  padding: 0;
+  margin: 0 0 var(--noma-space-4);
+  list-style: none;
+}
+
+.breadcrumbs li:not(:last-child)::after {
+  margin-left: var(--noma-space-2);
+  color: var(--noma-color-text-secondary);
+  content: '/';
+}
+
+.placeholder {
+  display: grid;
+  max-width: 68ch;
+  gap: var(--noma-space-4);
+}
+
+.placeholder h1,
+.placeholder p {
+  margin: 0;
+}
+
+.placeholder h1 {
+  font-size: var(--noma-type-page-title-font-size);
+  line-height: var(--noma-type-page-title-line-height);
+}
+
+.placeholder p:not(.eyebrow) {
+  color: var(--noma-color-text-secondary);
+}
+
+.skipLink:focus-visible,
+.breadcrumbs a:focus-visible {
+  outline: var(--noma-focus-ring-width) var(--noma-focus-ring-style) var(--noma-focus-ring-color);
+  outline-offset: var(--noma-focus-ring-offset);
+}
+
+@media (forced-colors: active) {
+  .skipLink,
+  .breadcrumbs a[aria-current='page'] {
+    border: var(--noma-border-strong) solid CanvasText;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skipLink {
+    transition: none;
+  }
+}

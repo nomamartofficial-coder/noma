@@ -1,0 +1,21 @@
+.shell { min-height: 100vh; padding-bottom: env(safe-area-inset-bottom, 0px); background: var(--noma-color-surface-page); }
+.header { display: grid; min-width: 0; gap: var(--noma-space-4); padding: var(--noma-space-4); background: var(--noma-color-surface-primary); border-bottom: var(--noma-border-thin) solid var(--noma-color-border-default); }
+.header > div, .navigation { min-width: 0; }
+.brand, .surface, .connectivity p { margin: 0; }
+.brand { font-size: var(--noma-type-section-title-font-size); font-weight: var(--noma-font-weight-bold); }
+.surface { color: var(--noma-color-text-secondary); }
+.navigation { max-width: 100%; overflow: hidden; }
+.navigationList { display: flex; width: 100%; max-width: 100%; overflow-x: auto; padding: 0; margin: 0; list-style: none; scrollbar-width: thin; }
+.navigationLink { display: flex; min-height: var(--noma-size-target-action); align-items: center; padding: var(--noma-space-2) var(--noma-space-4); color: var(--noma-color-text-secondary); border-bottom: var(--noma-border-strong) solid transparent; text-decoration: none; white-space: nowrap; }
+.navigationLink[aria-current='page'] { color: var(--noma-color-text-primary); background: var(--noma-color-surface-selected); border-bottom-color: var(--noma-color-border-focus); font-weight: var(--noma-font-weight-semibold); }
+.connectivity, .help { display: grid; max-width: 760px; gap: var(--noma-space-2); padding: var(--noma-space-4); margin: var(--noma-space-4) auto 0; background: var(--noma-color-surface-secondary); border: var(--noma-border-thin) solid var(--noma-color-border-strong); border-radius: var(--noma-radius-md); }
+.connectivity p, .help span { color: var(--noma-color-text-secondary); }
+.main { width: min(100%, 760px); min-height: 55vh; margin: 0 auto; padding: var(--noma-space-8) var(--noma-space-4); scroll-margin-top: var(--noma-space-4); }
+.help { margin-bottom: var(--noma-space-6); }
+.actionMode { display: grid; gap: var(--noma-space-5); }
+.actionContext, .nextAction, .instructions, .incidentHelp { padding: var(--noma-space-4); background: var(--noma-color-surface-primary); border: var(--noma-border-thin) solid var(--noma-color-border-default); border-radius: var(--noma-radius-md); }
+.nextAction :is(a, button) { min-height: var(--noma-size-target-action); }
+.incidentHelp { border-width: var(--noma-border-strong); }
+.navigationLink:focus-visible { outline: var(--noma-focus-ring-width) var(--noma-focus-ring-style) var(--noma-focus-ring-color); outline-offset: var(--noma-focus-ring-offset); }
+@media (min-width: 768px) { .header { padding-inline: var(--noma-space-8); } .main { padding-block: var(--noma-space-10); } }
+@media (forced-colors: active) { .navigationLink[aria-current='page'], .connectivity, .incidentHelp { border: var(--noma-border-strong) solid CanvasText; } }

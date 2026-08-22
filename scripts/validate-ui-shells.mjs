@@ -11,6 +11,7 @@ const ALLOWED_CLIENT_FILES = new Set([
   'apps/web/src/app/(buyer)/account/error.tsx',
   'apps/web/src/shells/active-navigation.tsx',
   'apps/web/src/shells/compact-account-navigation.tsx',
+  'apps/web/src/shells/protected/compact-shell-navigation.tsx',
   'apps/web/src/shells/surface-switcher.tsx',
 ]);
 
@@ -67,6 +68,7 @@ export function validateUiShells(fixture) {
   const failures = [];
   const scripts = fixture.rootPackage.scripts ?? {};
   const routes = fixture.pagePaths.map(routeFromPage).sort();
+  const consumerRoutes = routes.filter((route) => !/^\/(?:seller|rider|operations|admin)(?:\/|$)/.test(route));
   const routeSet = new Set(routes);
 
   for (const dependency of ['tailwindcss', '@radix-ui/react-navigation-menu', 'playwright', '@playwright/test', 'storybook', 'lucide-react']) {
@@ -82,10 +84,9 @@ export function validateUiShells(fixture) {
   if (!fixture.marketplaceLayout.includes('PublicFooter') || !fixture.marketplaceLayout.includes('Primary mobile')) failures.push(failure('MARKETPLACE_SHELL', 'required composition missing'));
   if (!fixture.accountLayout.includes('Account sections') || !fixture.accountLayout.includes('CompactAccountNavigation')) failures.push(failure('ACCOUNT_SHELL', 'required composition missing'));
 
-  if (routes.join('|') !== [...EXPECTED_ROUTES].sort().join('|') || new Set(routes).size !== routes.length) failures.push(failure('ROUTE_MANIFEST', routes.join(', ')));
+  if (consumerRoutes.join('|') !== [...EXPECTED_ROUTES].sort().join('|') || new Set(routes).size !== routes.length) failures.push(failure('ROUTE_MANIFEST', routes.join(', ')));
   if (fixture.pagePaths.some((path) => /\/health\//.test(path))) failures.push(failure('HEALTH_LAYOUT', 'health route became a page'));
   if (fixture.apiRoutes.length > 0) failures.push(failure('BUSINESS_API', fixture.apiRoutes.join(', ')));
-  for (const path of routes) if (/^\/(?:seller|rider|operations|admin)(?:\/|$)/.test(path)) failures.push(failure('FUTURE_SURFACE', path));
 
   const mobileBlock = fixture.navigation.match(/export const mobileDestinations[\s\S]*?export const accountDestinations/)?.[0] ?? '';
   const accountBlock = fixture.navigation.match(/export const accountDestinations[\s\S]*?export function isDestinationCurrent/)?.[0] ?? '';
@@ -168,7 +169,7 @@ async function runSelfTests(baseline) {
     ['broad client page', (f) => { f.sources.push({ path: 'apps/web/src/app/(marketplace)/bad.tsx', contents: "'use client';" }); }, 'CLIENT_BOUNDARY'],
     ['route group href', (f) => { f.sources.push({ path: 'apps/web/src/shells/bad.tsx', contents: '<a href="/(marketplace)">Bad</a>' }); }, 'ROUTE_GROUP_LEAK'],
     ['local storage role', (f) => { f.sources.push({ path: 'apps/web/src/shells/bad.ts', contents: "localStorage.setItem('role', 'buyer');" }); }, 'CLIENT_AUTHORITY'],
-    ['seller shell', (f) => { f.pagePaths.push('apps/web/src/app/seller/page.tsx'); }, 'FUTURE_SURFACE'],
+    ['consumer route collision', (f) => { f.pagePaths.push('apps/web/src/app/(marketplace)/account/page.tsx'); }, 'ROUTE_MANIFEST'],
     ['fake cart count', (f) => { f.sources.push({ path: 'apps/web/src/shells/bad.tsx', contents: '<span>Cart 3</span>' }); }, 'FAKE_DATA'],
     ['fake user', (f) => { f.sources.push({ path: 'apps/web/src/shells/bad.ts', contents: "const user = { name: 'Synthetic' };" }); }, 'FAKE_DATA'],
     ['fake products', (f) => { f.sources.push({ path: 'apps/web/src/shells/bad.ts', contents: 'const products = [{ id: 1 }];' }); }, 'FAKE_DATA'],

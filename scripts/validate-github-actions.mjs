@@ -55,7 +55,7 @@ console.log(`PASS: ${result.workflows} workflows, ${result.jobs} bounded jobs, $
 if (process.argv.includes('--self-test')) {
   await runSelfTest();
   selfTestGateEvaluator();
-  console.log('PASS: 26 injected workflow policy violations were rejected in isolated fixtures');
+  console.log('PASS: 28 injected workflow policy violations were rejected in isolated fixtures');
   console.log('PASS: stable gate accepted success and rejected failure, skip, and cancellation');
 }
 
@@ -77,8 +77,8 @@ async function validateRepository(root, { fixture = false } = {}) {
   } catch {
     errors.push(`${COMMAND_CATALOG}: required CI command catalog is missing`);
   }
-  for (const token of ['security:dependencies:validate', 'security:dependencies:self-test']) {
-    if (!commandCatalog.includes(token)) errors.push(`${COMMAND_CATALOG}: missing dependency security command ${token}`);
+  for (const token of ['security:dependencies:validate', 'security:dependencies:self-test', "'UI-005'", 'scripts/test-protected-role-routes.mjs']) {
+    if (!commandCatalog.includes(token)) errors.push(`${COMMAND_CATALOG}: missing required command token ${token}`);
   }
 
   const sources = new Map();
@@ -156,6 +156,7 @@ async function validateRepository(root, { fixture = false } = {}) {
   for (const token of ['force_ci_failure:', 'default: false', "github.event_name == 'workflow_dispatch'", "github.event.label.name == 'ci-force-failure'", 'NOMA_FORCE_CI_FAILURE', 'NOMA_CI_FAILURE_AUTHORITY']) {
     if (!quality.includes(token)) errors.push(`ci-quality.yml: manual deliberate-failure guard missing ${token}`);
   }
+  if (countOccurrences(commandCatalog, 'scripts/test-protected-role-routes.mjs') !== 2) errors.push(`${COMMAND_CATALOG}: protected role route smoke must run in Quality runtime and Windows compatibility`);
   const security = sources.get('.github/workflows/ci-security.yml');
   for (const token of ['security-events: write', 'fail-on-severity: moderate', 'javascript-typescript', 'security-extended']) {
     if (!security.includes(token)) errors.push(`ci-security.yml: security control missing ${token}`);
@@ -347,7 +348,9 @@ async function runSelfTest() {
     testCase('unsafe artifact absence', quality, (s) => s.replace('if-no-files-found: error', 'if-no-files-found: ignore'), 'must fail when files are absent'),
     testCase('missing cleanup', integration, (s) => s.replace('run: pnpm ci:cleanup', 'run: node --version'), 'infrastructure cleanup is required'),
     testCase('weakened dependency severity', '.github/workflows/ci-security.yml', (s) => s.replace('fail-on-severity: moderate', 'fail-on-severity: high'), 'security control missing fail-on-severity: moderate'),
-    testCase('missing dependency floor command', COMMAND_CATALOG, (s) => s.replace('security:dependencies:validate', 'security:dependencies:removed'), 'missing dependency security command security:dependencies:validate'),
+    testCase('missing dependency floor command', COMMAND_CATALOG, (s) => s.replace('security:dependencies:validate', 'security:dependencies:removed'), 'missing required command token security:dependencies:validate'),
+    testCase('missing protected route smoke', COMMAND_CATALOG, (s) => s.replaceAll('scripts/test-protected-role-routes.mjs', 'scripts/protected-smoke-removed.mjs'), 'missing required command token scripts/test-protected-role-routes.mjs'),
+    testCase('missing UI-005 trace lookup', COMMAND_CATALOG, (s) => s.replace("'UI-005'", "'UI-REMOVED'"), "missing required command token 'UI-005'"),
   ];
 
   try {

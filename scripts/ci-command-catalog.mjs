@@ -29,6 +29,7 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('traceability-ui002', 'Resolve UI-002 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'UI-002']),
       command('traceability-ui003', 'Resolve UI-003 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'UI-003']),
       command('traceability-ui004', 'Resolve UI-004 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'UI-004']),
+      command('traceability-ui005', 'Resolve UI-005 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'UI-005']),
     ]),
     static: Object.freeze([
       command('lint', 'Lint all workspace packages', 'pnpm', ['lint']),
@@ -43,6 +44,7 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
     ]),
     runtime: Object.freeze([
       command('runtime-smoke', 'Run Web, API, and Worker smoke checks', 'pnpm', ['smoke:runtimes']),
+      command('protected-role-route-smoke', 'Prove protected role routes fail closed without IAM', 'node', ['scripts/test-protected-role-routes.mjs']),
       command('tracked-diff', 'Reject tracked runtime mutations', 'git', ['diff', '--exit-code', '--', '.']),
     ]),
   }),
@@ -90,6 +92,7 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('typecheck', 'Type-check all workspace packages', 'pnpm', ['typecheck']),
       command('build', 'Build all workspace packages', 'pnpm', ['build']),
       command('runtime-smoke', 'Verify Windows runtime launch, probes, and cleanup', 'node', ['scripts/smoke-runtimes.mjs']),
+      command('protected-role-route-smoke', 'Prove protected role routes fail closed on Windows', 'node', ['scripts/test-protected-role-routes.mjs']),
       command('tracked-diff', 'Reject tracked Windows mutations', 'git', ['diff', '--exit-code', '--', '.']),
     ]),
   }),

@@ -39,7 +39,7 @@ async function pageRoutes(): Promise<string[]> {
     const segments = relative(appRoot, path).replaceAll('\\', '/').split('/').slice(0, -1)
       .filter((segment) => !/^\(.+\)$/.test(segment));
     return segments.length === 0 ? '/' : `/${segments.join('/')}`;
-  }).sort();
+  }).filter((route) => !/^\/(?:seller|rider|operations|admin)(?:\/|$)/.test(route)).sort();
 }
 
 describe('UI-004 shell navigation contracts', () => {
