@@ -128,7 +128,8 @@ INC-001,EP13,"Implement incident records, emergency feature controls, and stop-t
 INC-002,EP13,"Create security, privacy, provider, finance, delivery, and recovery runbooks",P0,P0-RECOVERY,NOT_STARTED,Security/Operations/Finance
 SEC-004,EP13,Run privileged-access and provider-account reviews,P0,P0-AUTHORITY,NOT_STARTED,Security/Access Admin
 SEC-005,EP13,Remediate dependency advisories and strengthen dependency gate,P0,P0-RECOVERY,COMPLETE,Security/Engineering/QA/DevOps
-SEC-006,EP13,Raise nanoid advisory floor to 3.3.18,P0,P0-RECOVERY,IN_REVIEW,Security/Engineering/QA/DevOps
+SEC-006,EP13,Raise nanoid advisory floor to 3.3.18,P0,P0-RECOVERY,COMPLETE,Security/Engineering/QA/DevOps
+SEC-007,EP13,Remediate deepmerge-ts advisory in Prisma configuration graph,P0,P0-RECOVERY,IN_REVIEW,Security/Engineering/QA/Data/DevOps
 QA-001,EP14,"Populate requirement-test, machine-coverage, and journey matrices",P0,P0-RECOVERY,NOT_STARTED,QA/Product
 QA-002,EP14,"Implement API, event, job, and provider contract suites",P0,P0-RECOVERY,NOT_STARTED,QA/Engineering
 QA-003,EP14,"Implement financial, inventory, custody, authority, and idempotency property suites",P0,P0-FINANCIAL,NOT_STARTED,QA/Engineering

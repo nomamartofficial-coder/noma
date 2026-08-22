@@ -588,6 +588,7 @@ A failed gate moves unfinished dependent work; it does not authorise bypassing t
 | `SEC-004` | Run privileged-access and provider-account reviews | P0 | P0-AUTHORITY | S | W7 | IAM-009,CMP-001 | Review templates, active account inventory, MFA/shared-account checks, excessive scope, revocation, and evidence. | No shared privileged/provider dashboards; stale access revoked; exceptions have owner/expiry. | Access-review evidence | Security/Access Admin |
 | `SEC-005` | Remediate dependency advisories and strengthen dependency gate | P0 | P0-RECOVERY | S | W1 | DEV-008,DEV-009 | Upgrade supported parent dependencies, converge compatible transitive ranges, enforce offline lockfile floors, and block newly introduced Moderate-or-higher vulnerabilities. | Reviewed graph has no Moderate/High/Critical advisory; weakened floors fail the Security Gate; infrastructure activation waits for clean default-branch advisory evidence. | Dependency validator/self-test; live audit; required CI gates | Security/Engineering/QA/DevOps |
 | `SEC-006` | Raise nanoid advisory floor to 3.3.18 | P0 | P0-RECOVERY | S | W1 | SEC-005 | Raise the compatible nanoid convergence override and deterministic lockfile policy to the current patched floor without unrelated dependency churn. | Frozen install and live Moderate-level audit pass; every nanoid package and PostCSS edge resolves 3.3.18; weakened floors fail the Security Gate. | Dependency validator/self-test; live audit; required CI gates | Security/Engineering/QA/DevOps |
+| `SEC-007` | Remediate deepmerge-ts advisory in Prisma configuration graph | P0 | P0-RECOVERY | S | W1 | SEC-006,DEV-004 | Converge Prisma's configuration-only dependency to the current patched deepmerge-ts release, protect the exact graph and supply-chain exception offline, and reject unrelated churn. | Frozen install and live Moderate-level audit pass; Prisma configuration resolves only deepmerge-ts 8.0.2; weakened package, edge, or exception fails the Security Gate. | Dependency validator/self-test; Prisma/database verification; live audit; required CI gates | Security/Engineering/QA/Data/DevOps |
 
 ## 38. `EP14` — Quality, performance, accessibility, UAT, and release evidence
 
@@ -644,7 +645,7 @@ A failed gate moves unfinished dependent work; it does not authorise bypassing t
 
 ## 41. Capacity reality check
 
-This document contains **152 atomic task cards**: **141 P0** and **11 P1**. They are acceptance atoms, not a claim that one person can safely review 152 unrelated pull requests in eight weeks. Approved bundling may reduce the practical pull-request count, and independent lanes may proceed in parallel, but the human review, UAT, provider, security, finance, logistics, and readiness workload remains real.
+This document contains **153 atomic task cards**: **142 P0** and **11 P1**. They are acceptance atoms, not a claim that one person can safely review 153 unrelated pull requests in eight weeks. Approved bundling may reduce the practical pull-request count, and independent lanes may proceed in parallel, but the human review, UAT, provider, security, finance, logistics, and readiness workload remains real.
 
 The eight-week target is conditional on all of the following:
 
@@ -667,7 +668,7 @@ This capacity warning is a planning inference from the atomic backlog and does n
 **Primary task pull:**
 - FND-001–FND-008
 - DEV-001–DEV-010
-- SEC-005–SEC-006
+- SEC-005–SEC-007
 - UI-001–UI-006
 
 **Week exit evidence:**

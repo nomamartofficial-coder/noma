@@ -120,7 +120,7 @@ Read-only inspection on 9 August 2026 found:
 | Dependency review / dependency graph | enabled; the pinned action blocks newly introduced `moderate` or higher vulnerabilities |
 | Secret scanning | disabled |
 | Push protection | disabled |
-| Dependabot alerts | enabled; SEC-005 remediated the original alerts, and SEC-006 raises the nanoid floor to 3.3.18 after the live audit identified the stricter patched boundary |
+| Dependabot alerts | enabled; SEC-005 remediated the original alerts, SEC-006 raised the nanoid floor to 3.3.18, and SEC-007 remediates GHSA-ggr8-5vv4-36mx in Prisma's configuration graph |
 | Branch protection / repository rulesets | active for `main` with the five stable required checks; administrator-controlled |
 | Merge queue | not configured |
 

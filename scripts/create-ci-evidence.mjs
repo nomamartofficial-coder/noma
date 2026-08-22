@@ -210,6 +210,7 @@ function traceabilityStatus(commands) {
     'traceability-dev009': 'DEV-009',
     'traceability-sec005': 'SEC-005',
     'traceability-sec006': 'SEC-006',
+    'traceability-sec007': 'SEC-007',
   });
   return {
     executed: relevant.length > 0,
