@@ -14,6 +14,18 @@ const APPROVED = Object.freeze({
   fastUri: '3.1.5',
   nanoid: '3.3.18',
   deepmergeTs: '8.0.2',
+  ui006: Object.freeze({
+    '@playwright/test': '1.62.1',
+    '@storybook/addon-a11y': '10.5.10',
+    '@storybook/addon-docs': '10.5.10',
+    '@storybook/addon-vitest': '10.5.10',
+    '@storybook/nextjs-vite': '10.5.10',
+    '@vitest/browser-playwright': '4.1.10',
+    mockdate: '3.0.5',
+    storybook: '10.5.10',
+    vite: '8.2.0',
+    vitest: '4.1.10',
+  }),
 });
 
 const sources = await readSources(ROOT);
@@ -23,11 +35,11 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log('PASS: dependency manifests, convergence overrides, lockfile packages, and dependency edges use approved patched versions');
+console.log('PASS: dependency manifests, convergence overrides, UI test-tool pins, lockfile packages, and dependency edges use approved versions');
 
 if (process.argv.includes('--self-test')) {
   runSelfTest(sources);
-  console.log('PASS: 15 weakened dependency-policy fixtures were rejected');
+  console.log('PASS: dependency-policy weakened fixtures were rejected');
 }
 
 async function readSources(root) {
@@ -49,6 +61,11 @@ function validateSources({ web, workspace, lock }) {
   if (webManifest.dependencies?.next !== APPROVED.next) {
     errors.push(`${FILES.web}: Next.js must be pinned exactly to ${APPROVED.next}`);
   }
+  for (const [name, version] of Object.entries(APPROVED.ui006)) {
+    if (webManifest.devDependencies?.[name] !== version) {
+      errors.push(`${FILES.web}: ${name} must be pinned exactly to ${version}`);
+    }
+  }
 
   for (const [name, version] of [['fast-uri', APPROVED.fastUri], ['nanoid', APPROVED.nanoid]]) {
     if (!workspace.includes(`  '${name}@': ${version}\n`)) {
@@ -67,12 +84,21 @@ function validateSources({ web, workspace, lock }) {
   if (!workspace.includes(`minimumReleaseAgeExclude:\n  - deepmerge-ts@${APPROVED.deepmergeTs}\n`)) {
     errors.push(`${FILES.workspace}: missing reviewed deepmerge-ts release-age exception for ${APPROVED.deepmergeTs}`);
   }
+  if (!workspace.includes("peerDependencyRules:\n  allowedVersions:\n    'tsconfck@3.1.6>typescript': 6.0.3\n")) {
+    errors.push(`${FILES.workspace}: missing narrow tsconfck TypeScript 6.0.3 peer allowance`);
+  }
 
   const importers = yamlSection(lock, 'importers');
   const webImporter = yamlEntryBlocks(importers, 'apps/web@').at(0)
     ?? yamlNamedEntry(importers, 'apps/web');
   if (!webImporter.includes(`      next:\n        specifier: ${APPROVED.next}\n        version: ${APPROVED.next}(`)) {
     errors.push(`${FILES.lock}: apps/web must resolve the exact Next.js ${APPROVED.next} importer`);
+  }
+  for (const [name, version] of Object.entries(APPROVED.ui006)) {
+    const importerName = name.startsWith('@') ? `'${name}'` : name;
+    if (!webImporter.includes(`      ${importerName}:\n        specifier: ${version}\n        version: ${version}`)) {
+      errors.push(`${FILES.lock}: apps/web must resolve exact ${name} ${version}`);
+    }
   }
 
   const packages = yamlSection(lock, 'packages');
@@ -82,6 +108,10 @@ function validateSources({ web, workspace, lock }) {
   assertVersions(errors, packages, 'fast-uri', [APPROVED.fastUri]);
   assertVersions(errors, packages, 'nanoid', [APPROVED.nanoid]);
   assertVersions(errors, packages, 'deepmerge-ts', [APPROVED.deepmergeTs]);
+  for (const [name, version] of Object.entries(APPROVED.ui006)) {
+    const entry = name.startsWith('@') ? `  '${name}@${version}':` : `  ${name}@${version}:`;
+    if (!packages.includes(entry)) errors.push(`${FILES.lock}: missing approved ${name} ${version} package`);
+  }
 
   const snapshots = yamlSection(lock, 'snapshots');
   const nextBlocks = yamlEntryBlocks(snapshots, `next@${APPROVED.next}`);
@@ -174,6 +204,10 @@ function runSelfTest(original) {
     fixture('downgraded Ajv fast-uri edge', 'lock', '      fast-uri: 3.1.5', '      fast-uri: 3.1.4', 'Ajv must resolve fast-uri'),
     fixture('downgraded PostCSS nanoid edge', 'lock', '      nanoid: 3.3.18', '      nanoid: 3.3.17', 'PostCSS must resolve nanoid'),
     fixture('downgraded Prisma configuration edge', 'lock', '      deepmerge-ts: 8.0.2', '      deepmerge-ts: 7.1.5', 'Prisma configuration must resolve deepmerge-ts'),
+    fixture('ranged Storybook manifest', 'web', '"storybook": "10.5.10"', '"storybook": "^10.5.10"', 'storybook must be pinned exactly'),
+    fixture('downgraded Playwright manifest', 'web', '"@playwright/test": "1.62.1"', '"@playwright/test": "1.61.0"', '@playwright/test must be pinned exactly'),
+    fixture('removed tsconfck peer allowance', 'workspace', "peerDependencyRules:\n  allowedVersions:\n    'tsconfck@3.1.6>typescript': 6.0.3\n", '', 'missing narrow tsconfck TypeScript 6.0.3 peer allowance'),
+    fixture('downgraded Storybook importer', 'lock', '      storybook:\n        specifier: 10.5.10', '      storybook:\n        specifier: 10.5.9', 'apps/web must resolve exact storybook 10.5.10'),
   ];
 
   for (const test of tests) {

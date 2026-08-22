@@ -12,4 +12,8 @@ packages/database/src/generated/prisma/
 .env.*
 !.env.example
 .vercel/
+apps/web/storybook-static/
+apps/web/playwright-report/
+apps/web/test-results/
+apps/web/.cache/
 .DS_Store
