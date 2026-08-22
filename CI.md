@@ -14,10 +14,10 @@ All workflows run on pull requests targeting `main`, pushes to `main`, merge-gro
 
 | Workflow | Mandatory jobs | Stable gate |
 |---|---|---|
-| `ci-quality.yml` | policy; lint/typecheck/build; unit/component/coverage; runtime smoke | `Noma / CI Policy`; `Noma / Quality Gate` |
+| `ci-quality.yml` | policy; lint/typecheck/build; unit/component/coverage; runtime smoke; Storybook Chromium accessibility and reviewed Linux visual comparison | `Noma / CI Policy`; `Noma / Quality Gate` |
 | `ci-integration.yml` | environment startup; PostgreSQL migration/restore; Redis/BullMQ/outbox recovery; Testcontainers isolation; real observability/readiness recovery; provider conformance | `Noma / Integration Gate` |
 | `ci-security.yml` | offline dependency-floor checks; repository secret/redaction controls; Moderate-or-higher dependency review; CodeQL JavaScript/TypeScript | `Noma / Security Gate` |
-| `ci-windows.yml` | exact toolchain; paths; frozen install; validation; lint/typecheck/build; runtime launch/probes/process cleanup | `Noma / Windows Compatibility` |
+| `ci-windows.yml` | exact toolchain; paths; frozen install; validation; lint/typecheck/build; Storybook static/browser smoke; runtime launch/probes/process cleanup | `Noma / Windows Compatibility` |
 
 Each stable gate uses `if: always()` and the checked-in `scripts/evaluate-ci-gate.mjs`. A mandatory upstream result other than `success`, including unexpected `skipped` or `cancelled`, fails the gate. Dynamic job names are never required directly.
 
@@ -74,6 +74,8 @@ pnpm observability:verify
 pnpm ui:verify
 pnpm ui:shells:verify
 pnpm ui:commerce:verify
+pnpm ui:storybook:verify
+pnpm ui:visual:test
 ```
 
 `ci:quality`, `ci:integration`, `ci:security`, and `ci:windows` execute the same checked-in command catalog used by Actions. The Security repository segment runs the deterministic dependency-floor validator and its negative self-test before secret and redaction controls. Live `pnpm audit --audit-level moderate` remains review evidence rather than a registry-dependent stable gate. The Quality policy segment runs DEV-010 observability validation and UI-001 token validation with their negative tests; unit coverage includes the token/contrast suite. The Integration harness segment runs its real PostgreSQL/Redis trace and readiness-recovery rehearsal. Windows validates the same static observability and token policy plus normal runtime startup/shutdown. These remain within the five stable gate names. Results are written under ignored `.artifacts/ci/`.
@@ -81,6 +83,8 @@ pnpm ui:commerce:verify
 The Quality policy and Windows segments include UI-003 commerce truth, exact-money, evidence/privacy, client-boundary, generated-CSS, and negative-policy validation through the existing `ui:*` aggregate. Unit/component coverage includes commerce precision, truth, axe, and keyboard/focus tests. No sixth stable gate is introduced.
 
 UI-004 route, navigation, fake-authority/data, client-boundary, link-integrity, responsive-token, and negative-policy checks run through the same `ui:validate` and `ui:self-test` aggregate in Quality policy and Windows compatibility. Shell unit/component coverage remains in the existing Quality gate; no gate name is added or changed.
+
+UI-006 adds a mandatory Quality segment that validates the Storybook inventory, runs negative policy fixtures, exercises eligible stories with real Chromium and error-level axe enforcement, builds the private static catalogue, and compares the 31 reviewed Ubuntu baselines at zero-pixel tolerance. Windows installs the same pinned Chromium and runs validation, negative tests, browser accessibility, static build, and all-entry smoke without pixel comparison. `ui:visual:update` is prohibited in CI.
 
 CI validates deployment configuration but has no provider credentials, deploy permissions, production environment, or deployment hook. Remote staging smoke remains a separately authorized post-deploy action and its redacted evidence is created under `.artifacts/deployment/`.
 
