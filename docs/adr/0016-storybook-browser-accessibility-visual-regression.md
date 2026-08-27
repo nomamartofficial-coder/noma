@@ -25,6 +25,7 @@ Protected routes remain fail closed. Protected presentation stories call no acce
 - The five stable required gate names remain unchanged; the Quality Gate gains a mandatory Storybook/visual job and Windows gains browser smoke.
 - Automated axe and screenshots complement rather than replace keyboard, screen-reader, zoom, forced-colour, and intended-actor review.
 - A real accessibility defect found in the existing account shell is corrected independently by retaining one banner landmark and labelling the account-context section.
+- Two newly disclosed `image-size@2.0.2` denial-of-service advisories have no published fix. They are isolated to private, development-only Storybook image metadata processing; a two-ID exception expires on 10 September 2026, while the production dependency audit remains clean.
 
 ## Rejected alternatives
 

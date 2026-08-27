@@ -8,7 +8,7 @@
 
 Noma treats the committed manifests and `pnpm-lock.yaml` as reviewed supply-chain inputs. A frozen install proves reproducibility, but it does not prove that resolved versions meet the approved security floor. SEC-005 therefore combines an offline lockfile policy with GitHub dependency review and a separately recorded live registry audit. SEC-006 raises the reviewed `nanoid` floor after the live audit began classifying `3.3.17` as vulnerable. SEC-007 resolves GHSA-ggr8-5vv4-36mx after Prisma's current configuration package began resolving the affected `deepmerge-ts` line.
 
-This policy does not deploy, provision infrastructure, contact a business provider, or activate a marketplace capability.
+This policy does not deploy, provision infrastructure, contact a business provider, or activate a marketplace capability. UI-006 also records an expiring exception for two unfixable `image-size` advisories in private Storybook build tooling; the production dependency audit remains clean and the exception expires on 10 September 2026.
 
 ## Reviewed resolutions
 
@@ -20,6 +20,7 @@ This policy does not deploy, provision infrastructure, contact a business provid
 | `fast-uri` | `3.1.5` | Compatible convergence override for Ajv's `^3.0.1` range |
 | `nanoid` | `3.3.18` | Current patched floor for GHSA-2v37-7h3g-55p8 within PostCSS's declared range |
 | `deepmerge-ts` | `8.0.2` | Current patched release for GHSA-ggr8-5vv4-36mx in Prisma's configuration-only graph |
+| `image-size` | `2.0.2` (temporary exception) | No patched npm release exists for GHSA-5p2g-fcmc-qvqq or GHSA-w3rx-r6r6-pgpr; reachable only through development-only Storybook tooling |
 
 The `fast-uri@` and `nanoid@` keys in `pnpm-workspace.yaml` intentionally use pnpm's convergence-only override form. They apply only where the declaring dependency already accepts the selected version. The forced `deepmerge-ts` override is a bounded exception because the current stable Prisma `7.9.1` parent pins the vulnerable line exactly and no supported parent upgrade exists. Its exact `minimumReleaseAgeExclude` entry records the reviewed advisory response required while the patched release is still inside the local supply-chain cooling period; it does not permit another package or version. Prisma schema validation, generation, migration, build, and runtime checks must therefore prove the patched major remains compatible before review. PostCSS, Sharp, and deepmerge-ts are not added as direct application dependencies; ownership remains with their parents.
 
@@ -34,7 +35,7 @@ pnpm audit --audit-level moderate
 
 The first three commands are deterministic and network-free. They validate exact manifest pins, reviewed overrides, lockfile package sets, and the Next→PostCSS/Sharp, Ajv→fast-uri, and PostCSS→nanoid edges. The self-test mutates each protected boundary in memory and proves the validator rejects weaker fixtures.
 
-The live `pnpm audit` command is required review evidence but is not embedded in a stable required CI gate because registry availability is external and time-varying. GitHub's pinned Dependency Review action independently rejects newly introduced vulnerabilities at `moderate` severity or above.
+The live `pnpm audit` command is required review evidence but is not embedded in a stable required CI gate because registry availability is external and time-varying. Its committed ignore list contains only the two `image-size` advisory IDs documented in `docs/security/ui-006-image-size-exception.md`; validation rejects any change to that set, a weaker audit floor, a changed dependency edge, or an expired review date. `pnpm audit --prod --audit-level moderate` must remain clean. GitHub's pinned Dependency Review action independently rejects newly introduced vulnerabilities at `moderate` severity or above.
 
 ## Update and recovery
 

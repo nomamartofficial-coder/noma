@@ -34,6 +34,8 @@ Registry metadata was rechecked on 22 August 2026 before publication. Storybook 
 
 `pnpm peers check` passes. The sole reviewed peer convergence allows `tsconfck@3.1.6` to consume the repository's locked TypeScript `6.0.3`; dependency policy validation rejects its removal or broadening. No lifecycle-script permission was added.
 
+The 27 August 2026 live audit disclosed two High denial-of-service advisories in `image-size@2.0.2`, reached only through `@storybook/nextjs-vite` → `vite-plugin-storybook-nextjs`. The parent accepts `^2.0.0`, but npm has no `image-size@2.0.3` release and the upstream repository is archived. The production audit is clean. A two-ID, development-only exception is documented in `docs/security/ui-006-image-size-exception.md`, expires on 10 September 2026, and may not be broadened or renewed without independent Security review.
+
 Stories use immutable synthetic values. They may not read environment credentials, contact a network, import `@noma/testing`, use production records, or introduce alternate product behavior. Protected role routes remain fail closed; their stories render presentation components directly with clearly synthetic inputs.
 
 ## Inventory and states
