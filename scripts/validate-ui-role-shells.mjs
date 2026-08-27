@@ -117,8 +117,14 @@ export function validateUiRoleShells(fixture) {
     if (/universal(?:Role)?Dashboard/i.test(source.contents)) failures.push(fail('UNIVERSAL_DASHBOARD', source.path));
   }
 
-  for (const dependency of ['ag-grid-react', '@tanstack/react-table', 'storybook', '@storybook/react', 'playwright', '@playwright/test', 'next-auth']) {
+  for (const dependency of ['ag-grid-react', '@tanstack/react-table', '@storybook/react', 'playwright', 'next-auth']) {
     if (fixture.rootPackage.dependencies?.[dependency] || fixture.rootPackage.devDependencies?.[dependency] || fixture.webPackage.dependencies?.[dependency] || fixture.webPackage.devDependencies?.[dependency]) failures.push(fail('DEPENDENCY_SCOPE', dependency));
+  }
+  for (const [dependency, approvedVersion] of [['@playwright/test', '1.62.1'], ['storybook', '10.5.10']]) {
+    if (fixture.webPackage.dependencies?.[dependency]
+      || fixture.rootPackage.dependencies?.[dependency]
+      || fixture.rootPackage.devDependencies?.[dependency]
+      || fixture.webPackage.devDependencies?.[dependency] !== approvedVersion) failures.push(fail('DEPENDENCY_SCOPE', dependency));
   }
   if (!fixture.operationsShell.includes('destinations: readonly OperationsWorkspaceDestination[]') || !fixture.adminShell.includes('destinations: readonly AdminDestination[]')) failures.push(fail('SUPPLIED_ONLY', 'Operations/Admin navigation must be explicit input'));
   if (!fixture.operationsShell.includes('density="compact"') || !fixture.operationsShell.includes('TableCaption') || !fixture.operationsShell.includes('scope="col"')) failures.push(fail('OPERATIONS_TABLE', 'compact semantic table contract missing'));
