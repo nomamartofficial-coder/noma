@@ -4,6 +4,7 @@
 - Date: 2026-08-22
 - Task: `UI-006`
 - Issue: `#46`
+- Pull request: `#47`
 - Authority: `docs/05-design-system.md`, `docs/06-technical-architecture.md`, `docs/11-testing-strategy.md`, `REQ-UI-006`, `DEC-SCOPE-010`, `DEC-REPO-001`
 
 ## Context

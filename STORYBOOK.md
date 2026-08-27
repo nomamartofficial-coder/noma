@@ -2,6 +2,7 @@
 
 > **Task:** `UI-006`  
 > **Issue:** `#46`  
+> **Pull request:** `#47`
 > **Status:** implemented for review; private development and CI tooling only
 
 ## Purpose and boundary
