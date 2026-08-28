@@ -12,7 +12,7 @@ import {
   TimelineItem,
 } from '@noma/ui';
 import type { CommercePhase } from '@noma/ui';
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { FIXED_STORY_INSTANT } from './contracts';
 

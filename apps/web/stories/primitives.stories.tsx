@@ -24,7 +24,7 @@ import {
   ToastProvider,
   useToast,
 } from '@noma/ui';
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 function PrimitiveCanvas({ children }: Readonly<{ children?: React.ReactNode }>) {

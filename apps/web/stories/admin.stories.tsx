@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { AdminReviewFrame, AdminShell } from '../src/shells/protected/admin/admin-shell';
 import { adminDestinations } from '../src/shells/protected/admin/navigation';
 
@@ -21,7 +21,7 @@ const meta = {
   id: 'protected-admin',
   title: 'Protected surfaces/Admin',
   component: AdminFixture,
-  parameters: { layout: 'fullscreen', nextjs: { appDirectory: true, navigation: { pathname: '/admin' } } },
+  parameters: { layout: 'fullscreen', noma: { pathname: '/admin' } },
 } satisfies Meta<typeof AdminFixture>;
 
 export default meta;

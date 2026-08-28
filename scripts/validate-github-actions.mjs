@@ -55,7 +55,7 @@ console.log(`PASS: ${result.workflows} workflows, ${result.jobs} bounded jobs, $
 if (process.argv.includes('--self-test')) {
   await runSelfTest();
   selfTestGateEvaluator();
-  console.log('PASS: 31 injected workflow policy violations were rejected in isolated fixtures');
+  console.log('PASS: 32 injected workflow policy violations were rejected in isolated fixtures');
   console.log('PASS: stable gate accepted success and rejected failure, skip, and cancellation');
 }
 
@@ -164,6 +164,7 @@ async function validateRepository(root, { fixture = false } = {}) {
   for (const token of ['security-events: write', 'fail-on-severity: moderate', 'javascript-typescript', 'security-extended']) {
     if (!security.includes(token)) errors.push(`ci-security.yml: security control missing ${token}`);
   }
+  if (/^\s*allow-ghsas:/m.test(security)) errors.push('ci-security.yml: dependency review advisory allowances are forbidden');
   if (countOccurrences(combined, 'security-events: write') !== 1) {
     errors.push('security-events: write must be granted only to the CodeQL job');
   }
@@ -351,6 +352,7 @@ async function runSelfTest() {
     testCase('unsafe artifact absence', quality, (s) => s.replace('if-no-files-found: error', 'if-no-files-found: ignore'), 'must fail when files are absent'),
     testCase('missing cleanup', integration, (s) => s.replace('run: pnpm ci:cleanup', 'run: node --version'), 'infrastructure cleanup is required'),
     testCase('weakened dependency severity', '.github/workflows/ci-security.yml', (s) => s.replace('fail-on-severity: moderate', 'fail-on-severity: high'), 'security control missing fail-on-severity: moderate'),
+    testCase('dependency advisory allowance', '.github/workflows/ci-security.yml', (s) => s.replace('          fail-on-severity: moderate', '          fail-on-severity: moderate\n          allow-ghsas: GHSA-5p2g-fcmc-qvqq'), 'dependency review advisory allowances are forbidden'),
     testCase('missing dependency floor command', COMMAND_CATALOG, (s) => s.replace('security:dependencies:validate', 'security:dependencies:removed'), 'missing required command token security:dependencies:validate'),
     testCase('missing protected route smoke', COMMAND_CATALOG, (s) => s.replaceAll('scripts/test-protected-role-routes.mjs', 'scripts/protected-smoke-removed.mjs'), 'missing required command token scripts/test-protected-role-routes.mjs'),
     testCase('missing UI-005 trace lookup', COMMAND_CATALOG, (s) => s.replace("'UI-005'", "'UI-REMOVED'"), "missing required command token 'UI-005'"),

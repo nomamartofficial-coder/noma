@@ -20,8 +20,3 @@ allowBuilds:
   ssh2: false
 minimumReleaseAgeExclude:
   - deepmerge-ts@8.0.2
-audit:
-  level: moderate
-  ignore:
-    - GHSA-5p2g-fcmc-qvqq
-    - GHSA-w3rx-r6r6-pgpr

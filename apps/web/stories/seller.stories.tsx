@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { SellerShell } from '../src/shells/protected/seller/seller-shell';
 
 function SellerFixture() {
@@ -9,7 +9,7 @@ const meta = {
   id: 'protected-seller',
   title: 'Protected surfaces/Seller',
   component: SellerFixture,
-  parameters: { layout: 'fullscreen', nextjs: { appDirectory: true, navigation: { pathname: '/seller' } } },
+  parameters: { layout: 'fullscreen', noma: { pathname: '/seller' } },
 } satisfies Meta<typeof SellerFixture>;
 
 export default meta;

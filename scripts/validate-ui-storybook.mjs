@@ -8,6 +8,7 @@ const FILES = Object.freeze({
   webPackage: 'apps/web/package.json',
   main: 'apps/web/.storybook/main.ts',
   preview: 'apps/web/.storybook/preview.tsx',
+  navigationMock: 'apps/web/.storybook/next-navigation.mock.ts',
   vitest: 'apps/web/vitest.storybook.config.ts',
   playwright: 'apps/web/playwright.visual.config.ts',
   contracts: 'apps/web/stories/contracts.ts',
@@ -23,7 +24,7 @@ const PINS = Object.freeze({
   '@storybook/addon-a11y': '10.5.10',
   '@storybook/addon-docs': '10.5.10',
   '@storybook/addon-vitest': '10.5.10',
-  '@storybook/nextjs-vite': '10.5.10',
+  '@storybook/react-vite': '10.5.10',
   '@vitest/browser-playwright': '4.1.10',
   mockdate: '3.0.5',
   storybook: '10.5.10',
@@ -53,6 +54,9 @@ async function readSources() {
   const entries = await Promise.all(Object.values(FILES).map(async (path) => [path, await readFile(resolve(ROOT, path), 'utf8')]));
   const storyNames = (await readdir(resolve(ROOT, 'apps/web/stories'))).filter((name) => name.endsWith('.stories.tsx'));
   for (const name of storyNames) entries.push([`apps/web/stories/${name}`, await readFile(resolve(ROOT, 'apps/web/stories', name), 'utf8')]);
+  const productionNames = (await readdir(resolve(ROOT, 'apps/web/src'), { recursive: true }))
+    .filter((name) => typeof name === 'string' && /\.(?:ts|tsx)$/.test(name));
+  for (const name of productionNames) entries.push([`apps/web/src/${name.replaceAll('\\', '/')}`, await readFile(resolve(ROOT, 'apps/web/src', name), 'utf8')]);
   return new Map(entries);
 }
 
@@ -64,19 +68,29 @@ function validateTextSources(sources) {
   for (const [name, version] of Object.entries(PINS)) {
     if (webPackage.devDependencies?.[name] !== version) errors.push(`${FILES.webPackage}: ${name} must be pinned exactly to ${version}`);
   }
-  for (const forbidden of ['@storybook/test', 'chromatic', 'playwright']) {
+  for (const forbidden of ['@storybook/test', '@storybook/nextjs-vite', 'chromatic', 'playwright']) {
     if (webPackage.devDependencies?.[forbidden]) errors.push(`${FILES.webPackage}: forbidden direct dependency ${forbidden}`);
   }
 
   const main = sources.get(FILES.main);
-  for (const token of ['@storybook/nextjs-vite', '@storybook/addon-docs', '@storybook/addon-a11y', '@storybook/addon-vitest', '../stories/**/*.stories']) {
+  for (const token of ['@storybook/react-vite', '@storybook/addon-docs', '@storybook/addon-a11y', '@storybook/addon-vitest', '../stories/**/*.stories', "jsx: { runtime: 'automatic' }", "'next/navigation'", 'next-navigation.mock.ts']) {
     if (!main.includes(token)) errors.push(`${FILES.main}: missing ${token}`);
+  }
+  for (const forbidden of ['@storybook/nextjs-vite', 'vite-plugin-storybook-nextjs']) {
+    if (main.includes(forbidden)) errors.push(`${FILES.main}: vulnerable adapter is forbidden (${forbidden})`);
   }
   if (/src\/app.*stories|stories.*src\/app/.test(main)) errors.push(`${FILES.main}: production App Router paths must not be Storybook sources`);
 
   const preview = sources.get(FILES.preview);
-  for (const token of ["a11y: { test: 'error' }", 'FIXED_STORY_INSTANT', "locale: 'en-NG'", 'Africa/Lagos', "tags: ['autodocs', 'test']"]) {
+  for (const token of ["a11y: { test: 'error' }", 'FIXED_STORY_INSTANT', "locale: 'en-NG'", 'Africa/Lagos', "tags: ['autodocs', 'test']", 'setStoryPathname(context.parameters.noma?.pathname)']) {
     if (!preview.includes(token)) errors.push(`${FILES.preview}: missing deterministic policy ${token}`);
+  }
+  const navigationMock = sources.get(FILES.navigationMock);
+  for (const token of ['setStoryPathname', 'usePathname', "storyPathname = '/'", 'pathnamePattern']) {
+    if (!navigationMock.includes(token)) errors.push(`${FILES.navigationMock}: missing deterministic navigation contract ${token}`);
+  }
+  for (const forbidden of ['notFound', 'redirect', 'permanentRedirect', 'useRouter', 'useSearchParams']) {
+    if (new RegExp(`\\b${forbidden}\\b`).test(navigationMock)) errors.push(`${FILES.navigationMock}: broader Next.js authority mock is forbidden (${forbidden})`);
   }
 
   const vitest = sources.get(FILES.vitest);
@@ -106,9 +120,23 @@ function validateTextSources(sources) {
   if (sources.get(FILES.taskIndex).includes('IAM-001,EP03,"Implement User, credential, session, and recovery persistence",P0,P0-AUTHORITY,IN_REVIEW')) errors.push('IAM-001 must not be advanced by UI-006');
 
   for (const [path, source] of sources) {
+    if (path.startsWith('apps/web/src/') && /(?:next-navigation\.mock|\.storybook)/.test(source)) {
+      errors.push(`${path}: production source must not import Storybook navigation mocks`);
+    }
     if (!path.includes('/stories/') || (!path.endsWith('.tsx') && !path.endsWith('.ts'))) continue;
+    if (/\bnextjs\s*:/.test(source)) errors.push(`${path}: adapter-specific Next.js story parameters are forbidden`);
     for (const [label, pattern] of forbiddenStoryPatterns) if (pattern.test(source)) errors.push(`${path}: forbidden ${label}`);
     if (/https?:\/\//.test(source)) errors.push(`${path}: external URLs are forbidden in deterministic stories`);
+  }
+  const deterministicPaths = Object.freeze({
+    'apps/web/stories/admin.stories.tsx': '/admin',
+    'apps/web/stories/consumer-shells.stories.tsx': '/',
+    'apps/web/stories/operations.stories.tsx': '/operations/support',
+    'apps/web/stories/rider.stories.tsx': '/rider',
+    'apps/web/stories/seller.stories.tsx': '/seller',
+  });
+  for (const [path, pathname] of Object.entries(deterministicPaths)) {
+    if (!sources.get(path).includes(`noma: { pathname: '${pathname}' }`)) errors.push(`${path}: missing deterministic Storybook pathname ${pathname}`);
   }
   return [...new Set(errors)];
 }
@@ -180,6 +208,10 @@ async function selfTest() {
     ['misplaced Storybook app', FILES.rootPackage, (s) => s.replace('"name": "noma"', '"name": "noma", "ui006": "apps/storybook"')],
     ['production route source', FILES.main, (s) => `${s}\n// stories: src/app/storybook\n`],
     ['ranged Storybook pin', FILES.webPackage, (s) => s.replace('"storybook": "10.5.10"', '"storybook": "^10.5.10"')],
+    ['vulnerable Next.js Storybook adapter', FILES.webPackage, (s) => s.replace('"@storybook/react-vite": "10.5.10"', '"@storybook/nextjs-vite": "10.5.10"')],
+    ['uncontrolled shell pathname', 'apps/web/stories/seller.stories.tsx', (s) => s.replace("noma: { pathname: '/seller' }", "noma: { pathname: undefined }")],
+    ['broader Next.js authority mock', FILES.navigationMock, (s) => `${s}\nexport function redirect() {}\n`],
+    ['production Storybook mock import', 'apps/web/src/shells/navigation.ts', (s) => `${s}\n// import '../../.storybook/next-navigation.mock'\n`],
     ['Chromatic dependency', FILES.webPackage, (s) => s.replace('"storybook": "10.5.10"', '"chromatic": "1.0.0", "storybook": "10.5.10"')],
     ['hosted visual token', 'apps/web/stories/foundations.stories.tsx', (s) => `${s}\n// CHROMATIC_TOKEN\n`],
     ['CI baseline update', FILES.qualityWorkflow, (s) => `${s}\n# pnpm ui:visual:update\n`],

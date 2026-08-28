@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import AccountError from '../src/app/(buyer)/account/error';
 import AccountLoading from '../src/app/(buyer)/account/loading';
@@ -43,7 +43,7 @@ const meta = {
   id: 'consumer-shells',
   title: 'Consumer shells/Marketplace and Buyer',
   component: ConsumerStories,
-  parameters: { layout: 'fullscreen', nextjs: { appDirectory: true } },
+  parameters: { layout: 'fullscreen', noma: { pathname: '/' } },
 } satisfies Meta<typeof ConsumerStories>;
 
 export default meta;

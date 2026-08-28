@@ -27,7 +27,7 @@ Registry metadata was rechecked on 22 August 2026 before publication. Storybook 
 
 | Direct development dependency | Exact version | License |
 | --- | ---: | --- |
-| `storybook`, `@storybook/nextjs-vite`, `@storybook/addon-docs`, `@storybook/addon-a11y`, `@storybook/addon-vitest` | `10.5.10` | MIT |
+| `storybook`, `@storybook/react-vite`, `@storybook/addon-docs`, `@storybook/addon-a11y`, `@storybook/addon-vitest` | `10.5.10` | MIT |
 | `vite` | `8.2.0` | MIT |
 | `vitest`, `@vitest/browser-playwright` | `4.1.10` | MIT |
 | `@playwright/test` | `1.62.1` | Apache-2.0 |
@@ -35,7 +35,7 @@ Registry metadata was rechecked on 22 August 2026 before publication. Storybook 
 
 `pnpm peers check` passes. The sole reviewed peer convergence allows `tsconfck@3.1.6` to consume the repository's locked TypeScript `6.0.3`; dependency policy validation rejects its removal or broadening. No lifecycle-script permission was added.
 
-The 27 August 2026 live audit disclosed two High denial-of-service advisories in `image-size@2.0.2`, reached only through `@storybook/nextjs-vite` → `vite-plugin-storybook-nextjs`. The parent accepts `^2.0.0`, but npm has no `image-size@2.0.3` release and the upstream repository is archived. The production audit is clean. A two-ID, development-only exception is documented in `docs/security/ui-006-image-size-exception.md`, expires on 10 September 2026, and may not be broadened or renewed without independent Security review.
+The 27 August 2026 live audit disclosed two High advisories in the Next.js-specific Storybook adapter's `image-size@2.0.2` edge. UI-006 removes that adapter rather than accepting an advisory exception. Storybook uses the reviewed React/Vite framework and an isolated deterministic `next/navigation` pathname mock outside production source. Dependency policy rejects the removed adapter, its vulnerable transitive packages, audit ignores, and GitHub Dependency Review allowances.
 
 Stories use immutable synthetic values. They may not read environment credentials, contact a network, import `@noma/testing`, use production records, or introduce alternate product behavior. Protected role routes remain fail closed; their stories render presentation components directly with clearly synthetic inputs.
 

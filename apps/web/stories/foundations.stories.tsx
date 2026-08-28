@@ -1,5 +1,5 @@
 import { densityModes, statusTones } from '@noma/ui';
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 function FoundationCanvas({ mode }: Readonly<{ mode: 'colour' | 'type' }>) {
   if (mode === 'colour') {

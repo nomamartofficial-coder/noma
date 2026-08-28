@@ -6,7 +6,6 @@ const FILES = Object.freeze({
   web: 'apps/web/package.json',
   workspace: 'pnpm-workspace.yaml',
   lock: 'pnpm-lock.yaml',
-  imageSizeException: 'docs/security/ui-006-image-size-exception.md',
 });
 const APPROVED = Object.freeze({
   next: '16.3.0',
@@ -15,17 +14,12 @@ const APPROVED = Object.freeze({
   fastUri: '3.1.5',
   nanoid: '3.3.18',
   deepmergeTs: '8.0.2',
-  imageSize: Object.freeze({
-    version: '2.0.2',
-    advisories: Object.freeze(['GHSA-5p2g-fcmc-qvqq', 'GHSA-w3rx-r6r6-pgpr']),
-    reviewDue: '2026-09-10',
-  }),
   ui006: Object.freeze({
     '@playwright/test': '1.62.1',
     '@storybook/addon-a11y': '10.5.10',
     '@storybook/addon-docs': '10.5.10',
     '@storybook/addon-vitest': '10.5.10',
-    '@storybook/nextjs-vite': '10.5.10',
+    '@storybook/react-vite': '10.5.10',
     '@vitest/browser-playwright': '4.1.10',
     mockdate: '3.0.5',
     storybook: '10.5.10',
@@ -54,7 +48,7 @@ async function readSources(root) {
   ));
 }
 
-function validateSources({ web, workspace, lock, imageSizeException }) {
+function validateSources({ web, workspace, lock }) {
   const errors = [];
   let webManifest;
   try {
@@ -93,23 +87,11 @@ function validateSources({ web, workspace, lock, imageSizeException }) {
   if (!workspace.includes("peerDependencyRules:\n  allowedVersions:\n    'tsconfck@3.1.6>typescript': 6.0.3\n")) {
     errors.push(`${FILES.workspace}: missing narrow tsconfck TypeScript 6.0.3 peer allowance`);
   }
-  const approvedAuditBlock = `audit:\n  level: moderate\n  ignore:\n${APPROVED.imageSize.advisories.map((advisory) => `    - ${advisory}`).join('\n')}\n`;
-  if (!workspace.includes(approvedAuditBlock)) {
-    errors.push(`${FILES.workspace}: image-size audit exception must contain only the two reviewed advisories at the moderate floor`);
+  if (/^audit:\s*$[\s\S]*?^\s+ignore:\s*$/m.test(workspace)) {
+    errors.push(`${FILES.workspace}: dependency audit advisory ignores are forbidden`);
   }
-  for (const fragment of [
-    `Package: \`image-size@${APPROVED.imageSize.version}\``,
-    ...APPROVED.imageSize.advisories.map((advisory) => `Advisory: \`${advisory}\``),
-    `Review due: \`${APPROVED.imageSize.reviewDue}\``,
-    'Scope: development-only Storybook image metadata processing',
-    'Production audit: no known vulnerabilities',
-    'No published patched release exists',
-  ]) {
-    if (!imageSizeException.includes(fragment)) errors.push(`${FILES.imageSizeException}: missing ${fragment}`);
-  }
-  const reviewDue = Date.parse(`${APPROVED.imageSize.reviewDue}T23:59:59Z`);
-  if (!Number.isFinite(reviewDue) || Date.now() > reviewDue) {
-    errors.push(`${FILES.imageSizeException}: reviewed image-size exception expired on ${APPROVED.imageSize.reviewDue}`);
+  for (const advisory of ['GHSA-5p2g-fcmc-qvqq', 'GHSA-w3rx-r6r6-pgpr']) {
+    if (workspace.includes(advisory)) errors.push(`${FILES.workspace}: advisory exclusions are forbidden (${advisory})`);
   }
 
   const importers = yamlSection(lock, 'importers');
@@ -132,7 +114,6 @@ function validateSources({ web, workspace, lock, imageSizeException }) {
   assertVersions(errors, packages, 'fast-uri', [APPROVED.fastUri]);
   assertVersions(errors, packages, 'nanoid', [APPROVED.nanoid]);
   assertVersions(errors, packages, 'deepmerge-ts', [APPROVED.deepmergeTs]);
-  assertVersions(errors, packages, 'image-size', [APPROVED.imageSize.version]);
   for (const [name, version] of Object.entries(APPROVED.ui006)) {
     const entry = name.startsWith('@') ? `  '${name}@${version}':` : `  ${name}@${version}:`;
     if (!packages.includes(entry)) errors.push(`${FILES.lock}: missing approved ${name} ${version} package`);
@@ -161,9 +142,9 @@ function validateSources({ web, workspace, lock, imageSizeException }) {
   if (prismaConfigBlocks.length !== 1) errors.push(`${FILES.lock}: expected one Prisma configuration snapshot, found ${prismaConfigBlocks.length}`);
   for (const block of prismaConfigBlocks) requireDependency(errors, block, 'Prisma configuration', 'deepmerge-ts', APPROVED.deepmergeTs);
 
-  const storybookNextBlocks = yamlEntryBlocks(snapshots, 'vite-plugin-storybook-nextjs@');
-  if (storybookNextBlocks.length !== 1) errors.push(`${FILES.lock}: expected one Storybook Next.js adapter snapshot, found ${storybookNextBlocks.length}`);
-  for (const block of storybookNextBlocks) requireDependency(errors, block, 'Storybook Next.js adapter', 'image-size', APPROVED.imageSize.version);
+  for (const forbidden of ['@storybook/nextjs-vite', 'vite-plugin-storybook-nextjs', 'image-size@']) {
+    if (lock.includes(forbidden)) errors.push(`${FILES.lock}: vulnerable Storybook dependency is forbidden (${forbidden})`);
+  }
 
   return [...new Set(errors)];
 }
@@ -236,11 +217,10 @@ function runSelfTest(original) {
     fixture('ranged Storybook manifest', 'web', '"storybook": "10.5.10"', '"storybook": "^10.5.10"', 'storybook must be pinned exactly'),
     fixture('downgraded Playwright manifest', 'web', '"@playwright/test": "1.62.1"', '"@playwright/test": "1.61.0"', '@playwright/test must be pinned exactly'),
     fixture('removed tsconfck peer allowance', 'workspace', "peerDependencyRules:\n  allowedVersions:\n    'tsconfck@3.1.6>typescript': 6.0.3\n", '', 'missing narrow tsconfck TypeScript 6.0.3 peer allowance'),
-    fixture('removed image-size advisory exception', 'workspace', '    - GHSA-w3rx-r6r6-pgpr\n', '', 'image-size audit exception must contain only the two reviewed advisories'),
-    fixture('weakened audit floor', 'workspace', '  level: moderate\n', '  level: high\n', 'image-size audit exception must contain only the two reviewed advisories'),
-    fixture('downgraded image-size package', 'lock', 'image-size@2.0.2:', 'image-size@2.0.1:', 'image-size package versions must be'),
-    fixture('changed Storybook image-size edge', 'lock', '      image-size: 2.0.2', '      image-size: 2.0.1', 'Storybook Next.js adapter must resolve image-size'),
-    fixture('expired image-size review', 'imageSizeException', 'Review due: `2026-09-10`', 'Review due: `2026-08-26`', 'missing Review due'),
+    fixture('reintroduced vulnerable Storybook adapter', 'web', '"@storybook/react-vite": "10.5.10"', '"@storybook/nextjs-vite": "10.5.10"', '@storybook/react-vite must be pinned exactly'),
+    fixture('added audit advisory ignore', 'workspace', 'minimumReleaseAgeExclude:\n  - deepmerge-ts@8.0.2\n', 'minimumReleaseAgeExclude:\n  - deepmerge-ts@8.0.2\naudit:\n  ignore:\n    - GHSA-5p2g-fcmc-qvqq\n', 'dependency audit advisory ignores are forbidden'),
+    fixture('reintroduced vulnerable adapter lock entry', 'lock', 'packages:\n', 'packages:\n  vite-plugin-storybook-nextjs@3.3.2:\n', 'vulnerable Storybook dependency is forbidden'),
+    fixture('reintroduced image-size lock entry', 'lock', 'packages:\n', 'packages:\n  image-size@2.0.2:\n', 'vulnerable Storybook dependency is forbidden'),
     fixture('downgraded Storybook importer', 'lock', '      storybook:\n        specifier: 10.5.10', '      storybook:\n        specifier: 10.5.9', 'apps/web must resolve exact storybook 10.5.10'),
   ];
 

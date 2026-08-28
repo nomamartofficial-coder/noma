@@ -4,10 +4,11 @@ import '@noma/ui/commerce.css';
 import '../src/app/globals.css';
 import '../stories/storybook.css';
 
-import type { Preview } from '@storybook/nextjs-vite';
+import type { Preview } from '@storybook/react-vite';
 import MockDate from 'mockdate';
 
 import { FIXED_STORY_INSTANT, nomaViewports } from '../stories/contracts';
+import { setStoryPathname } from './next-navigation.mock';
 
 const preview: Preview = {
   async beforeEach() {
@@ -15,11 +16,14 @@ const preview: Preview = {
     return () => MockDate.reset();
   },
   decorators: [
-    (Story) => (
-      <div className="noma-story-canvas" data-noma-story-ready="true">
-        <Story />
-      </div>
-    ),
+    (Story, context) => {
+      setStoryPathname(context.parameters.noma?.pathname);
+      return (
+        <div className="noma-story-canvas" data-noma-story-ready="true">
+          <Story />
+        </div>
+      );
+    },
   ],
   initialGlobals: {
     backgrounds: { value: 'light' },

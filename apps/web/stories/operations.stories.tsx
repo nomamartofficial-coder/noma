@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { operationsDestinations } from '../src/shells/protected/operations/navigation';
 import { OperationsQueueFrame, OperationsQueueTable, OperationsShell } from '../src/shells/protected/operations/operations-shell';
 
@@ -14,7 +14,7 @@ const meta = {
   id: 'protected-operations',
   title: 'Protected surfaces/Operations',
   component: OperationsFixture,
-  parameters: { layout: 'fullscreen', nextjs: { appDirectory: true, navigation: { pathname: '/operations/support' } } },
+  parameters: { layout: 'fullscreen', noma: { pathname: '/operations/support' } },
 } satisfies Meta<typeof OperationsFixture>;
 
 export default meta;

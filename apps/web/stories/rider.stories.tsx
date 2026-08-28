@@ -1,5 +1,5 @@
 import { Button, CommerceStatus } from '@noma/ui';
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { RiderActionMode, RiderShell } from '../src/shells/protected/rider/rider-shell';
 import type { RiderConnectivityPresentation } from '../src/shells/protected/rider/rider-shell';
 
@@ -11,7 +11,7 @@ const meta = {
   id: 'protected-rider',
   title: 'Protected surfaces/Rider connectivity',
   component: RiderFixture,
-  parameters: { layout: 'fullscreen', nextjs: { appDirectory: true, navigation: { pathname: '/rider' } } },
+  parameters: { layout: 'fullscreen', noma: { pathname: '/rider' } },
 } satisfies Meta<typeof RiderFixture>;
 
 export default meta;

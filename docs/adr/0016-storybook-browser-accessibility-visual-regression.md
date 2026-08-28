@@ -19,6 +19,8 @@ Run every eligible story in real Chromium through Storybook's Vitest integration
 
 Protected routes remain fail closed. Protected presentation stories call no access resolver and create no role, session, cookie, header, query, or environment bypass. Storybook has no deployment configuration and no production data or provider access.
 
+Use the React/Vite Storybook framework for browser-renderable components and synthetic shell compositions. A Storybook-only Vite alias supplies deterministic `usePathname` presentation state; it exports no redirect, authorization, not-found, search-parameter, or routing authority and is excluded from Next.js production source.
+
 ## Consequences
 
 - Component documentation, interactions, accessibility checks, state coverage, and visual review share one deterministic inventory.
@@ -26,7 +28,7 @@ Protected routes remain fail closed. Protected presentation stories call no acce
 - The five stable required gate names remain unchanged; the Quality Gate gains a mandatory Storybook/visual job and Windows gains browser smoke.
 - Automated axe and screenshots complement rather than replace keyboard, screen-reader, zoom, forced-colour, and intended-actor review.
 - A real accessibility defect found in the existing account shell is corrected independently by retaining one banner landmark and labelling the account-context section.
-- Two newly disclosed `image-size@2.0.2` denial-of-service advisories have no published fix. They are isolated to private, development-only Storybook image metadata processing; a two-ID exception expires on 10 September 2026, while the production dependency audit remains clean.
+- The vulnerable Next.js-specific Storybook adapter and its `image-size` edge are absent. Audit and Dependency Review advisory allowances remain forbidden.
 
 ## Rejected alternatives
 
@@ -35,6 +37,7 @@ Protected routes remain fail closed. Protected presentation stories call no acce
 - Storybook production deployment: rejected because documentation is development and CI tooling, not a product route.
 - Browser stories backed by `@noma/testing`, network calls, or production data: rejected because fixtures must remain browser-safe, deterministic, and synthetic.
 - Protected-route demo bypass: rejected because presentation documentation cannot create authority.
+- A temporary advisory allowlist: rejected because replacing the browser documentation adapter removes the vulnerable edge without weakening the shared Security gate.
 
 ## Rollback
 
