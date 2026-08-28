@@ -158,6 +158,8 @@ async function validateRepository(root, { fixture = false } = {}) {
   }
   if (countOccurrences(commandCatalog, 'scripts/test-protected-role-routes.mjs') !== 2) errors.push(`${COMMAND_CATALOG}: protected role route smoke must run in Quality runtime and Windows compatibility`);
   if (!quality.includes('needs: [policy, static, tests, runtime, storybook]')) errors.push('ci-quality.yml: Quality Gate must require the Storybook browser and visual segment');
+  const canonicalPlaywrightImage = 'mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e';
+  if (!quality.includes(canonicalPlaywrightImage)) errors.push('ci-quality.yml: canonical Playwright image must be pinned by digest');
   if (countOccurrences(combined, 'playwright install') !== 2) errors.push('Storybook Chromium must be installed only in Linux Quality and Windows Compatibility');
   if (combined.includes('ui:visual:update')) errors.push('CI workflows must never update reviewed visual baselines');
   const security = sources.get('.github/workflows/ci-security.yml');
@@ -359,6 +361,7 @@ async function runSelfTest() {
     testCase('missing UI-006 trace lookup', COMMAND_CATALOG, (s) => s.replace("'UI-006'", "'UI-REMOVED'"), "missing required command token 'UI-006'"),
     testCase('missing Storybook browser command', COMMAND_CATALOG, (s) => s.replaceAll('ui:storybook:test', 'ui:storybook:removed'), 'missing required command token ui:storybook:test'),
     testCase('CI baseline update', quality, (s) => `${s}\n# run: pnpm ui:visual:update\n`, 'must never update reviewed visual baselines'),
+    testCase('floating canonical Playwright image', quality, (s) => s.replace('@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e', ''), 'canonical Playwright image must be pinned by digest'),
   ];
 
   try {

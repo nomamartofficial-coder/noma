@@ -4,7 +4,15 @@ import { resolve, relative, sep } from 'node:path';
 const base = resolve(process.argv[2] ?? '.');
 const ignoredPaths = new Set(process.argv.slice(3).map((path) => resolve(base, path)));
 const allowedExtensions = new Set(['.ts', '.js', '.mjs', '.json', '.md', '.yaml', '.yml']);
-const ignoredDirectories = new Set(['node_modules', 'dist', '.turbo', '.next']);
+const ignoredDirectories = new Set([
+  'node_modules',
+  'dist',
+  '.turbo',
+  '.next',
+  'storybook-static',
+  'playwright-report',
+  'test-results',
+]);
 const failures = [];
 
 function extensionOf(name) {

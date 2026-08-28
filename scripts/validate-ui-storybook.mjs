@@ -13,6 +13,7 @@ const FILES = Object.freeze({
   playwright: 'apps/web/playwright.visual.config.ts',
   contracts: 'apps/web/stories/contracts.ts',
   visualRunner: 'scripts/run-ui-visual-tests.mjs',
+  lintPackage: 'scripts/lint-package.mjs',
   qualityWorkflow: '.github/workflows/ci-quality.yml',
   windowsWorkflow: '.github/workflows/ci-windows.yml',
   taskIndex: 'delivery/traceability/task-index.csv',
@@ -105,6 +106,13 @@ function validateTextSources(sources) {
   for (const token of ['Visual baselines must never be updated in CI', 'Canonical baselines may only be updated on Linux/Ubuntu 24.04', "NOMA_VISUAL_MODE: isLinux ? 'compare' : 'smoke'"]) {
     if (!runner.includes(token)) errors.push(`${FILES.visualRunner}: missing baseline guard ${token}`);
   }
+  const qualityWorkflow = sources.get(FILES.qualityWorkflow);
+  const canonicalImage = 'mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e';
+  if (!qualityWorkflow.includes(canonicalImage)) errors.push(`${FILES.qualityWorkflow}: canonical Playwright image must be pinned by digest`);
+  const lintPackage = sources.get(FILES.lintPackage);
+  for (const outputDirectory of ['storybook-static', 'playwright-report', 'test-results']) {
+    if (!lintPackage.includes(`'${outputDirectory}'`)) errors.push(`${FILES.lintPackage}: generated ${outputDirectory} must be excluded from source linting`);
+  }
 
   const contracts = sources.get(FILES.contracts);
   for (const state of requiredStates) if (!new RegExp(`\\b${state}:`).test(contracts)) errors.push(`${FILES.contracts}: missing state ${state}`);
@@ -115,7 +123,7 @@ function validateTextSources(sources) {
   for (const match of visualSource.matchAll(/storyId:\s*['"]([^'"]+)['"]/g)) {
     if (!inventoryStoryIds.has(match[1])) errors.push(`${FILES.contracts}: visual story ${match[1]} is absent from inventory`);
   }
-  if (sources.get(FILES.qualityWorkflow).includes('ui:visual:update') || sources.get(FILES.windowsWorkflow).includes('ui:visual:update')) errors.push('GitHub Actions must never update visual baselines');
+  if (qualityWorkflow.includes('ui:visual:update') || sources.get(FILES.windowsWorkflow).includes('ui:visual:update')) errors.push('GitHub Actions must never update visual baselines');
   if (/apps[\\/]storybook/.test(sources.get(FILES.rootPackage))) errors.push('Storybook must remain associated with apps/web');
   if (sources.get(FILES.taskIndex).includes('IAM-001,EP03,"Implement User, credential, session, and recovery persistence",P0,P0-AUTHORITY,IN_REVIEW')) errors.push('IAM-001 must not be advanced by UI-006');
 
@@ -215,6 +223,8 @@ async function selfTest() {
     ['Chromatic dependency', FILES.webPackage, (s) => s.replace('"storybook": "10.5.10"', '"chromatic": "1.0.0", "storybook": "10.5.10"')],
     ['hosted visual token', 'apps/web/stories/foundations.stories.tsx', (s) => `${s}\n// CHROMATIC_TOKEN\n`],
     ['CI baseline update', FILES.qualityWorkflow, (s) => `${s}\n# pnpm ui:visual:update\n`],
+    ['floating canonical Playwright image', FILES.qualityWorkflow, (s) => s.replace('@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e', '')],
+    ['generated Storybook output linted as source', FILES.lintPackage, (s) => s.replace("  'storybook-static',\n", '')],
     ['random story', 'apps/web/stories/foundations.stories.tsx', (s) => `${s}\n// Math.random()\n`],
     ['wall clock story', 'apps/web/stories/foundations.stories.tsx', (s) => `${s}\n// Date.now()\n`],
     ['database story import', 'apps/web/stories/foundations.stories.tsx', (s) => `${s}\n// @noma/database\n`],

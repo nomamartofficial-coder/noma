@@ -15,7 +15,7 @@ Noma's token, primitive, commerce, consumer-shell, and protected-surface present
 
 Keep Storybook, stories, fixtures, and browser tests under `apps/web` but outside production source. Catalogue real production components using immutable synthetic inputs, fixed Nigerian locale and Lagos time, a fixed instant, and six explicit viewports. Maintain an internal inventory and state-applicability registry that is checked against source stories and the built index.
 
-Run every eligible story in real Chromium through Storybook's Vitest integration, with axe violations treated as failures and retries disabled. Test the loopback-only static build separately with Playwright. Ubuntu 24.04 with the pinned Chromium version owns strict pixel baselines; Windows runs equivalent browser smoke without comparing pixels. CI cannot update baselines.
+Run every eligible story in real Chromium through Storybook's Vitest integration, with axe violations treated as failures and retries disabled. Test the loopback-only static build separately with Playwright. The official Playwright Ubuntu 24.04 image is pinned by digest so Chromium, fonts, and rasterization remain one reviewed environment; it owns strict pixel baselines. Windows runs equivalent browser smoke without comparing pixels. CI cannot update baselines.
 
 Protected routes remain fail closed. Protected presentation stories call no access resolver and create no role, session, cookie, header, query, or environment bypass. Storybook has no deployment configuration and no production data or provider access.
 
@@ -29,6 +29,7 @@ Use the React/Vite Storybook framework for browser-renderable components and syn
 - Automated axe and screenshots complement rather than replace keyboard, screen-reader, zoom, forced-colour, and intended-actor review.
 - A real accessibility defect found in the existing account shell is corrected independently by retaining one banner landmark and labelling the account-context section.
 - The vulnerable Next.js-specific Storybook adapter and its `image-size` edge are absent. Audit and Dependency Review advisory allowances remain forbidden.
+- Generated Storybook and Playwright output is excluded from source linting, while tracked stories, configuration, tests, and baselines remain governed.
 
 ## Rejected alternatives
 

@@ -20,6 +20,7 @@ All configuration, stories, fixtures, browser tests, and output live outside `ap
 - Theme: Noma light
 - CSS order: foundations, components, commerce, Web globals, Storybook-only presentation CSS
 - Browser-test retries: zero
+- Canonical pixels: official Playwright `v1.62.1-noble` image pinned by digest
 
 ## Reviewed dependency inventory
 
@@ -62,7 +63,7 @@ Install the pinned Chromium runtime once on a new machine:
 pnpm --filter @noma/web exec playwright install chromium
 ```
 
-Linux CI uses `--with-deps`. The browser suite runs eligible CSF stories through the Storybook Vitest addon in real headless Chromium. Global axe policy is `error`; story-level disabling, `todo`, manual-only accessibility settings, and broad contrast suppression are prohibited.
+Linux CI runs the pixel-owning job in the official Playwright Ubuntu 24.04 image pinned to `sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e`, then verifies the exact Node and pnpm toolchain through the shared setup action. This prevents hosted-runner font drift from invalidating zero-pixel evidence. The browser suite runs eligible CSF stories through the Storybook Vitest addon in real headless Chromium. Global axe policy is `error`; story-level disabling, `todo`, manual-only accessibility settings, and broad contrast suppression are prohibited.
 
 ## Accessibility and review limitations
 
