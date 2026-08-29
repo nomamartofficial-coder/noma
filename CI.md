@@ -10,6 +10,12 @@ The pipeline converts Noma's existing deterministic local commands into four Git
 
 All workflows run on pull requests targeting `main`, pushes to `main`, merge-group checks, and manual dispatch. They deliberately omit path filters so required checks do not disappear for documentation, migration, workflow, or traceability changes. Pull-request workflows never use `pull_request_target`.
 
+## Codex authoring independence
+
+The post-`UI-006` model and reasoning-effort policy in [`CODEX_EXECUTION.md`](CODEX_EXECUTION.md) governs authoring only. It does not change this pipeline's job graph, required commands, stable gate names, evidence, or branch protection.
+
+CI must not call an LLM, depend on a Codex account or usage allowance, transmit repository content to a model, or vary a required check according to the model that authored a change. A cheaper execution profile is never a reason to skip a gate, and a more capable profile is never evidence that a gate may be waived. The `UI-006` prohibition on `ui:visual:update` in CI and automatic visual-baseline acceptance remains unchanged.
+
 ## Workflow and job graph
 
 | Workflow | Mandatory jobs | Stable gate |
