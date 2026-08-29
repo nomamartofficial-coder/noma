@@ -9,6 +9,8 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('runtimes-self-test', 'Run runtime scaffold negative tests', 'pnpm', ['runtimes:self-test']),
       command('environment-validate', 'Validate typed environment contracts', 'pnpm', ['env:validate']),
       command('environment-self-test', 'Run environment negative tests', 'pnpm', ['env:self-test']),
+      command('identity-validate', 'Validate IAM-001 persistence, security, and fail-closed boundaries', 'pnpm', ['identity:validate']),
+      command('identity-self-test', 'Run IAM-001 persistence-boundary negative tests', 'pnpm', ['identity:self-test']),
       command('providers-validate', 'Validate provider boundaries', 'pnpm', ['providers:validate']),
       command('providers-self-test', 'Run provider boundary negative tests', 'pnpm', ['providers:self-test']),
       command('observability-validate', 'Validate observability, propagation, redaction, and health policy', 'pnpm', ['observability:validate']),
@@ -31,6 +33,7 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('traceability-ui004', 'Resolve UI-004 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'UI-004']),
       command('traceability-ui005', 'Resolve UI-005 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'UI-005']),
       command('traceability-ui006', 'Resolve UI-006 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'UI-006']),
+      command('traceability-iam001', 'Resolve IAM-001 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'IAM-001']),
     ]),
     static: Object.freeze([
       command('lint', 'Lint all workspace packages', 'pnpm', ['lint']),
@@ -64,6 +67,7 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
     database: Object.freeze([
       command('build-for-database', 'Build database workspace dependencies on the clean runner', 'pnpm', ['build']),
       command('database-verify', 'Run PostgreSQL migration and restore verification', 'pnpm', ['db:verify']),
+      command('identity-integration', 'Run IAM-001 PostgreSQL constraint and concurrency verification', 'pnpm', ['identity:integration-test']),
     ]),
     queue: Object.freeze([
       command('build-for-queue', 'Build queue workspace dependencies on the clean runner', 'pnpm', ['build']),
@@ -92,6 +96,8 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('workspace-validate', 'Validate workspace boundaries', 'pnpm', ['workspace:validate']),
       command('runtimes-validate', 'Validate runtime scaffolds', 'pnpm', ['runtimes:validate']),
       command('environment-validate', 'Validate typed environment contracts', 'pnpm', ['env:validate']),
+      command('identity-validate', 'Validate IAM-001 persistence and secret-storage boundaries', 'pnpm', ['identity:validate']),
+      command('identity-self-test', 'Run IAM-001 persistence-boundary negative tests', 'pnpm', ['identity:self-test']),
       command('providers-validate', 'Validate provider boundaries', 'pnpm', ['providers:validate']),
       command('observability-validate', 'Validate observability boundaries and runtime wiring', 'pnpm', ['observability:validate']),
       command('observability-self-test', 'Run observability policy negative tests', 'pnpm', ['observability:self-test']),

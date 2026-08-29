@@ -55,7 +55,7 @@ console.log(`PASS: ${result.workflows} workflows, ${result.jobs} bounded jobs, $
 if (process.argv.includes('--self-test')) {
   await runSelfTest();
   selfTestGateEvaluator();
-  console.log('PASS: 32 injected workflow policy violations were rejected in isolated fixtures');
+  console.log('PASS: 33 injected workflow policy violations were rejected in isolated fixtures');
   console.log('PASS: stable gate accepted success and rejected failure, skip, and cancellation');
 }
 
@@ -77,7 +77,7 @@ async function validateRepository(root, { fixture = false } = {}) {
   } catch {
     errors.push(`${COMMAND_CATALOG}: required CI command catalog is missing`);
   }
-  for (const token of ['security:dependencies:validate', 'security:dependencies:self-test', "'UI-005'", "'UI-006'", 'scripts/test-protected-role-routes.mjs', 'ui:storybook:validate', 'ui:storybook:self-test', 'ui:storybook:test', 'ui:visual:test']) {
+  for (const token of ['security:dependencies:validate', 'security:dependencies:self-test', 'identity:validate', 'identity:self-test', 'identity:integration-test', "'UI-005'", "'UI-006'", "'IAM-001'", 'scripts/test-protected-role-routes.mjs', 'ui:storybook:validate', 'ui:storybook:self-test', 'ui:storybook:test', 'ui:visual:test']) {
     if (!commandCatalog.includes(token)) errors.push(`${COMMAND_CATALOG}: missing required command token ${token}`);
   }
 
@@ -364,6 +364,7 @@ async function runSelfTest() {
     testCase('missing protected route smoke', COMMAND_CATALOG, (s) => s.replaceAll('scripts/test-protected-role-routes.mjs', 'scripts/protected-smoke-removed.mjs'), 'missing required command token scripts/test-protected-role-routes.mjs'),
     testCase('missing UI-005 trace lookup', COMMAND_CATALOG, (s) => s.replace("'UI-005'", "'UI-REMOVED'"), "missing required command token 'UI-005'"),
     testCase('missing UI-006 trace lookup', COMMAND_CATALOG, (s) => s.replace("'UI-006'", "'UI-REMOVED'"), "missing required command token 'UI-006'"),
+    testCase('missing IAM-001 persistence validation', COMMAND_CATALOG, (s) => s.replaceAll('identity:validate', 'identity:removed'), 'missing required command token identity:validate'),
     testCase('missing Storybook browser command', COMMAND_CATALOG, (s) => s.replaceAll('ui:storybook:test', 'ui:storybook:removed'), 'missing required command token ui:storybook:test'),
     testCase('CI baseline update', quality, (s) => `${s}\n# run: pnpm ui:visual:update\n`, 'must never update reviewed visual baselines'),
     testCase('floating canonical Playwright image', quality, (s) => s.replace('@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e', ''), 'canonical Playwright image must be pinned by digest'),
