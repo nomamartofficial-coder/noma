@@ -72,6 +72,12 @@ Docker Desktop or another [Testcontainers-supported runtime](https://node.testco
 
 The optional native build scripts from `cpu-features`, `protobufjs`, and `ssh2` are explicitly denied in `pnpm-workspace.yaml`; the testing foundation uses their supported JavaScript paths and does not require native compilation.
 
+## Codex execution-profile independence
+
+For tasks after `UI-006`, model and reasoning-effort selection follows [`CODEX_EXECUTION.md`](CODEX_EXECUTION.md). The required test layers still come only from task risk, acceptance criteria, and `docs/11-testing-strategy.md`. A lower-cost execution profile does not permit narrower coverage, skipped suites, weakened assertions, retries, less deterministic data, or deferred browser, accessibility, security, migration, concurrency, integration, or UAT evidence.
+
+The `UI-006` Storybook, real-browser accessibility, and reviewed visual-baseline contracts remain unchanged. No execution profile may accept a visual baseline automatically or replace the required local/CI comparison and human review.
+
 ## CI reporting
 
 The checked-in CI command catalog runs with the same UTC/seed/zero-retry contract. Unit and component jobs emit human-readable output, JUnit XML, V8 JSON summary, LCOV, and HTML coverage. Coverage remains diagnostic: DEV-008 records the repository baseline and provider-contract source separately and does not introduce an unapproved threshold that the current foundation cannot meet.
