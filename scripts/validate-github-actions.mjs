@@ -367,7 +367,7 @@ async function runSelfTest() {
     testCase('missing Storybook browser command', COMMAND_CATALOG, (s) => s.replaceAll('ui:storybook:test', 'ui:storybook:removed'), 'missing required command token ui:storybook:test'),
     testCase('CI baseline update', quality, (s) => `${s}\n# run: pnpm ui:visual:update\n`, 'must never update reviewed visual baselines'),
     testCase('floating canonical Playwright image', quality, (s) => s.replace('@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e', ''), 'canonical Playwright image must be pinned by digest'),
-    testCase('missing pinned-container workspace trust', quality, (s) => s.replace('      - name: Trust the checked-out workspace in the pinned container\n        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"\n', ''), 'pinned Storybook container must trust only the checked-out workspace'),
+    testCase('missing pinned-container workspace trust', quality, (s) => s.replace(/      - name: Trust the checked-out workspace in the pinned container\r?\n        run: git config --global --add safe\.directory "\$GITHUB_WORKSPACE"\r?\n/, ''), 'pinned Storybook container must trust only the checked-out workspace'),
   ];
 
   try {
