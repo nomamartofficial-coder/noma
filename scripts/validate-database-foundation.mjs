@@ -24,6 +24,7 @@ const REQUIRED_FILES = [
   'packages/database/prisma/migrations/20260801000000_pre_prisma_baseline/migration.sql',
   'packages/database/prisma/migrations/20260801000100_postgresql_foundation/migration.sql',
   'packages/database/prisma/migrations/20260801000200_queue_outbox_foundation/migration.sql',
+  'packages/database/prisma/migrations/20260829000100_iam_001_identity_persistence/migration.sql',
   'packages/database/src/client.ts',
   'packages/database/src/transaction.ts',
   'packages/database/tests/client.test.mjs',
@@ -151,9 +152,19 @@ async function validate() {
   const models = [...schema.matchAll(/^\s*model\s+([A-Za-z][A-Za-z0-9]*)/gm)]
     .map((match) => match[1])
     .sort();
-  const expectedModels = ['JobExecution', 'JobExecutionAttempt', 'OutboxEvent'];
+  const expectedModels = [
+    'Credential',
+    'IdentityToken',
+    'JobExecution',
+    'JobExecutionAttempt',
+    'OutboxEvent',
+    'RecoveryAttempt',
+    'Session',
+    'User',
+    'UserEmail',
+  ];
   if (JSON.stringify(models) !== JSON.stringify(expectedModels)) {
-    fail('only the DEV-005 technical outbox and job-execution models are permitted');
+    fail('Prisma models must exactly match the reviewed DEV-005 and IAM-001 persistence set');
   }
 
   const prismaConfig = await read('packages/database/prisma.config.ts');

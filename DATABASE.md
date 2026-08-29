@@ -15,6 +15,8 @@
 
 The image mounts its named volume at `/var/lib/postgresql`, the PostgreSQL 18 version-aware parent path. Local port publishing is restricted to `127.0.0.1`. Readiness requires PostgreSQL's final PID 1 server, so the image's temporary initialization server cannot be mistaken for a ready database.
 
+IAM-001 extends this foundation with one additive identity migration, checksum, Prisma models, PostgreSQL CHECK constraints and partial indexes, restrictive relationships, and a bounded repository. Identity-specific architecture and commands are documented in [`IDENTITY_PERSISTENCE.md`](IDENTITY_PERSISTENCE.md).
+
 ## Local start
 
 ```bash

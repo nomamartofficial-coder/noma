@@ -41,6 +41,7 @@ python scripts/validate_traceability.py --lookup DEC-SCOPE-006
 python scripts/validate_traceability.py --lookup SEC-005
 python scripts/validate_traceability.py --lookup SEC-006
 python scripts/validate_traceability.py --lookup SEC-007
+python scripts/validate_traceability.py --lookup IAM-001
 ```
 
 Validation fails on:
