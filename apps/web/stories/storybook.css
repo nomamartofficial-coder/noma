@@ -1,0 +1,100 @@
+.noma-story-canvas {
+  min-height: 100vh;
+  color: var(--noma-color-text-primary);
+  background: var(--noma-color-surface-page);
+}
+
+.noma-story-section {
+  display: grid;
+  max-width: 960px;
+  gap: var(--noma-space-6);
+  padding: var(--noma-space-8);
+  margin: 0 auto;
+}
+
+.noma-story-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--noma-space-4);
+}
+
+.noma-story-stack {
+  display: grid;
+  gap: var(--noma-space-4);
+}
+
+.noma-story-card {
+  padding: var(--noma-space-5);
+  background: var(--noma-color-surface-primary);
+  border: var(--noma-border-thin) solid var(--noma-color-border-default);
+  border-radius: var(--noma-radius-lg);
+}
+
+.noma-story-swatch {
+  min-height: 96px;
+  border: var(--noma-border-thin) solid var(--noma-color-border-default);
+  border-radius: var(--noma-radius-md);
+}
+
+.noma-story-swatch[data-tone='primary'] { background: var(--noma-color-action-primary-background); }
+.noma-story-swatch[data-tone='success'] { background: var(--noma-color-status-success-background); }
+.noma-story-swatch[data-tone='warning'] { background: var(--noma-color-status-warning-background); }
+.noma-story-swatch[data-tone='danger'] { background: var(--noma-color-status-danger-background); }
+
+.noma-story-copy {
+  max-width: 65ch;
+}
+
+.noma-story-shell-content {
+  display: grid;
+  gap: var(--noma-space-4);
+  max-width: 760px;
+}
+
+.noma-story-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--noma-space-3);
+}
+
+.noma-story-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 480px) {
+  .noma-story-section { padding: var(--noma-space-4); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .noma-story-canvas *,
+  .noma-story-canvas *::before,
+  .noma-story-canvas *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .noma-story-card,
+  .noma-story-swatch { border-color: CanvasText; }
+}
+*,
+*::before,
+*::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  caret-color: transparent !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}

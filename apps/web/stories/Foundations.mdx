@@ -1,0 +1,22 @@
+import { Meta, Title, Description } from '@storybook/addon-docs/blocks';
+
+<Meta title="Foundations/Usage rules" />
+
+<Title>Noma UI usage rules</Title>
+
+<Description>
+Noma components present state supplied by an owning workflow. They do not infer payment, delivery, custody, authorization, approval, or business completion.
+</Description>
+
+## Required practice
+
+- Use semantic and component tokens rather than raw colour values.
+- Supply readable labels, exact material timestamps, and canonical minor-unit money strings.
+- Keep pending, failed, uncertain, superseded, and final states distinct.
+- Keep evidence metadata safe and place authorization in the owning application workflow.
+
+## Prohibited practice
+
+- Do not import database, provider, or secret-bearing data into stories.
+- Do not use a visual story as an authorization bypass or a production route.
+- Do not update screenshot baselines in CI or accept a change without human review.

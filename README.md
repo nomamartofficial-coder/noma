@@ -529,7 +529,7 @@ Active product experiences target WCAG 2.2 Level AA and must support:
 - honest loading, empty, error, stale, denied, paused, uncertain-provider, and offline states; and
 - clear consequences and recovery for destructive or high-impact actions.
 
-Read [`docs/05-design-system.md`](docs/05-design-system.md) for the binding design contract, [`DESIGN_TOKENS.md`](DESIGN_TOKENS.md) for the UI-001 registry, [`COMPONENTS.md`](COMPONENTS.md) for the UI-002 primitive API, [`COMMERCE_PATTERNS.md`](COMMERCE_PATTERNS.md) for UI-003 status, money, history, evidence, and high-risk presentation boundaries, and [`SHELLS.md`](SHELLS.md) for UI-004 Marketplace and Buyer shell composition.
+Read [`docs/05-design-system.md`](docs/05-design-system.md) for the binding design contract, [`DESIGN_TOKENS.md`](DESIGN_TOKENS.md) for the UI-001 registry, [`COMPONENTS.md`](COMPONENTS.md) for the UI-002 primitive API, [`COMMERCE_PATTERNS.md`](COMMERCE_PATTERNS.md) for UI-003 status, money, history, evidence, and high-risk presentation boundaries, [`SHELLS.md`](SHELLS.md) for UI-004/UI-005 application shells, and [`STORYBOOK.md`](STORYBOOK.md) plus [`VISUAL_TESTING.md`](VISUAL_TESTING.md) for UI-006 living documentation and reviewed browser baselines.
 
 ---
 

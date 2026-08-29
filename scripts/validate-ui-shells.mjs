@@ -71,8 +71,16 @@ export function validateUiShells(fixture) {
   const consumerRoutes = routes.filter((route) => !/^\/(?:seller|rider|operations|admin)(?:\/|$)/.test(route));
   const routeSet = new Set(routes);
 
-  for (const dependency of ['tailwindcss', '@radix-ui/react-navigation-menu', 'playwright', '@playwright/test', 'storybook', 'lucide-react']) {
+  for (const dependency of ['tailwindcss', '@radix-ui/react-navigation-menu', 'playwright', 'lucide-react']) {
     if (fixture.webPackage.dependencies?.[dependency] || fixture.webPackage.devDependencies?.[dependency] || fixture.rootPackage.dependencies?.[dependency] || fixture.rootPackage.devDependencies?.[dependency]) {
+      failures.push(failure('DEPENDENCY_SCOPE', dependency));
+    }
+  }
+  for (const [dependency, approvedVersion] of [['@playwright/test', '1.62.1'], ['storybook', '10.5.10']]) {
+    if (fixture.webPackage.dependencies?.[dependency]
+      || fixture.rootPackage.dependencies?.[dependency]
+      || fixture.rootPackage.devDependencies?.[dependency]
+      || fixture.webPackage.devDependencies?.[dependency] !== approvedVersion) {
       failures.push(failure('DEPENDENCY_SCOPE', dependency));
     }
   }
@@ -180,6 +188,8 @@ async function runSelfTests(baseline) {
     ['root consumer shell', (f) => { f.rootLayout += '\n<ConsumerHeader />'; }, 'ROOT_LAYOUT'],
     ['raw error stack', (f) => { f.errorSource += '\nconsole.log(error.stack);'; }, 'ERROR_DISCLOSURE'],
     ['business route handler', (f) => { f.apiRoutes.push('apps/web/src/app/api/orders/route.ts'); }, 'BUSINESS_API'],
+    ['Storybook runtime dependency', (f) => { f.webPackage.dependencies = { ...f.webPackage.dependencies, storybook: '10.5.10' }; }, 'DEPENDENCY_SCOPE'],
+    ['unapproved Playwright pin', (f) => { f.webPackage.devDependencies['@playwright/test'] = '1.62.0'; }, 'DEPENDENCY_SCOPE'],
   ];
   for (const [name, mutate, code] of cases) expectRejected(name, mutate, code, baseline);
   console.log(`PASS: ${cases.length} UI-004 shell policy negative fixtures were rejected`);

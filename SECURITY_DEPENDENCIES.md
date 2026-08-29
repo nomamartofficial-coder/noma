@@ -8,7 +8,7 @@
 
 Noma treats the committed manifests and `pnpm-lock.yaml` as reviewed supply-chain inputs. A frozen install proves reproducibility, but it does not prove that resolved versions meet the approved security floor. SEC-005 therefore combines an offline lockfile policy with GitHub dependency review and a separately recorded live registry audit. SEC-006 raises the reviewed `nanoid` floor after the live audit began classifying `3.3.17` as vulnerable. SEC-007 resolves GHSA-ggr8-5vv4-36mx after Prisma's current configuration package began resolving the affected `deepmerge-ts` line.
 
-This policy does not deploy, provision infrastructure, contact a business provider, or activate a marketplace capability.
+This policy does not deploy, provision infrastructure, contact a business provider, or activate a marketplace capability. UI-006 removes the vulnerable Next.js-specific Storybook adapter from the private documentation toolchain rather than weakening the dependency gate.
 
 ## Reviewed resolutions
 
@@ -34,7 +34,7 @@ pnpm audit --audit-level moderate
 
 The first three commands are deterministic and network-free. They validate exact manifest pins, reviewed overrides, lockfile package sets, and the Next→PostCSS/Sharp, Ajv→fast-uri, and PostCSS→nanoid edges. The self-test mutates each protected boundary in memory and proves the validator rejects weaker fixtures.
 
-The live `pnpm audit` command is required review evidence but is not embedded in a stable required CI gate because registry availability is external and time-varying. GitHub's pinned Dependency Review action independently rejects newly introduced vulnerabilities at `moderate` severity or above.
+The live `pnpm audit` command is required review evidence but is not embedded in a stable required CI gate because registry availability is external and time-varying. No advisory ignore is permitted. `pnpm audit --audit-level moderate` and `pnpm audit --prod --audit-level moderate` must remain clean. GitHub's pinned Dependency Review action independently rejects newly introduced vulnerabilities at `moderate` severity or above without advisory allowances.
 
 ## Update and recovery
 

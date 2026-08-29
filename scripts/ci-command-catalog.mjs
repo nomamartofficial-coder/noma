@@ -30,6 +30,7 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('traceability-ui003', 'Resolve UI-003 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'UI-003']),
       command('traceability-ui004', 'Resolve UI-004 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'UI-004']),
       command('traceability-ui005', 'Resolve UI-005 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'UI-005']),
+      command('traceability-ui006', 'Resolve UI-006 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'UI-006']),
     ]),
     static: Object.freeze([
       command('lint', 'Lint all workspace packages', 'pnpm', ['lint']),
@@ -46,6 +47,14 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('runtime-smoke', 'Run Web, API, and Worker smoke checks', 'pnpm', ['smoke:runtimes']),
       command('protected-role-route-smoke', 'Prove protected role routes fail closed without IAM', 'node', ['scripts/test-protected-role-routes.mjs']),
       command('tracked-diff', 'Reject tracked runtime mutations', 'git', ['diff', '--exit-code', '--', '.']),
+    ]),
+    storybook: Object.freeze([
+      command('storybook-validate', 'Validate Storybook inventory, state coverage, isolation, and pins', 'pnpm', ['ui:storybook:validate']),
+      command('storybook-self-test', 'Run Storybook policy negative tests', 'pnpm', ['ui:storybook:self-test']),
+      command('storybook-browser', 'Run every eligible story in Chromium with accessibility enforcement', 'pnpm', ['ui:storybook:test']),
+      command('storybook-static', 'Build the private static Storybook', 'pnpm', ['storybook:build']),
+      command('visual-compare', 'Compare the reviewed Ubuntu visual baselines at zero-pixel tolerance', 'pnpm', ['ui:visual:test']),
+      command('tracked-diff', 'Reject tracked Storybook or visual test mutations', 'git', ['diff', '--exit-code', '--', '.']),
     ]),
   }),
   integration: Object.freeze({
@@ -88,6 +97,10 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('observability-self-test', 'Run observability policy negative tests', 'pnpm', ['observability:self-test']),
       command('ui-validate', 'Validate design-token, primitive, commerce truth, application-shell, accessibility, and generated CSS policy', 'pnpm', ['ui:validate']),
       command('ui-self-test', 'Run UI token, primitive, commerce, and application-shell policy negative tests', 'pnpm', ['ui:self-test']),
+      command('storybook-validate', 'Validate Storybook inventory, state coverage, isolation, and pins on Windows', 'pnpm', ['ui:storybook:validate']),
+      command('storybook-self-test', 'Run Storybook policy negative tests on Windows', 'pnpm', ['ui:storybook:self-test']),
+      command('storybook-browser', 'Run eligible stories in Windows Chromium with accessibility enforcement', 'pnpm', ['ui:storybook:test']),
+      command('visual-smoke', 'Build static Storybook and smoke every visual entry without pixel comparison', 'pnpm', ['ui:visual:test']),
       command('lint', 'Lint all workspace packages', 'pnpm', ['lint']),
       command('typecheck', 'Type-check all workspace packages', 'pnpm', ['typecheck']),
       command('build', 'Build all workspace packages', 'pnpm', ['build']),

@@ -10,11 +10,11 @@ export default function AccountLayout({ children }: Readonly<{ children: ReactNo
     <div className={styles.consumerShell}>
       <a className={styles.skipLink} href="#main-content">Skip to main content</a>
       <ConsumerHeader />
-      <header className={styles.accountHeader}>
+      <section aria-labelledby="account-surface-title" className={styles.accountHeader}>
         <p className={styles.accountContextLabel}>Consumer account</p>
-        <p className={styles.accountContextTitle}>My account</p>
+        <p className={styles.accountContextTitle} id="account-surface-title">My account</p>
         <CompactAccountNavigation />
-      </header>
+      </section>
       <div className={styles.accountGrid}>
         <aside className={styles.accountRail}>
           <ActiveNavigation destinations={accountDestinations} label="Account sections" />

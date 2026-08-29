@@ -152,6 +152,42 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
+  storybook:
+    name: Storybook browser accessibility and visual regression
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
+    timeout-minutes: 35
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Trust the checked-out workspace in the pinned container
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Set up workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Install pinned Playwright Chromium
+        run: pnpm --filter @noma/web exec playwright install --with-deps chromium
+      - name: Run Storybook browser and canonical visual segment
+        id: suite
+        run: pnpm ci:quality -- --segment storybook
+      - name: Collect safe Storybook evidence
+        if: always()
+        env:
+          NOMA_CI_JOB_RESULT: ${{ steps.suite.outcome }}
+          NOMA_CI_ARTIFACT_NAME: noma-quality-storybook-${{ github.run_id }}-${{ github.run_attempt }}
+        run: pnpm ci:evidence -- --suite quality --segment storybook --job-result "$NOMA_CI_JOB_RESULT"
+      - name: Upload Storybook evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: noma-quality-storybook-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/ci/quality-storybook/
+          if-no-files-found: error
+          retention-days: 90
+
   ci-policy-gate:
     name: Noma / CI Policy
     if: always()
@@ -176,7 +212,7 @@ jobs:
   quality-gate:
     name: Noma / Quality Gate
     if: always()
-    needs: [policy, static, tests, runtime]
+    needs: [policy, static, tests, runtime, storybook]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
