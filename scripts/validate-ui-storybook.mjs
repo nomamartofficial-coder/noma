@@ -127,7 +127,7 @@ function validateTextSources(sources) {
   }
   if (qualityWorkflow.includes('ui:visual:update') || sources.get(FILES.windowsWorkflow).includes('ui:visual:update')) errors.push('GitHub Actions must never update visual baselines');
   if (/apps[\\/]storybook/.test(sources.get(FILES.rootPackage))) errors.push('Storybook must remain associated with apps/web');
-  if (sources.get(FILES.taskIndex).includes('IAM-001,EP03,"Implement User, credential, session, and recovery persistence",P0,P0-AUTHORITY,IN_REVIEW')) errors.push('IAM-001 must not be advanced by UI-006');
+  if (!sources.get(FILES.taskIndex).includes('UI-006,EP02,Create Storybook/component documentation and visual regression,P0,P2-PRESENTATION,COMPLETE')) errors.push('UI-006 must be COMPLETE after its reviewed merge');
 
   for (const [path, source] of sources) {
     if (path.startsWith('apps/web/src/') && /(?:next-navigation\.mock|\.storybook)/.test(source)) {
@@ -237,7 +237,7 @@ async function selfTest() {
     ['stale visual story id', FILES.contracts, (s) => s.replace("storyId: 'foundations-noma--colour'", "storyId: 'stale-story--missing'")],
     ['numeric Money input', 'apps/web/stories/commerce.stories.tsx', (s) => `${s}\n// <Money amountMinor={1} currency="NGN" />\n`],
     ['protected local storage bypass', 'apps/web/stories/protected-access.stories.tsx', (s) => `${s}\n// localStorage role bypass\n`],
-    ['premature IAM status', FILES.taskIndex, (s) => s.replace('IAM-001,EP03,"Implement User, credential, session, and recovery persistence",P0,P0-AUTHORITY,NOT_STARTED', 'IAM-001,EP03,"Implement User, credential, session, and recovery persistence",P0,P0-AUTHORITY,IN_REVIEW')],
+    ['unmerged UI-006 status', FILES.taskIndex, (s) => s.replace('UI-006,EP02,Create Storybook/component documentation and visual regression,P0,P2-PRESENTATION,COMPLETE', 'UI-006,EP02,Create Storybook/component documentation and visual regression,P0,P2-PRESENTATION,IN_REVIEW')],
     ['speculative checkout story', 'apps/web/stories/consumer-shells.stories.tsx', (s) => `${s}\n// /checkout\n`],
   ];
   const lineEndingVariants = [

@@ -41,7 +41,7 @@ function modelBlock(schema, model) {
   return match[1];
 }
 
-export function validateIdentitySources({ schema, migration, platform, database, packageJson }) {
+export function validateIdentitySources({ schema, migration, platform, database, packageJson, taskIndex }) {
   for (const model of REQUIRED_MODELS) modelBlock(schema, model);
   const user = modelBlock(schema, 'User');
   for (const field of PROHIBITED_SCHEMA_FIELDS) {
@@ -107,6 +107,13 @@ export function validateIdentitySources({ schema, migration, platform, database,
   for (const command of ['identity:validate', 'identity:self-test', 'identity:integration-test', 'identity:verify']) {
     if (!packageJson.scripts?.[command]) fail(`root package missing ${command}`);
   }
+  for (const expected of [
+    'UI-006,EP02,Create Storybook/component documentation and visual regression,P0,P2-PRESENTATION,COMPLETE',
+    'IAM-001,EP03,"Implement User, credential, session, and recovery persistence",P0,P0-AUTHORITY,IN_REVIEW',
+    'IAM-002,EP03,"Implement password registration, sign-in, sign-out, and session rotation",P0,P0-AUTHORITY,NOT_STARTED',
+  ]) {
+    if (!taskIndex.includes(expected)) fail(`IAM-001 traceability lifecycle mismatch: ${expected.split(',')[0]}`);
+  }
 }
 
 async function validate() {
@@ -117,6 +124,7 @@ async function validate() {
     platform: `${await read('packages/platform/src/identity/contracts.ts')}\n${await read('packages/platform/src/identity/normalization.ts')}`,
     database: await read('packages/database/src/identity.ts'),
     packageJson: JSON.parse(await read('package.json')),
+    taskIndex: await read('delivery/traceability/task-index.csv'),
   });
   const protectedAccess = await read('apps/web/src/shells/protected/protected-surface-access.server.ts');
   if (!protectedAccess.includes('notFound()')) fail('protected role surfaces must remain fail closed');
@@ -128,6 +136,7 @@ function selfTest(sources) {
     ['raw session token', { ...sources, migration: sources.migration.replace('"token_digest"', '"session_token"') }],
     ['cascade delete', { ...sources, migration: sources.migration.replace('ON DELETE RESTRICT', 'ON DELETE CASCADE') }],
     ['non-atomic consumption', { ...sources, database: sources.database.replace('UPDATE "identity_tokens" AS t', 'SELECT * FROM "identity_tokens" AS t') }],
+    ['premature IAM-002', { ...sources, taskIndex: sources.taskIndex.replace('IAM-002,EP03,"Implement password registration, sign-in, sign-out, and session rotation",P0,P0-AUTHORITY,NOT_STARTED', 'IAM-002,EP03,"Implement password registration, sign-in, sign-out, and session rotation",P0,P0-AUTHORITY,IN_REVIEW') }],
   ];
   for (const [name, candidate] of mutations) {
     try {
@@ -146,12 +155,13 @@ try {
     platform: `${await read('packages/platform/src/identity/contracts.ts')}\n${await read('packages/platform/src/identity/normalization.ts')}`,
     database: await read('packages/database/src/identity.ts'),
     packageJson: JSON.parse(await read('package.json')),
+    taskIndex: await read('delivery/traceability/task-index.csv'),
   };
   await validate();
   console.log('PASS: IAM-001 identity models, repository boundary, database controls, and fail-closed routes');
   if (process.argv.includes('--self-test')) {
     selfTest(sources);
-    console.log('PASS: global role, raw secret, cascade delete, and replay-race mutations were rejected');
+    console.log('PASS: global role, raw secret, cascade delete, replay-race, and premature IAM-002 mutations were rejected');
   }
 } catch (error) {
   console.error(`FAIL: ${error.message}`);
