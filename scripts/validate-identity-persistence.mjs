@@ -41,7 +41,7 @@ function modelBlock(schema, model) {
   return match[1];
 }
 
-export function validateIdentitySources({ schema, migration, platform, database, packageJson, taskIndex }) {
+export function validateIdentitySources({ schema, migration, platform, database, integration, packageJson, taskIndex }) {
   for (const model of REQUIRED_MODELS) modelBlock(schema, model);
   const user = modelBlock(schema, 'User');
   for (const field of PROHIBITED_SCHEMA_FIELDS) {
@@ -99,6 +99,14 @@ export function validateIdentitySources({ schema, migration, platform, database,
   if (!/UPDATE\s+"identity_tokens"[\s\S]+"consumed_at"[\s\S]+RETURNING/mi.test(database)) {
     fail('identity token consumption must be one atomic conditional update');
   }
+  if (/process\.env\.npm_execpath/.test(integration)) {
+    fail('identity migration tests must not select an executable from the environment');
+  }
+  if (!integration.includes("createRequire(resolve(DATABASE_DIR, 'package.json'))") ||
+      !integration.includes("requireFromDatabase.resolve('prisma/build/index.js')") ||
+      !integration.includes("execFileAsync(process.execPath, [prismaCli, 'migrate', 'deploy']")) {
+    fail('identity migration tests must invoke the installed Prisma CLI through the trusted Node executable');
+  }
   for (const workflow of ['registerUser', 'login', 'signIn', 'resetPassword', 'authenticateRequest']) {
     if (database.includes(workflow) || platform.includes(workflow)) {
       fail(`IAM-001 must not implement authentication workflow ${workflow}`);
@@ -123,6 +131,7 @@ async function validate() {
     migration: await read('packages/database/prisma/migrations/20260829000100_iam_001_identity_persistence/migration.sql'),
     platform: `${await read('packages/platform/src/identity/contracts.ts')}\n${await read('packages/platform/src/identity/normalization.ts')}`,
     database: await read('packages/database/src/identity.ts'),
+    integration: await read('packages/testing/tests/identity-persistence.integration.test.ts'),
     packageJson: JSON.parse(await read('package.json')),
     taskIndex: await read('delivery/traceability/task-index.csv'),
   });
@@ -136,6 +145,7 @@ function selfTest(sources) {
     ['raw session token', { ...sources, migration: sources.migration.replace('"token_digest"', '"session_token"') }],
     ['cascade delete', { ...sources, migration: sources.migration.replace('ON DELETE RESTRICT', 'ON DELETE CASCADE') }],
     ['non-atomic consumption', { ...sources, database: sources.database.replace('UPDATE "identity_tokens" AS t', 'SELECT * FROM "identity_tokens" AS t') }],
+    ['environment-controlled migration executable', { ...sources, integration: sources.integration.replace('await execFileAsync(process.execPath', 'const command = process.env.npm_execpath ?? process.execPath;\n  await execFileAsync(command') }],
     ['premature IAM-002', { ...sources, taskIndex: sources.taskIndex.replace('IAM-002,EP03,"Implement password registration, sign-in, sign-out, and session rotation",P0,P0-AUTHORITY,NOT_STARTED', 'IAM-002,EP03,"Implement password registration, sign-in, sign-out, and session rotation",P0,P0-AUTHORITY,IN_REVIEW') }],
   ];
   for (const [name, candidate] of mutations) {
@@ -154,6 +164,7 @@ try {
     migration: await read('packages/database/prisma/migrations/20260829000100_iam_001_identity_persistence/migration.sql'),
     platform: `${await read('packages/platform/src/identity/contracts.ts')}\n${await read('packages/platform/src/identity/normalization.ts')}`,
     database: await read('packages/database/src/identity.ts'),
+    integration: await read('packages/testing/tests/identity-persistence.integration.test.ts'),
     packageJson: JSON.parse(await read('package.json')),
     taskIndex: await read('delivery/traceability/task-index.csv'),
   };
@@ -161,7 +172,7 @@ try {
   console.log('PASS: IAM-001 identity models, repository boundary, database controls, and fail-closed routes');
   if (process.argv.includes('--self-test')) {
     selfTest(sources);
-    console.log('PASS: global role, raw secret, cascade delete, replay-race, and premature IAM-002 mutations were rejected');
+    console.log('PASS: global role, raw secret, cascade delete, replay-race, executable-injection, and premature IAM-002 mutations were rejected');
   }
 } catch (error) {
   console.error(`FAIL: ${error.message}`);

@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { promisify } from 'node:util';
 
@@ -21,21 +22,17 @@ import { DeterministicTestIds } from '../src/random.js';
 
 const execFileAsync = promisify(execFile);
 const ROOT = resolve(import.meta.dirname, '../../..');
+const DATABASE_DIR = resolve(ROOT, 'packages/database');
+const requireFromDatabase = createRequire(resolve(DATABASE_DIR, 'package.json'));
+const prismaCli = requireFromDatabase.resolve('prisma/build/index.js');
 const ids = new DeterministicTestIds('iam-001-identity-persistence');
 const instant = new Date('2026-08-29T10:00:00.000Z');
 const later = (minutes: number) => new Date(instant.getTime() + minutes * 60_000);
 const digest = (value: string) => createHash('sha256').update(value).digest('hex');
 
 async function deployMigrations(connection: PostgreSqlTestConnection): Promise<void> {
-  const pnpmCli = process.env.npm_execpath;
-  const command = pnpmCli ? process.execPath : process.platform === 'win32' ? 'cmd.exe' : 'pnpm';
-  const arguments_ = pnpmCli
-    ? [pnpmCli, '--filter', '@noma/database', 'db:migrate:deploy']
-    : process.platform === 'win32'
-      ? ['/d', '/s', '/c', 'pnpm.cmd --filter @noma/database db:migrate:deploy']
-      : ['--filter', '@noma/database', 'db:migrate:deploy'];
-  await execFileAsync(command, arguments_, {
-    cwd: ROOT,
+  await execFileAsync(process.execPath, [prismaCli, 'migrate', 'deploy'], {
+    cwd: DATABASE_DIR,
     env: {
       ...process.env,
       NOMA_ENV: 'test',
