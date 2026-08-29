@@ -164,6 +164,8 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Trust the checked-out workspace in the pinned container
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Set up workspace
         uses: ./.github/actions/setup-workspace
       - name: Install pinned Playwright Chromium

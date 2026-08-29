@@ -109,6 +109,8 @@ function validateTextSources(sources) {
   const qualityWorkflow = sources.get(FILES.qualityWorkflow);
   const canonicalImage = 'mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e';
   if (!qualityWorkflow.includes(canonicalImage)) errors.push(`${FILES.qualityWorkflow}: canonical Playwright image must be pinned by digest`);
+  const containerWorkspaceTrust = 'git config --global --add safe.directory "$GITHUB_WORKSPACE"';
+  if (!qualityWorkflow.includes(containerWorkspaceTrust)) errors.push(`${FILES.qualityWorkflow}: pinned Storybook container must trust only the checked-out workspace`);
   const lintPackage = sources.get(FILES.lintPackage);
   for (const outputDirectory of ['storybook-static', 'playwright-report', 'test-results']) {
     if (!lintPackage.includes(`'${outputDirectory}'`)) errors.push(`${FILES.lintPackage}: generated ${outputDirectory} must be excluded from source linting`);
@@ -224,6 +226,7 @@ async function selfTest() {
     ['hosted visual token', 'apps/web/stories/foundations.stories.tsx', (s) => `${s}\n// CHROMATIC_TOKEN\n`],
     ['CI baseline update', FILES.qualityWorkflow, (s) => `${s}\n# pnpm ui:visual:update\n`],
     ['floating canonical Playwright image', FILES.qualityWorkflow, (s) => s.replace('@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e', '')],
+    ['missing pinned-container workspace trust', FILES.qualityWorkflow, (s) => s.replace('      - name: Trust the checked-out workspace in the pinned container\n        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"\n', '')],
     ['generated Storybook output linted as source', FILES.lintPackage, (s) => s.replace("  'storybook-static',\n", '')],
     ['random story', 'apps/web/stories/foundations.stories.tsx', (s) => `${s}\n// Math.random()\n`],
     ['wall clock story', 'apps/web/stories/foundations.stories.tsx', (s) => `${s}\n// Date.now()\n`],

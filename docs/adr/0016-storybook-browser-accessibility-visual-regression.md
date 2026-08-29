@@ -17,6 +17,8 @@ Keep Storybook, stories, fixtures, and browser tests under `apps/web` but outsid
 
 Run every eligible story in real Chromium through Storybook's Vitest integration, with axe violations treated as failures and retries disabled. Test the loopback-only static build separately with Playwright. The official Playwright Ubuntu 24.04 image is pinned by digest so Chromium, fonts, and rasterization remain one reviewed environment; it owns strict pixel baselines. Windows runs equivalent browser smoke without comparing pixels. CI cannot update baselines.
 
+Within that pinned job container, trust only the checked-out GitHub workspace before deterministic setup. The shared setup action still rejects dependency metadata mutation after frozen installation; container isolation must not turn that guard into a bypass or a false failure.
+
 Protected routes remain fail closed. Protected presentation stories call no access resolver and create no role, session, cookie, header, query, or environment bypass. Storybook has no deployment configuration and no production data or provider access.
 
 Use the React/Vite Storybook framework for browser-renderable components and synthetic shell compositions. A Storybook-only Vite alias supplies deterministic `usePathname` presentation state; it exports no redirect, authorization, not-found, search-parameter, or routing authority and is excluded from Next.js production source.

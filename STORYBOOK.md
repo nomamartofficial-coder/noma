@@ -22,6 +22,8 @@ All configuration, stories, fixtures, browser tests, and output live outside `ap
 - Browser-test retries: zero
 - Canonical pixels: official Playwright `v1.62.1-noble` image pinned by digest
 
+The pinned Storybook job container trusts only the checked-out GitHub workspace before shared setup. The frozen-install dependency metadata diff still runs unchanged, so container isolation cannot bypass lockfile verification or create a false failure.
+
 ## Reviewed dependency inventory
 
 Registry metadata was rechecked on 22 August 2026 before publication. Storybook `10.5.10` and Playwright `1.62.1` were the current stable releases. Vite `8.2.2` and Vitest `4.1.11` had newer patch releases, but UI-006 deliberately retains the approved exact Vite `8.2.0` and Vitest `4.1.10` family as specified by the task; ranges and unreviewed drift are rejected.

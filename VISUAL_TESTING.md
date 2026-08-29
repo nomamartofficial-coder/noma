@@ -9,6 +9,8 @@ The visual suite tests the loopback-only static Storybook `iframe.html` pages li
 
 Canonical comparisons use strict zero-pixel tolerance. GitHub runs the pixel job inside the official `mcr.microsoft.com/playwright:v1.62.1-noble` image pinned to `sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e`; this fixes the browser, system fonts, and rasterization environment together. Expected PNGs are reviewed source evidence beside `apps/web/stories/visual/ui-006.visual.spec.ts`. Actual, diff, report, and trace output remains ignored under `apps/web/test-results` and `apps/web/playwright-report`.
 
+The container adds only the checked-out GitHub workspace to Git's safe-directory list before deterministic setup. The shared setup action continues to reject any dependency metadata mutation after frozen installation.
+
 Windows and other non-Linux systems run all 31 pages as browser smoke checks but do not compare pixels. Browser engines, fonts, rasterization, and operating-system rendering make cross-platform pixels non-authoritative.
 
 ## Commands

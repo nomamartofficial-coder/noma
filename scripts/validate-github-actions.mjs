@@ -160,6 +160,11 @@ async function validateRepository(root, { fixture = false } = {}) {
   if (!quality.includes('needs: [policy, static, tests, runtime, storybook]')) errors.push('ci-quality.yml: Quality Gate must require the Storybook browser and visual segment');
   const canonicalPlaywrightImage = 'mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e';
   if (!quality.includes(canonicalPlaywrightImage)) errors.push('ci-quality.yml: canonical Playwright image must be pinned by digest');
+  const containerWorkspaceTrust = 'git config --global --add safe.directory "$GITHUB_WORKSPACE"';
+  if (countOccurrences(quality, containerWorkspaceTrust) !== 1) errors.push('ci-quality.yml: pinned Storybook container must trust only the checked-out workspace');
+  if (!/Trust the checked-out workspace in the pinned container[\s\S]*?git config --global --add safe\.directory "\$GITHUB_WORKSPACE"[\s\S]*?name: Set up workspace/.test(quality)) {
+    errors.push('ci-quality.yml: checked-out workspace trust must precede deterministic setup in the pinned container');
+  }
   if (countOccurrences(combined, 'playwright install') !== 2) errors.push('Storybook Chromium must be installed only in Linux Quality and Windows Compatibility');
   if (combined.includes('ui:visual:update')) errors.push('CI workflows must never update reviewed visual baselines');
   const security = sources.get('.github/workflows/ci-security.yml');
@@ -362,6 +367,7 @@ async function runSelfTest() {
     testCase('missing Storybook browser command', COMMAND_CATALOG, (s) => s.replaceAll('ui:storybook:test', 'ui:storybook:removed'), 'missing required command token ui:storybook:test'),
     testCase('CI baseline update', quality, (s) => `${s}\n# run: pnpm ui:visual:update\n`, 'must never update reviewed visual baselines'),
     testCase('floating canonical Playwright image', quality, (s) => s.replace('@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e', ''), 'canonical Playwright image must be pinned by digest'),
+    testCase('missing pinned-container workspace trust', quality, (s) => s.replace('      - name: Trust the checked-out workspace in the pinned container\n        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"\n', ''), 'pinned Storybook container must trust only the checked-out workspace'),
   ];
 
   try {
