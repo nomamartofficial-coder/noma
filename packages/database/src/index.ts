@@ -36,6 +36,7 @@ export {
   type BeginJobExecutionResult,
   type JobExecutionLease,
 } from './job-execution.js';
+export { createIdentityPersistence } from './identity.js';
 
 export const databasePackage = { name: '@noma/database', boundary: 'server' } as const;
 export type DatabasePackage = typeof databasePackage;

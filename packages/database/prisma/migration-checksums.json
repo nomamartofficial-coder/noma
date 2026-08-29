@@ -3,6 +3,7 @@
   "migrations": {
     "20260801000000_pre_prisma_baseline/migration.sql": "9d9e22e2c4bb2d93831c62911ff5d0bdaecc039472d368ed1b1aad59408ee013",
     "20260801000100_postgresql_foundation/migration.sql": "a70a95dfa7c200d25b62a7ccb97e6a6cee970389431795b8b928d17c5dd9ddc9",
-    "20260801000200_queue_outbox_foundation/migration.sql": "b87e89e1398212db5e950a2343bef0695b04417d8bd7a89e9e5973201b5b56df"
+    "20260801000200_queue_outbox_foundation/migration.sql": "b87e89e1398212db5e950a2343bef0695b04417d8bd7a89e9e5973201b5b56df",
+    "20260829000100_iam_001_identity_persistence/migration.sql": "82f7bf4c84958b1b031c6d65bcd02b88a37e74653efa52cd3abd18054ffa5960"
   }
 }

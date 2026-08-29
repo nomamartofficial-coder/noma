@@ -9,6 +9,51 @@ datasource db {
   provider = "postgresql"
 }
 
+enum AccountStatus {
+  PENDING_EMAIL
+  ACTIVE
+  RECOVERY_LOCKED
+  COMPROMISED_LOCKED
+  SUSPENDED
+  DEACTIVATION_REQUESTED
+  DEACTIVATED
+
+  @@map("account_status")
+}
+
+enum CredentialType {
+  PASSWORD
+
+  @@map("credential_type")
+}
+
+enum SessionStatus {
+  ACTIVE
+  STEP_UP_REQUIRED
+  REVOKED
+  EXPIRED
+
+  @@map("session_status")
+}
+
+enum AuthenticationAssurance {
+  ANONYMOUS
+  AUTHENTICATED
+  CONTACT_VERIFIED
+  RECENTLY_AUTHENTICATED
+  MFA_VERIFIED
+  PRIVILEGED_MFA_RECENT
+
+  @@map("authentication_assurance")
+}
+
+enum IdentityTokenPurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RECOVERY
+
+  @@map("identity_token_purpose")
+}
+
 enum OutboxStatus {
   PENDING
   DISPATCHED
@@ -50,6 +95,129 @@ enum AttentionStatus {
   RESOLVED
 
   @@map("attention_status")
+}
+
+model User {
+  id               String            @id @db.Uuid
+  publicReference  String            @unique(map: "users_public_reference_key") @map("public_reference") @db.VarChar(32)
+  status           AccountStatus     @default(PENDING_EMAIL)
+  displayName      String            @map("display_name") @db.VarChar(160)
+  locale           String            @default("en-NG") @db.VarChar(35)
+  version          Int               @default(0)
+  securityVersion  Int               @default(0) @map("security_version")
+  lastTransitionAt DateTime          @map("last_transition_at") @db.Timestamptz(6)
+  lastTransitionId String            @map("last_transition_id") @db.Uuid
+  statusReasonCode String?           @map("status_reason_code") @db.VarChar(80)
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deactivatedAt    DateTime?         @map("deactivated_at") @db.Timestamptz(6)
+  emails           UserEmail[]
+  credentials      Credential[]
+  sessions         Session[]
+  recoveryAttempts RecoveryAttempt[]
+
+  @@index([status, createdAt], map: "users_status_created_idx")
+  @@map("users")
+}
+
+model UserEmail {
+  id              String          @id @db.Uuid
+  userId          String          @map("user_id") @db.Uuid
+  displayEmail    String          @map("display_email") @db.VarChar(320)
+  normalizedEmail String          @map("normalized_email") @db.VarChar(320)
+  verifiedAt      DateTime?       @map("verified_at") @db.Timestamptz(6)
+  primaryAt       DateTime?       @map("primary_at") @db.Timestamptz(6)
+  retiredAt       DateTime?       @map("retired_at") @db.Timestamptz(6)
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Restrict)
+  identityTokens  IdentityToken[]
+
+  @@index([userId, retiredAt], map: "user_emails_user_retired_idx")
+  @@map("user_emails")
+}
+
+model Credential {
+  id                String         @id @db.Uuid
+  userId            String         @map("user_id") @db.Uuid
+  type              CredentialType
+  encodedHash       String         @map("encoded_hash") @db.Text
+  hashAlgorithm     String         @map("hash_algorithm") @db.VarChar(40)
+  hashPolicyVersion Int            @map("hash_policy_version")
+  version           Int            @default(0)
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  rotatedAt         DateTime?      @map("rotated_at") @db.Timestamptz(6)
+  revokedAt         DateTime?      @map("revoked_at") @db.Timestamptz(6)
+  user              User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, type, revokedAt], map: "credentials_user_type_revoked_idx")
+  @@map("credentials")
+}
+
+model Session {
+  id                    String                  @id @db.Uuid
+  userId                String                  @map("user_id") @db.Uuid
+  tokenDigest           String                  @unique(map: "sessions_token_digest_key") @map("token_digest") @db.VarChar(128)
+  status                SessionStatus           @default(ACTIVE)
+  assurance             AuthenticationAssurance
+  issuedSecurityVersion Int                     @map("issued_security_version")
+  issuedAt              DateTime                @map("issued_at") @db.Timestamptz(6)
+  lastUsedAt            DateTime                @map("last_used_at") @db.Timestamptz(6)
+  idleExpiresAt         DateTime                @map("idle_expires_at") @db.Timestamptz(6)
+  absoluteExpiresAt     DateTime                @map("absolute_expires_at") @db.Timestamptz(6)
+  revokedAt             DateTime?               @map("revoked_at") @db.Timestamptz(6)
+  revocationCode        String?                 @map("revocation_code") @db.VarChar(80)
+  deviceLabel           String                  @map("device_label") @db.VarChar(80)
+  clientFamily          String?                 @map("client_family") @db.VarChar(80)
+  version               Int                     @default(0)
+  lastTransitionAt      DateTime                @map("last_transition_at") @db.Timestamptz(6)
+  lastTransitionId      String                  @map("last_transition_id") @db.Uuid
+  statusReasonCode      String?                 @map("status_reason_code") @db.VarChar(80)
+  createdAt             DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user                  User                    @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, status, absoluteExpiresAt], map: "sessions_user_status_expiry_idx")
+  @@map("sessions")
+}
+
+model IdentityToken {
+  id                    String               @id @db.Uuid
+  userEmailId           String               @map("user_email_id") @db.Uuid
+  purpose               IdentityTokenPurpose
+  tokenDigest           String               @unique(map: "identity_tokens_token_digest_key") @map("token_digest") @db.VarChar(128)
+  issuedSecurityVersion Int                  @map("issued_security_version")
+  issuedAt              DateTime             @map("issued_at") @db.Timestamptz(6)
+  expiresAt             DateTime             @map("expires_at") @db.Timestamptz(6)
+  consumedAt            DateTime?            @map("consumed_at") @db.Timestamptz(6)
+  invalidatedAt         DateTime?            @map("invalidated_at") @db.Timestamptz(6)
+  invalidationCode      String?              @map("invalidation_code") @db.VarChar(80)
+  replacedByTokenId     String?              @map("replaced_by_token_id") @db.Uuid
+  createdAt             DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  userEmail             UserEmail            @relation(fields: [userEmailId], references: [id], onDelete: Restrict)
+  replacedBy            IdentityToken?       @relation("IdentityTokenReplacement", fields: [replacedByTokenId], references: [id], onDelete: Restrict)
+  replaces              IdentityToken[]      @relation("IdentityTokenReplacement")
+
+  @@index([userEmailId, purpose, expiresAt], map: "identity_tokens_subject_purpose_expiry_idx")
+  @@map("identity_tokens")
+}
+
+model RecoveryAttempt {
+  id                    String   @id @db.Uuid
+  userId                String?  @map("user_id") @db.Uuid
+  subjectDigest         String   @map("subject_digest") @db.VarChar(128)
+  correlationId         String   @map("correlation_id") @db.VarChar(200)
+  methodCode            String   @map("method_code") @db.VarChar(80)
+  outcomeCode           String   @map("outcome_code") @db.VarChar(80)
+  assuranceEvidenceCode String?  @map("assurance_evidence_code") @db.VarChar(80)
+  containmentCode       String?  @map("containment_code") @db.VarChar(80)
+  occurredAt            DateTime @map("occurred_at") @db.Timestamptz(6)
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  user                  User?    @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([subjectDigest, occurredAt], map: "recovery_attempts_subject_time_idx")
+  @@index([userId, occurredAt], map: "recovery_attempts_user_time_idx")
+  @@map("recovery_attempts")
 }
 
 model OutboxEvent {
