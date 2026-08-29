@@ -12,6 +12,7 @@ const FILES = Object.freeze({
   vitest: 'apps/web/vitest.storybook.config.ts',
   playwright: 'apps/web/playwright.visual.config.ts',
   contracts: 'apps/web/stories/contracts.ts',
+  visualSpec: 'apps/web/stories/visual/ui-006.visual.spec.ts',
   visualRunner: 'scripts/run-ui-visual-tests.mjs',
   lintPackage: 'scripts/lint-package.mjs',
   qualityWorkflow: '.github/workflows/ci-quality.yml',
@@ -106,6 +107,11 @@ function validateTextSources(sources) {
   for (const token of ['Visual baselines must never be updated in CI', 'Canonical baselines may only be updated on Linux/Ubuntu 24.04', "NOMA_VISUAL_MODE: isLinux ? 'compare' : 'smoke'"]) {
     if (!runner.includes(token)) errors.push(`${FILES.visualRunner}: missing baseline guard ${token}`);
   }
+  const visualSpec = sources.get(FILES.visualSpec);
+  for (const token of ["scope: 'worker'", 'browser.newContext', "waitUntil: 'domcontentloaded'", 'data-noma-story-ready', 'document.fonts.ready']) {
+    if (!visualSpec.includes(token)) errors.push(`${FILES.visualSpec}: missing bounded browser readiness policy ${token}`);
+  }
+  if (/async \(\{ page \}\)/.test(visualSpec)) errors.push(`${FILES.visualSpec}: visual entries must reuse the worker-scoped page to avoid Windows socket exhaustion`);
   const qualityWorkflow = sources.get(FILES.qualityWorkflow);
   const canonicalImage = 'mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e';
   if (!qualityWorkflow.includes(canonicalImage)) errors.push(`${FILES.qualityWorkflow}: canonical Playwright image must be pinned by digest`);
@@ -133,7 +139,7 @@ function validateTextSources(sources) {
     if (path.startsWith('apps/web/src/') && /(?:next-navigation\.mock|\.storybook)/.test(source)) {
       errors.push(`${path}: production source must not import Storybook navigation mocks`);
     }
-    if (!path.includes('/stories/') || (!path.endsWith('.tsx') && !path.endsWith('.ts'))) continue;
+    if (path === FILES.visualSpec || !path.includes('/stories/') || (!path.endsWith('.tsx') && !path.endsWith('.ts'))) continue;
     if (/\bnextjs\s*:/.test(source)) errors.push(`${path}: adapter-specific Next.js story parameters are forbidden`);
     for (const [label, pattern] of forbiddenStoryPatterns) if (pattern.test(source)) errors.push(`${path}: forbidden ${label}`);
     if (/https?:\/\//.test(source)) errors.push(`${path}: external URLs are forbidden in deterministic stories`);
@@ -228,6 +234,7 @@ async function selfTest() {
     ['floating canonical Playwright image', FILES.qualityWorkflow, (s) => s.replace('@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e', '')],
     ['missing pinned-container workspace trust', FILES.qualityWorkflow, (s) => s.replace(/      - name: Trust the checked-out workspace in the pinned container\r?\n        run: git config --global --add safe\.directory "\$GITHUB_WORKSPACE"\r?\n/, '')],
     ['generated Storybook output linted as source', FILES.lintPackage, (s) => s.replace(/  'storybook-static',\r?\n/, '')],
+    ['per-test visual browser page churn', FILES.visualSpec, (s) => s.replace("scope: 'worker'", "scope: 'test'")],
     ['random story', 'apps/web/stories/foundations.stories.tsx', (s) => `${s}\n// Math.random()\n`],
     ['wall clock story', 'apps/web/stories/foundations.stories.tsx', (s) => `${s}\n// Date.now()\n`],
     ['database story import', 'apps/web/stories/foundations.stories.tsx', (s) => `${s}\n// @noma/database\n`],
