@@ -227,7 +227,7 @@ async function selfTest() {
     ['CI baseline update', FILES.qualityWorkflow, (s) => `${s}\n# pnpm ui:visual:update\n`],
     ['floating canonical Playwright image', FILES.qualityWorkflow, (s) => s.replace('@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e', '')],
     ['missing pinned-container workspace trust', FILES.qualityWorkflow, (s) => s.replace(/      - name: Trust the checked-out workspace in the pinned container\r?\n        run: git config --global --add safe\.directory "\$GITHUB_WORKSPACE"\r?\n/, '')],
-    ['generated Storybook output linted as source', FILES.lintPackage, (s) => s.replace("  'storybook-static',\n", '')],
+    ['generated Storybook output linted as source', FILES.lintPackage, (s) => s.replace(/  'storybook-static',\r?\n/, '')],
     ['random story', 'apps/web/stories/foundations.stories.tsx', (s) => `${s}\n// Math.random()\n`],
     ['wall clock story', 'apps/web/stories/foundations.stories.tsx', (s) => `${s}\n// Date.now()\n`],
     ['database story import', 'apps/web/stories/foundations.stories.tsx', (s) => `${s}\n// @noma/database\n`],
@@ -240,13 +240,19 @@ async function selfTest() {
     ['premature IAM status', FILES.taskIndex, (s) => s.replace('IAM-001,EP03,"Implement User, credential, session, and recovery persistence",P0,P0-AUTHORITY,NOT_STARTED', 'IAM-001,EP03,"Implement User, credential, session, and recovery persistence",P0,P0-AUTHORITY,IN_REVIEW')],
     ['speculative checkout story', 'apps/web/stories/consumer-shells.stories.tsx', (s) => `${s}\n// /checkout\n`],
   ];
+  const lineEndingVariants = [
+    ['LF', new Map([...original].map(([path, source]) => [path, source.replace(/\r?\n/g, '\n')]))],
+    ['CRLF', new Map([...original].map(([path, source]) => [path, source.replace(/\r?\n/g, '\r\n')]))],
+  ];
   for (const [name, path, mutate] of cases) {
-    const sources = new Map(original);
-    sources.set(path, mutate(sources.get(path)));
-    const errors = validateTextSources(sources);
-    if (errors.length === 0) throw new Error(`UI-006 validator self-test did not reject ${name}`);
+    for (const [lineEndings, originalVariant] of lineEndingVariants) {
+      const sources = new Map(originalVariant);
+      sources.set(path, mutate(sources.get(path)));
+      const errors = validateTextSources(sources);
+      if (errors.length === 0) throw new Error(`UI-006 validator self-test did not reject ${name} with ${lineEndings}`);
+    }
   }
-  console.log(`PASS: UI-006 validator rejected ${cases.length} unsafe fixtures`);
+  console.log(`PASS: UI-006 validator rejected ${cases.length} unsafe fixtures across LF and CRLF inputs`);
 }
 
 if (process.argv.includes('--self-test')) {
