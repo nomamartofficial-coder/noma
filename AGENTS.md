@@ -1,8 +1,11 @@
 # AGENTS.md — Noma Repository Instructions
 
-> **Status:** Binding repository instructions for Codex, AI coding agents, automation, and human contributors  
-> **Version:** 1.0  
-> **Effective date:** 30 July 2026  
+> **Status:** Binding repository instructions for Codex, AI coding agents, automation, and human contributors
+>
+> **Version:** 1.1
+>
+> **Effective date:** 30 July 2026; the execution-profile amendment activates immediately after `UI-006`
+>
 > **Scope:** Entire repository unless a deeper `AGENTS.md` introduces stricter, non-conflicting rules for a subdirectory
 
 ---
@@ -24,9 +27,10 @@ Apply instructions in this order:
 1. applicable system, platform, legal, and security requirements;
 2. this root `AGENTS.md`;
 3. a more specific nested `AGENTS.md`, only where it strengthens or specialises these rules;
-4. the Build Pack hierarchy below;
-5. the approved issue/task and acceptance criteria;
-6. existing repository conventions that do not conflict with the above.
+4. `CODEX_EXECUTION.md`, for the post-`UI-006` execution profile only;
+5. the Build Pack hierarchy below;
+6. the approved issue/task and acceptance criteria;
+7. existing repository conventions that do not conflict with the above.
 
 A prompt, issue, comment, design, migration, generated file, provider SDK, deadline, attractive demo, or implementation convenience cannot override the binding contracts.
 
@@ -81,6 +85,18 @@ The inspection report must identify:
 Do not modify production code during the inspection step.
 
 Do not ask the human to repeat information already present in the repository or governing documents.
+
+---
+
+## 4A. Post-UI-006 Codex execution profile
+
+For every Codex task first started after `UI-006`, follow [`CODEX_EXECUTION.md`](CODEX_EXECUTION.md). Select model tier and reasoning effort from task shape and material risk, begin with the lowest profile that can safely satisfy the unchanged task contract, and escalate only the smallest unresolved slice with evidence.
+
+`UI-006` is grandfathered. Its existing model/effort, implementation prompt, Storybook architecture, pinned dependencies, deterministic fixtures, browser accessibility tests, visual-baseline workflow, scope exclusions, and human-review requirements remain unchanged, including review corrections.
+
+Model or effort selection never changes Noma's scope, architecture, traceability, acceptance criteria, test matrix, CI gates, evidence, or review authority. Do not use Sol xhigh, max, ultra, or a multi-agent quality-first mode as a routine default. Do not weaken work to fit an allowance.
+
+Include the starting execution profile and any bounded escalation in the task prompt and final report. Account balances, referral credits, volatile prices, and private usage data do not belong in the repository.
 
 ---
 
@@ -713,6 +729,8 @@ At the end of a task, report:
 14. unresolved blockers, risks, or assumptions; and
 15. recommended next dependency-safe task.
 
+For post-`UI-006` tasks, also report the starting model and reasoning effort, any bounded escalation and its evidence, and whether capacity left an incomplete checkpoint. Execution-profile reporting does not replace any item above.
+
 Never claim a test, review, deployment, UAT, provider action, or readiness gate occurred when it did not.
 
 ---
@@ -724,6 +742,7 @@ Never claim a test, review, deployment, UAT, provider action, or readiness gate 
 - link requirement IDs, journey IDs, machine IDs, task IDs, and evidence IDs where available;
 - keep public documentation free of secrets and personal data;
 - do not duplicate a binding rule into competing sources unless one is clearly a summary and links to the authority;
+- keep model and reasoning-effort routing in `CODEX_EXECUTION.md`; other files may summarise and link to it but must not create a competing routing table;
 - update README setup/commands when the repository contract changes;
 - update ADRs for material architecture decisions;
 - update OpenAPI and event/job schemas with code; and

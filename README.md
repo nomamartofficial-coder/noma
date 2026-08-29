@@ -99,6 +99,7 @@ The repository documentation is the source of truth.
 | [`docs/12-delivery-backlog.md`](docs/12-delivery-backlog.md) | Epics, 150 bounded tasks, dependencies, acceptance, build order, and execution plan |
 | [`docs/13-covenant-pilot-readiness.md`](docs/13-covenant-pilot-readiness.md) | Launch evidence, capacity, UAT approval, GO/HOLD/PAUSE decisions, and expansion criteria |
 | [`AGENTS.md`](AGENTS.md) | Binding instructions for Codex, AI agents, automation, and contributors |
+| [`CODEX_EXECUTION.md`](CODEX_EXECUTION.md) | Post-UI-006 model/effort routing, escalation, context discipline, and quality invariants |
 | [`README.md`](README.md) | Repository orientation, setup contract, commands, and contribution entry point |
 
 For a conflict, follow the authority hierarchy in [`AGENTS.md`](AGENTS.md). Do not silently reconcile competing rules in code.
@@ -554,7 +555,9 @@ The normal cycle is:
 
 Codex accelerates implementation but does not approve scope, merge, deploy production, perform UAT on behalf of users, configure production providers, or activate the marketplace.
 
-See [`AGENTS.md`](AGENTS.md) and [`docs/12-delivery-backlog.md`](docs/12-delivery-backlog.md).
+Beginning with the first task after `UI-006`, every Codex task also declares and follows the model/effort profile in [`CODEX_EXECUTION.md`](CODEX_EXECUTION.md). This changes how execution capacity is allocated, not the task sequence, quality bar, tests, CI gates, evidence, or human-review authority. `UI-006` remains under its original execution configuration.
+
+See [`AGENTS.md`](AGENTS.md), [`CODEX_EXECUTION.md`](CODEX_EXECUTION.md), and [`docs/12-delivery-backlog.md`](docs/12-delivery-backlog.md).
 
 ---
 
@@ -670,6 +673,8 @@ docs/13-covenant-pilot-readiness.md
 
 Completion of this documentation milestone means the implementation can proceed from a coherent authority set. It is not a claim that the 150 delivery tasks, provider environments, UAT, or readiness gates have been completed.
 
+[`CODEX_EXECUTION.md`](CODEX_EXECUTION.md) is a post-`UI-006` operational supplement to this original sixteen-file milestone. It does not amend the Build Pack's product or architecture contracts.
+
 ---
 
 ## Starting implementation
@@ -694,7 +699,7 @@ Do not begin by generating the storefront homepage or checkout in isolation.
 
 Before contributing:
 
-1. read [`AGENTS.md`](AGENTS.md);
+1. read [`AGENTS.md`](AGENTS.md) and, for a post-`UI-006` Codex task, [`CODEX_EXECUTION.md`](CODEX_EXECUTION.md);
 2. identify the approved task ID;
 3. read the governing documents;
 4. inspect before editing;
