@@ -4,7 +4,7 @@
 - Date: 2026-08-29
 - Task: `IAM-001`
 - Issue: `#50`
-- Pull request: pending
+- Pull request: `#51`
 - Authority: `docs/06-technical-architecture.md`, `docs/07-domain-model.md`, `docs/08-state-machines.md`, `docs/10-security-and-compliance.md`, `docs/11-testing-strategy.md`, `REQ-IAM-001`
 
 ## Context
