@@ -18,6 +18,8 @@ The root Vitest configuration defines three non-overlapping projects:
 
 The existing `pnpm db:verify` and `pnpm queue:verify` Compose suites remain focused DEV-004/005 recovery evidence. New reusable infrastructure tests use `@noma/testing/containers`.
 
+IAM-001 adds `pnpm identity:integration-test`, using the pinned PostgreSQL Testcontainers harness and committed migrations. It proves active-email and password-credential uniqueness, session digest/expiry/revocation/security-version behavior, token expiry/invalidation/replay, barrier-coordinated exactly-one token consumption, restrictive identity deletion, append-only recovery evidence, and raw-secret absence. `pnpm identity:verify` combines policy, negative, unit, migration, real-database, and protected-route denial evidence.
+
 DEV-010 adds `pnpm observability:integration`, a bounded sequential Testcontainers rehearsal that applies committed migrations, proves connected API/outbox/BullMQ/Worker trace context and PostgreSQL completion evidence, then pauses authenticated Redis and observes readiness fail and recover while liveness remains healthy. It uses `pollUntil`, not arbitrary wall-clock sleeps.
 
 UI-001 adds a Docker-free `@noma/ui` unit suite. It recomputes WCAG relative luminance for required text, status, action, and focus pairs; proves immutable aliases and isolated brand remapping; and verifies deterministic TypeScript/CSS parity, reduced motion, forced colours, and the light-only pilot boundary. `pnpm ui:verify` runs the generated-output check, static policy, 20 negative fixtures, and token tests without network or infrastructure.
