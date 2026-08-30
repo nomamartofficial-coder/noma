@@ -1,20 +1,22 @@
 # Dependency security policy
 
-> **Task:** `SEC-005`, corrected by `SEC-006` and `SEC-007`
+> **Task:** `SEC-005`, corrected by `SEC-006`, `SEC-007`, and the bounded Next.js 16.3.3 security correction
 > **Risk:** `P0-RECOVERY`  
-> **Status:** SEC-005 and SEC-006 complete; SEC-007 implemented for review; infrastructure activation remains blocked
+> **Status:** SEC-005 through SEC-007 complete; Next.js 16.3.3 implemented for review; infrastructure activation remains blocked
 
 ## Purpose
 
 Noma treats the committed manifests and `pnpm-lock.yaml` as reviewed supply-chain inputs. A frozen install proves reproducibility, but it does not prove that resolved versions meet the approved security floor. SEC-005 therefore combines an offline lockfile policy with GitHub dependency review and a separately recorded live registry audit. SEC-006 raises the reviewed `nanoid` floor after the live audit began classifying `3.3.17` as vulnerable. SEC-007 resolves GHSA-ggr8-5vv4-36mx after Prisma's current configuration package began resolving the affected `deepmerge-ts` line.
 
-This policy does not deploy, provision infrastructure, contact a business provider, or activate a marketplace capability. UI-006 removes the vulnerable Next.js-specific Storybook adapter from the private documentation toolchain rather than weakening the dependency gate.
+This policy does not deploy, provision infrastructure, contact a business provider, or activate a marketplace capability. UI-006 removes the vulnerable Next.js-specific Storybook adapter from the private documentation toolchain rather than weakening the dependency gate. The bounded Next.js correction raises the Web runtime from `16.3.0` to Active-LTS `16.3.3` for GHSA-2xp9-vwfh-vxw4 and GHSA-p293-qw3h-jr36 without beginning IAM-002 or changing application behavior.
+
+The reviewed `16.3.3` lockfile update also advances Next's own `@next/env` and platform SWC packages to `16.3.3`, advances `@swc/helpers` to `0.5.23`, and consolidates `baseline-browser-mapping` and `caniuse-lite` onto versions already present elsewhere in the workspace graph. It introduces no unrelated package or direct dependency; React and the remaining application and test-tool pins are unchanged.
 
 ## Reviewed resolutions
 
 | Package | Approved resolution | Reason |
 |---|---:|---|
-| `next` | `16.3.0` | Stable parent release resolving patched PostCSS and Sharp versions |
+| `next` | `16.3.3` | Active-LTS security release addressing two Critical vulnerabilities while retaining the reviewed PostCSS and Sharp graph |
 | `postcss` | `8.5.23`, `8.5.25` | Covers the four open PostCSS advisories while retaining Vite's already-safe graph |
 | `sharp` | `0.35.3` | Exceeds the `0.35.0` patched minimum through Next's supported optional range |
 | `fast-uri` | `3.1.5` | Compatible convergence override for Ajv's `^3.0.1` range |

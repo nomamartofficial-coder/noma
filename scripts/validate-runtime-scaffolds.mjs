@@ -21,7 +21,7 @@ async function validate() {
   const web = await readJson('apps/web/package.json');
   const api = await readJson('apps/api/package.json');
   const worker = await readJson('apps/worker/package.json');
-  if (web.dependencies?.next !== '16.3.0') fail('Next.js must be pinned to 16.3.0');
+  if (web.dependencies?.next !== '16.3.3') fail('Next.js must be pinned to 16.3.3');
   for (const pkg of [api, worker]) {
     if (pkg.dependencies?.['@nestjs/core'] !== '11.1.28') fail(`${pkg.name}: NestJS must be pinned to 11.1.28`);
     for (const script of ['dev', 'start', 'build', 'typecheck']) if (!pkg.scripts?.[script]) fail(`${pkg.name}: missing ${script}`);
