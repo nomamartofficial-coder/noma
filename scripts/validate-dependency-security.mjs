@@ -8,7 +8,7 @@ const FILES = Object.freeze({
   lock: 'pnpm-lock.yaml',
 });
 const APPROVED = Object.freeze({
-  next: '16.3.0',
+  next: '16.3.3',
   postcss: Object.freeze(['8.5.23', '8.5.25']),
   sharp: '0.35.3',
   fastUri: '3.1.5',
@@ -199,7 +199,7 @@ function yamlEntryBlocks(section, prefix, { literalSuffix = false } = {}) {
 
 function runSelfTest(original) {
   const tests = [
-    fixture('downgraded Next manifest', 'web', '"next": "16.3.0"', '"next": "16.2.12"', 'Next.js must be pinned exactly'),
+    fixture('restored vulnerable Next manifest', 'web', '"next": "16.3.3"', '"next": "16.3.0"', 'Next.js must be pinned exactly'),
     fixture('removed fast-uri override', 'workspace', "  'fast-uri@': 3.1.5\n", '', 'missing reviewed fast-uri@ convergence override'),
     fixture('removed nanoid override', 'workspace', "  'nanoid@': 3.3.18\n", '', 'missing reviewed nanoid@ convergence override'),
     fixture('removed deepmerge-ts override', 'workspace', '  deepmerge-ts: 8.0.2\n', '', 'missing reviewed deepmerge-ts forced override'),
