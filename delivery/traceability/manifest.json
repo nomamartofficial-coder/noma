@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0.0",
-  "register_version": "2026-08-29.2",
+  "register_version": "2026-08-31.1",
   "authority": "docs/12-delivery-backlog.md FND-007",
-  "generated_at": "2026-08-29T16:21:59+01:00",
+  "generated_at": "2026-08-31T08:00:00+01:00",
   "counts": {
     "tasks": 153,
     "p0_tasks": 142,
@@ -55,6 +55,7 @@
     "python scripts/validate_traceability.py --lookup UI-005",
     "python scripts/validate_traceability.py --lookup UI-006",
     "python scripts/validate_traceability.py --lookup IAM-001",
+    "python scripts/validate_traceability.py --lookup IAM-002",
     "python scripts/validate_traceability.py --lookup SEC-006",
     "python scripts/validate_traceability.py --lookup SEC-007"
   ],

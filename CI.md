@@ -88,6 +88,8 @@ pnpm ui:visual:test
 
 IAM-001 adds deterministic identity-persistence validation and negative fixtures to Quality policy and Windows. The Integration database segment applies the additive identity migration and runs real PostgreSQL constraints, session invalidation, same-email contention, and atomic one-time-token consumption. The existing five stable gate names and fail-closed protected-route smoke remain unchanged.
 
+IAM-002 adds password/authentication validation and negative fixtures to Quality policy and Windows, native Argon2id unit/calibration evidence to Quality and Windows, and real PostgreSQL/Redis/Nest API authentication tests to Integration. Security continues to enforce exact dependency pins and a Moderate audit floor. No gate is renamed or added, and protected role routes remain fail closed.
+
 The Quality policy and Windows segments include UI-003 commerce truth, exact-money, evidence/privacy, client-boundary, generated-CSS, and negative-policy validation through the existing `ui:*` aggregate. Unit/component coverage includes commerce precision, truth, axe, and keyboard/focus tests. No sixth stable gate is introduced.
 
 UI-004 route, navigation, fake-authority/data, client-boundary, link-integrity, responsive-token, and negative-policy checks run through the same `ui:validate` and `ui:self-test` aggregate in Quality policy and Windows compatibility. Shell unit/component coverage remains in the existing Quality gate; no gate name is added or changed.
