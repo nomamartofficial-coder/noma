@@ -115,6 +115,8 @@ export const RUNTIME_METRIC_NAMES = [
   'noma.dependency.probe.total',
   'noma.dependency.probe.duration_ms',
   'noma.telemetry.export.failure.total',
+  'noma.identity.authentication.total',
+  'noma.identity.auth_rate_limit.total',
 ] as const;
 
 export type QueueMetricName = (typeof QUEUE_METRIC_NAMES)[number];
@@ -185,7 +187,7 @@ const TRACEPARENT_PATTERN = /^[0-9a-f]{2}-([0-9a-f]{32})-([0-9a-f]{16})-([0-9a-f
 const SAFE_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$/;
 const SAFE_EVENT_PATTERN = /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/;
 const METRIC_ATTRIBUTE_KEYS = new Set([
-  'dependency', 'job', 'method', 'outcome', 'owner', 'queue', 'route', 'runtime', 'state', 'status_class',
+  'action', 'dependency', 'job', 'method', 'outcome', 'owner', 'queue', 'route', 'runtime', 'state', 'status_class',
 ]);
 const correlationStorage = new AsyncLocalStorage<CorrelationContext>();
 

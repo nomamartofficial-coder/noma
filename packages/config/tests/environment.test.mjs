@@ -144,6 +144,22 @@ test('API database and Redis dependencies must be configured together', () => {
     }),
     EnvironmentValidationError,
   );
+  assert.throws(
+    () => loadServerEnvironment('api', {
+      DATABASE_URL: 'postgresql://noma:synthetic@127.0.0.1:55432/noma',
+      REDIS_URL: 'redis://default:synthetic@127.0.0.1:56379',
+    }),
+    (error) => error instanceof EnvironmentValidationError
+      && error.issues.some((issue) => issue.key === 'AUTH_CORRELATION_SECRET'),
+  );
+  const configured = loadServerEnvironment('api', {
+    DATABASE_URL: 'postgresql://noma:synthetic@127.0.0.1:55432/noma',
+    REDIS_URL: 'redis://default:synthetic@127.0.0.1:56379',
+    AUTH_CORRELATION_SECRET: 'synthetic-correlation-secret-at-least-32-characters',
+  });
+  assert.equal(configured.authentication.idleMilliseconds, 7 * 24 * 60 * 60_000);
+  assert.equal(configured.authentication.absoluteMilliseconds, 30 * 24 * 60 * 60_000);
+  assert.equal(configured.authentication.touchAfterMilliseconds, 15 * 60_000);
 });
 
 test('staging requires release identity, dependencies, API session secret, and encrypted database transport', () => {
@@ -232,6 +248,7 @@ test('valid production configuration is typed and serialises without secrets', (
   assert.equal(serialised.includes('database-password'), false);
   assert.deepEqual(describeServerEnvironment(config).configuredSecrets, {
     sessionSecret: true,
+    authCorrelationSecret: false,
     databaseUrl: true,
     redisUrl: true,
     telemetryAuthorization: false,
