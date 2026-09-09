@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 const ROOT = resolve(import.meta.dirname, '..');
 const FILES = Object.freeze({
   web: 'apps/web/package.json',
+  security: 'packages/security/package.json',
   workspace: 'pnpm-workspace.yaml',
   lock: 'pnpm-lock.yaml',
 });
@@ -14,6 +15,9 @@ const APPROVED = Object.freeze({
   fastUri: '3.1.5',
   nanoid: '3.3.18',
   deepmergeTs: '8.0.2',
+  argon2: '0.45.1',
+  passwordDictionary: '4.1.3',
+  dictionaryCompression: '3.0.1',
   ui006: Object.freeze({
     '@playwright/test': '1.62.1',
     '@storybook/addon-a11y': '10.5.10',
@@ -48,11 +52,13 @@ async function readSources(root) {
   ));
 }
 
-function validateSources({ web, workspace, lock }) {
+function validateSources({ web, security, workspace, lock }) {
   const errors = [];
   let webManifest;
+  let securityManifest;
   try {
     webManifest = JSON.parse(web);
+    securityManifest = JSON.parse(security);
   } catch (error) {
     errors.push(`${FILES.web}: invalid JSON: ${error.message}`);
     return errors;
@@ -65,6 +71,15 @@ function validateSources({ web, workspace, lock }) {
     if (webManifest.devDependencies?.[name] !== version) {
       errors.push(`${FILES.web}: ${name} must be pinned exactly to ${version}`);
     }
+  }
+  if (securityManifest.dependencies?.argon2 !== APPROVED.argon2) {
+    errors.push(`${FILES.security}: argon2 must be pinned exactly to ${APPROVED.argon2}`);
+  }
+  if (securityManifest.dependencies?.['@zxcvbn-ts/language-common'] !== APPROVED.passwordDictionary) {
+    errors.push(`${FILES.security}: @zxcvbn-ts/language-common must be pinned exactly to ${APPROVED.passwordDictionary}`);
+  }
+  if (!workspace.includes('  argon2: true\n')) {
+    errors.push(`${FILES.workspace}: argon2 must be the only approved IAM-002 native build addition`);
   }
 
   for (const [name, version] of [['fast-uri', APPROVED.fastUri], ['nanoid', APPROVED.nanoid]]) {
@@ -106,6 +121,17 @@ function validateSources({ web, workspace, lock }) {
       errors.push(`${FILES.lock}: apps/web must resolve exact ${name} ${version}`);
     }
   }
+  const securityImporter = yamlEntryBlocks(importers, 'packages/security@').at(0)
+    ?? yamlNamedEntry(importers, 'packages/security');
+  for (const [name, version] of [
+    ['argon2', APPROVED.argon2],
+    ['@zxcvbn-ts/language-common', APPROVED.passwordDictionary],
+  ]) {
+    const importerName = name.startsWith('@') ? `'${name}'` : name;
+    if (!securityImporter.includes(`      ${importerName}:\n        specifier: ${version}\n        version: ${version}`)) {
+      errors.push(`${FILES.lock}: packages/security must resolve exact ${name} ${version}`);
+    }
+  }
 
   const packages = yamlSection(lock, 'packages');
   assertVersions(errors, packages, 'next', [APPROVED.next]);
@@ -114,6 +140,13 @@ function validateSources({ web, workspace, lock }) {
   assertVersions(errors, packages, 'fast-uri', [APPROVED.fastUri]);
   assertVersions(errors, packages, 'nanoid', [APPROVED.nanoid]);
   assertVersions(errors, packages, 'deepmerge-ts', [APPROVED.deepmergeTs]);
+  assertVersions(errors, packages, 'argon2', [APPROVED.argon2]);
+  if (!packages.includes(`  '@zxcvbn-ts/language-common@${APPROVED.passwordDictionary}':`)) {
+    errors.push(`${FILES.lock}: missing exact @zxcvbn-ts/language-common ${APPROVED.passwordDictionary} package`);
+  }
+  if (!packages.includes(`  '@zxcvbn-ts/dictionary-compression@${APPROVED.dictionaryCompression}':`)) {
+    errors.push(`${FILES.lock}: missing exact @zxcvbn-ts/dictionary-compression ${APPROVED.dictionaryCompression} package`);
+  }
   for (const [name, version] of Object.entries(APPROVED.ui006)) {
     const entry = name.startsWith('@') ? `  '${name}@${version}':` : `  ${name}@${version}:`;
     if (!packages.includes(entry)) errors.push(`${FILES.lock}: missing approved ${name} ${version} package`);
@@ -141,6 +174,10 @@ function validateSources({ web, workspace, lock }) {
   const prismaConfigBlocks = yamlEntryBlocks(snapshots, "'@prisma/config@");
   if (prismaConfigBlocks.length !== 1) errors.push(`${FILES.lock}: expected one Prisma configuration snapshot, found ${prismaConfigBlocks.length}`);
   for (const block of prismaConfigBlocks) requireDependency(errors, block, 'Prisma configuration', 'deepmerge-ts', APPROVED.deepmergeTs);
+
+  const dictionaryBlocks = yamlEntryBlocks(snapshots, "'@zxcvbn-ts/language-common@");
+  if (dictionaryBlocks.length !== 1) errors.push(`${FILES.lock}: expected one password dictionary snapshot, found ${dictionaryBlocks.length}`);
+  for (const block of dictionaryBlocks) requireDependency(errors, block, 'password dictionary', "'@zxcvbn-ts/dictionary-compression'", APPROVED.dictionaryCompression);
 
   for (const forbidden of ['@storybook/nextjs-vite', 'vite-plugin-storybook-nextjs', 'image-size@']) {
     if (lock.includes(forbidden)) errors.push(`${FILES.lock}: vulnerable Storybook dependency is forbidden (${forbidden})`);
@@ -222,6 +259,11 @@ function runSelfTest(original) {
     fixture('reintroduced vulnerable adapter lock entry', 'lock', 'packages:\n', 'packages:\n  vite-plugin-storybook-nextjs@3.3.2:\n', 'vulnerable Storybook dependency is forbidden'),
     fixture('reintroduced image-size lock entry', 'lock', 'packages:\n', 'packages:\n  image-size@2.0.2:\n', 'vulnerable Storybook dependency is forbidden'),
     fixture('downgraded Storybook importer', 'lock', '      storybook:\n        specifier: 10.5.10', '      storybook:\n        specifier: 10.5.9', 'apps/web must resolve exact storybook 10.5.10'),
+    fixture('ranged Argon2 manifest', 'security', '"argon2": "0.45.1"', '"argon2": "^0.45.1"', 'argon2 must be pinned exactly'),
+    fixture('downgraded password dictionary manifest', 'security', '"@zxcvbn-ts/language-common": "4.1.3"', '"@zxcvbn-ts/language-common": "4.1.2"', '@zxcvbn-ts/language-common must be pinned exactly'),
+    fixture('removed Argon2 build approval', 'workspace', '  argon2: true\n', '', 'argon2 must be the only approved IAM-002 native build addition'),
+    fixture('downgraded Argon2 lock package', 'lock', 'argon2@0.45.1:', 'argon2@0.45.0:', 'argon2 package versions must be'),
+    fixture('downgraded dictionary compression edge', 'lock', "      '@zxcvbn-ts/dictionary-compression': 3.0.1", "      '@zxcvbn-ts/dictionary-compression': 3.0.0", 'password dictionary must resolve'),
   ];
 
   for (const test of tests) {

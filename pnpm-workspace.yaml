@@ -11,6 +11,7 @@ peerDependencyRules:
     'tsconfck@3.1.6>typescript': 6.0.3
 allowBuilds:
   '@prisma/engines': true
+  argon2: true
   cpu-features: false
   esbuild: true
   msgpackr-extract: false
