@@ -37,6 +37,12 @@
     "identity:test": "pnpm --filter @noma/platform build && vitest run --project unit packages/platform/tests/identity.test.ts",
     "identity:integration-test": "pnpm build && vitest run --project integration packages/testing/tests/identity-persistence.integration.test.ts",
     "identity:verify": "pnpm identity:validate && pnpm identity:self-test && pnpm identity:test && pnpm db:verify && pnpm identity:integration-test && node scripts/test-protected-role-routes.mjs",
+    "auth:validate": "node scripts/validate-authentication.mjs",
+    "auth:self-test": "node scripts/validate-authentication.mjs --self-test",
+    "auth:test": "pnpm --filter @noma/platform build && pnpm --filter @noma/security build && vitest run --project unit apps/api/tests/authentication.test.ts packages/platform/tests/authentication.test.ts packages/security/tests/authentication.test.ts",
+    "auth:integration-test": "pnpm build && vitest run --project integration packages/testing/tests/authentication.integration.test.ts",
+    "auth:calibrate": "pnpm --filter @noma/security build && node scripts/calibrate-password-hash.mjs",
+    "auth:verify": "pnpm auth:validate && pnpm auth:self-test && pnpm auth:test && pnpm auth:calibrate && pnpm auth:integration-test && node scripts/test-protected-role-routes.mjs",
     "queue:foundation:validate": "node scripts/validate-queue-foundation.mjs",
     "queue:self-test": "node scripts/validate-queue-foundation.mjs --self-test",
     "queue:test": "pnpm --filter @noma/contracts test && pnpm --filter @noma/integrations test && pnpm --filter @noma/worker test",
@@ -123,7 +129,7 @@
     "start:api": "pnpm --filter @noma/api start",
     "start:worker": "pnpm --filter @noma/worker start",
     "smoke:runtimes": "pnpm build && node scripts/smoke-runtimes.mjs",
-    "check": "pnpm workspace:validate && pnpm runtimes:validate && pnpm env:validate && pnpm db:validate && pnpm queue:foundation:validate && pnpm testing:validate && pnpm providers:validate && pnpm observability:validate && pnpm ui:validate && pnpm deploy:validate && pnpm security:dependencies:validate && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "check": "pnpm workspace:validate && pnpm runtimes:validate && pnpm env:validate && pnpm db:validate && pnpm identity:validate && pnpm auth:validate && pnpm queue:foundation:validate && pnpm testing:validate && pnpm providers:validate && pnpm observability:validate && pnpm ui:validate && pnpm deploy:validate && pnpm security:dependencies:validate && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "clean": "turbo run clean && node scripts/clean-workspace.mjs"
   },
   "devDependencies": {

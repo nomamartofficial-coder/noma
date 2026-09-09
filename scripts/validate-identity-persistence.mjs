@@ -117,8 +117,8 @@ export function validateIdentitySources({ schema, migration, platform, database,
   }
   for (const expected of [
     'UI-006,EP02,Create Storybook/component documentation and visual regression,P0,P2-PRESENTATION,COMPLETE',
-    'IAM-001,EP03,"Implement User, credential, session, and recovery persistence",P0,P0-AUTHORITY,IN_REVIEW',
-    'IAM-002,EP03,"Implement password registration, sign-in, sign-out, and session rotation",P0,P0-AUTHORITY,NOT_STARTED',
+    'IAM-001,EP03,"Implement User, credential, session, and recovery persistence",P0,P0-AUTHORITY,COMPLETE',
+    'IAM-002,EP03,"Implement password registration, sign-in, sign-out, and session rotation",P0,P0-AUTHORITY,IN_REVIEW',
   ]) {
     if (!taskIndex.includes(expected)) fail(`IAM-001 traceability lifecycle mismatch: ${expected.split(',')[0]}`);
   }
@@ -146,7 +146,7 @@ function selfTest(sources) {
     ['cascade delete', { ...sources, migration: sources.migration.replace('ON DELETE RESTRICT', 'ON DELETE CASCADE') }],
     ['non-atomic consumption', { ...sources, database: sources.database.replace('UPDATE "identity_tokens" AS t', 'SELECT * FROM "identity_tokens" AS t') }],
     ['environment-controlled migration executable', { ...sources, integration: sources.integration.replace('await execFileAsync(process.execPath', 'const command = process.env.npm_execpath ?? process.execPath;\n  await execFileAsync(command') }],
-    ['premature IAM-002', { ...sources, taskIndex: sources.taskIndex.replace('IAM-002,EP03,"Implement password registration, sign-in, sign-out, and session rotation",P0,P0-AUTHORITY,NOT_STARTED', 'IAM-002,EP03,"Implement password registration, sign-in, sign-out, and session rotation",P0,P0-AUTHORITY,IN_REVIEW') }],
+    ['regressed IAM-002 lifecycle', { ...sources, taskIndex: sources.taskIndex.replace('IAM-002,EP03,"Implement password registration, sign-in, sign-out, and session rotation",P0,P0-AUTHORITY,IN_REVIEW', 'IAM-002,EP03,"Implement password registration, sign-in, sign-out, and session rotation",P0,P0-AUTHORITY,NOT_STARTED') }],
   ];
   for (const [name, candidate] of mutations) {
     try {
@@ -172,7 +172,7 @@ try {
   console.log('PASS: IAM-001 identity models, repository boundary, database controls, and fail-closed routes');
   if (process.argv.includes('--self-test')) {
     selfTest(sources);
-    console.log('PASS: global role, raw secret, cascade delete, replay-race, executable-injection, and premature IAM-002 mutations were rejected');
+    console.log('PASS: global role, raw secret, cascade delete, replay-race, executable-injection, and lifecycle regressions were rejected');
   }
 } catch (error) {
   console.error(`FAIL: ${error.message}`);
