@@ -26,13 +26,13 @@ The pinned Storybook job container trusts only the checked-out GitHub workspace 
 
 ## Reviewed dependency inventory
 
-Registry metadata was rechecked on 22 August 2026 before publication. Storybook `10.5.10` and Playwright `1.62.1` were the current stable releases. Vite `8.2.2` and Vitest `4.1.11` had newer patch releases, but UI-006 deliberately retains the approved exact Vite `8.2.0` and Vitest `4.1.10` family as specified by the task; ranges and unreviewed drift are rejected.
+Registry metadata was rechecked on 9 September 2026 after the live audit disclosed a Vitest mocker advisory. Storybook `10.5.10`, Vite `8.2.0`, and Playwright `1.62.1` remain on their reviewed exact pins; the compatible Vitest family advances to the patched `4.1.11` release. Ranges and unreviewed drift are rejected.
 
 | Direct development dependency | Exact version | License |
 | --- | ---: | --- |
 | `storybook`, `@storybook/react-vite`, `@storybook/addon-docs`, `@storybook/addon-a11y`, `@storybook/addon-vitest` | `10.5.10` | MIT |
 | `vite` | `8.2.0` | MIT |
-| `vitest`, `@vitest/browser-playwright` | `4.1.10` | MIT |
+| `vitest`, `@vitest/browser-playwright`, root `@vitest/coverage-v8` | `4.1.11` | MIT |
 | `@playwright/test` | `1.62.1` | Apache-2.0 |
 | `mockdate` | `3.0.5` | MIT |
 

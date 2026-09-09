@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const FILES = Object.freeze({
+  root: 'package.json',
   web: 'apps/web/package.json',
   security: 'packages/security/package.json',
   workspace: 'pnpm-workspace.yaml',
@@ -11,8 +12,11 @@ const FILES = Object.freeze({
 const APPROVED = Object.freeze({
   next: '16.3.3',
   postcss: Object.freeze(['8.5.23', '8.5.25']),
-  sharp: '0.35.3',
-  fastUri: '3.1.5',
+  sharp: '0.35.4',
+  fastUri: '3.1.7',
+  mysql2: '3.23.1',
+  multer: '2.3.0',
+  qs: '6.16.0',
   nanoid: '3.3.18',
   deepmergeTs: '8.0.2',
   argon2: '0.45.1',
@@ -24,11 +28,11 @@ const APPROVED = Object.freeze({
     '@storybook/addon-docs': '10.5.10',
     '@storybook/addon-vitest': '10.5.10',
     '@storybook/react-vite': '10.5.10',
-    '@vitest/browser-playwright': '4.1.10',
+    '@vitest/browser-playwright': '4.1.11',
     mockdate: '3.0.5',
     storybook: '10.5.10',
     vite: '8.2.0',
-    vitest: '4.1.10',
+    vitest: '4.1.11',
   }),
 });
 
@@ -52,11 +56,13 @@ async function readSources(root) {
   ));
 }
 
-function validateSources({ web, security, workspace, lock }) {
+function validateSources({ root, web, security, workspace, lock }) {
   const errors = [];
+  let rootManifest;
   let webManifest;
   let securityManifest;
   try {
+    rootManifest = JSON.parse(root);
     webManifest = JSON.parse(web);
     securityManifest = JSON.parse(security);
   } catch (error) {
@@ -66,6 +72,14 @@ function validateSources({ web, security, workspace, lock }) {
 
   if (webManifest.dependencies?.next !== APPROVED.next) {
     errors.push(`${FILES.web}: Next.js must be pinned exactly to ${APPROVED.next}`);
+  }
+  for (const [name, version] of [
+    ['@vitest/coverage-v8', APPROVED.ui006.vitest],
+    ['vitest', APPROVED.ui006.vitest],
+  ]) {
+    if (rootManifest.devDependencies?.[name] !== version) {
+      errors.push(`${FILES.root}: ${name} must be pinned exactly to ${version}`);
+    }
   }
   for (const [name, version] of Object.entries(APPROVED.ui006)) {
     if (webManifest.devDependencies?.[name] !== version) {
@@ -88,6 +102,19 @@ function validateSources({ web, security, workspace, lock }) {
     }
     if (!lock.includes(`  ${name}@: ${version}\n`)) {
       errors.push(`${FILES.lock}: missing resolved ${name}@ convergence override to ${version}`);
+    }
+  }
+  for (const [name, version] of [
+    ['mysql2', APPROVED.mysql2],
+    ['multer', APPROVED.multer],
+    ['qs', APPROVED.qs],
+    ['sharp', APPROVED.sharp],
+  ]) {
+    if (!workspace.includes(`  ${name}: ${version}\n`)) {
+      errors.push(`${FILES.workspace}: missing reviewed ${name} forced override to ${version}`);
+    }
+    if (!lock.includes(`  ${name}: ${version}\n`)) {
+      errors.push(`${FILES.lock}: missing resolved ${name} forced override to ${version}`);
     }
   }
   if (!workspace.includes(`  deepmerge-ts: ${APPROVED.deepmergeTs}\n`)) {
@@ -138,7 +165,10 @@ function validateSources({ web, security, workspace, lock }) {
   assertVersions(errors, packages, 'postcss', APPROVED.postcss);
   assertVersions(errors, packages, 'sharp', [APPROVED.sharp]);
   assertVersions(errors, packages, 'fast-uri', [APPROVED.fastUri]);
+  assertVersions(errors, packages, 'mysql2', [APPROVED.mysql2]);
+  assertVersions(errors, packages, 'multer', [APPROVED.multer]);
   assertVersions(errors, packages, 'nanoid', [APPROVED.nanoid]);
+  assertVersions(errors, packages, 'qs', [APPROVED.qs]);
   assertVersions(errors, packages, 'deepmerge-ts', [APPROVED.deepmergeTs]);
   assertVersions(errors, packages, 'argon2', [APPROVED.argon2]);
   if (!packages.includes(`  '@zxcvbn-ts/language-common@${APPROVED.passwordDictionary}':`)) {
@@ -237,18 +267,27 @@ function yamlEntryBlocks(section, prefix, { literalSuffix = false } = {}) {
 function runSelfTest(original) {
   const tests = [
     fixture('restored vulnerable Next manifest', 'web', '"next": "16.3.3"', '"next": "16.3.0"', 'Next.js must be pinned exactly'),
-    fixture('removed fast-uri override', 'workspace', "  'fast-uri@': 3.1.5\n", '', 'missing reviewed fast-uri@ convergence override'),
+    fixture('restored vulnerable root Vitest manifest', 'root', '"vitest": "4.1.11"', '"vitest": "4.1.10"', 'vitest must be pinned exactly'),
+    fixture('restored vulnerable Web Vitest manifest', 'web', '"vitest": "4.1.11"', '"vitest": "4.1.10"', 'vitest must be pinned exactly'),
+    fixture('removed fast-uri override', 'workspace', "  'fast-uri@': 3.1.7\n", '', 'missing reviewed fast-uri@ convergence override'),
+    fixture('removed mysql2 override', 'workspace', '  mysql2: 3.23.1\n', '', 'missing reviewed mysql2 forced override'),
+    fixture('removed multer override', 'workspace', '  multer: 2.3.0\n', '', 'missing reviewed multer forced override'),
     fixture('removed nanoid override', 'workspace', "  'nanoid@': 3.3.18\n", '', 'missing reviewed nanoid@ convergence override'),
+    fixture('removed qs override', 'workspace', '  qs: 6.16.0\n', '', 'missing reviewed qs forced override'),
+    fixture('removed sharp override', 'workspace', '  sharp: 0.35.4\n', '', 'missing reviewed sharp forced override'),
     fixture('removed deepmerge-ts override', 'workspace', '  deepmerge-ts: 8.0.2\n', '', 'missing reviewed deepmerge-ts forced override'),
     fixture('removed deepmerge-ts release-age exception', 'workspace', 'minimumReleaseAgeExclude:\n  - deepmerge-ts@8.0.2\n', '', 'missing reviewed deepmerge-ts release-age exception'),
-    fixture('downgraded fast-uri package', 'lock', 'fast-uri@3.1.5:', 'fast-uri@3.1.4:', 'fast-uri package versions must be'),
+    fixture('downgraded fast-uri package', 'lock', 'fast-uri@3.1.7:', 'fast-uri@3.1.5:', 'fast-uri package versions must be'),
+    fixture('downgraded mysql2 package', 'lock', 'mysql2@3.23.1:', 'mysql2@3.15.3:', 'mysql2 package versions must be'),
+    fixture('downgraded multer package', 'lock', 'multer@2.3.0:', 'multer@2.2.0:', 'multer package versions must be'),
     fixture('downgraded nanoid package', 'lock', 'nanoid@3.3.18:', 'nanoid@3.3.17:', 'nanoid package versions must be'),
+    fixture('downgraded qs package', 'lock', 'qs@6.16.0:', 'qs@6.15.3:', 'qs package versions must be'),
     fixture('downgraded deepmerge-ts package', 'lock', 'deepmerge-ts@8.0.2:', 'deepmerge-ts@7.1.5:', 'deepmerge-ts package versions must be'),
     fixture('downgraded PostCSS package', 'lock', 'postcss@8.5.23:', 'postcss@8.4.31:', 'postcss package versions must be'),
-    fixture('downgraded Sharp package', 'lock', 'sharp@0.35.3:', 'sharp@0.34.5:', 'sharp package versions must be'),
+    fixture('downgraded Sharp package', 'lock', 'sharp@0.35.4:', 'sharp@0.35.3:', 'sharp package versions must be'),
     fixture('downgraded Next PostCSS edge', 'lock', '      postcss: 8.5.23', '      postcss: 8.4.31', 'Next.js must resolve postcss'),
-    fixture('downgraded Next Sharp edge', 'lock', '      sharp: 0.35.3(', '      sharp: 0.34.5(', 'Next.js must resolve sharp'),
-    fixture('downgraded Ajv fast-uri edge', 'lock', '      fast-uri: 3.1.5', '      fast-uri: 3.1.4', 'Ajv must resolve fast-uri'),
+    fixture('downgraded Next Sharp edge', 'lock', '      sharp: 0.35.4(', '      sharp: 0.35.3(', 'Next.js must resolve sharp'),
+    fixture('downgraded Ajv fast-uri edge', 'lock', '      fast-uri: 3.1.7', '      fast-uri: 3.1.5', 'Ajv must resolve fast-uri'),
     fixture('downgraded PostCSS nanoid edge', 'lock', '      nanoid: 3.3.18', '      nanoid: 3.3.17', 'PostCSS must resolve nanoid'),
     fixture('downgraded Prisma configuration edge', 'lock', '      deepmerge-ts: 8.0.2', '      deepmerge-ts: 7.1.5', 'Prisma configuration must resolve deepmerge-ts'),
     fixture('ranged Storybook manifest', 'web', '"storybook": "10.5.10"', '"storybook": "^10.5.10"', 'storybook must be pinned exactly'),

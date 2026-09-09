@@ -27,11 +27,11 @@ const PINS = Object.freeze({
   '@storybook/addon-docs': '10.5.10',
   '@storybook/addon-vitest': '10.5.10',
   '@storybook/react-vite': '10.5.10',
-  '@vitest/browser-playwright': '4.1.10',
+  '@vitest/browser-playwright': '4.1.11',
   mockdate: '3.0.5',
   storybook: '10.5.10',
   vite: '8.2.0',
-  vitest: '4.1.10',
+  vitest: '4.1.11',
 });
 
 const requiredStates = Object.freeze(['LOADING', 'EMPTY', 'NO_RESULTS', 'ERROR', 'PENDING', 'DISABLED', 'PERMISSION_RESTRICTED', 'UNAUTHENTICATED', 'EXPIRED', 'RATE_LIMITED', 'OFFLINE', 'CONFLICT']);
