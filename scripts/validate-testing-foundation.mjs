@@ -24,10 +24,10 @@ const EXPECTED_ROOT_DEPENDENCIES = Object.freeze({
   '@testing-library/jest-dom': '7.0.0',
   '@testing-library/react': '16.3.2',
   '@testing-library/user-event': '14.6.1',
-  '@vitest/coverage-v8': '4.1.10',
+  '@vitest/coverage-v8': '4.1.11',
   jsdom: '30.0.1',
   vite: '8.2.0',
-  vitest: '4.1.10',
+  vitest: '4.1.11',
 });
 const EXPECTED_TESTING_DEPENDENCIES = Object.freeze({
   '@testcontainers/postgresql': '12.0.4',
@@ -156,7 +156,7 @@ async function validate() {
 
 function selfTest() {
   try {
-    validatePins({ vitest: '^4.1.10' }, { vitest: '4.1.10' }, 'negative dependency');
+    validatePins({ vitest: '^4.1.11' }, { vitest: '4.1.11' }, 'negative dependency');
     fail('floating dependency negative test did not fail');
   } catch (error) {
     if (!/must be pinned/.test(error.message)) throw error;

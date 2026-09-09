@@ -19,9 +19,16 @@ import { resolveRuntimeAddress } from './runtime.js';
 
 export interface ServerSecrets {
   readonly sessionSecret?: string;
+  readonly authCorrelationSecret?: string;
   readonly databaseUrl?: string;
   readonly redisUrl?: string;
   readonly telemetryAuthorization?: string;
+}
+
+export interface ServerAuthenticationConfig {
+  readonly idleMilliseconds: number;
+  readonly absoluteMilliseconds: number;
+  readonly touchAfterMilliseconds: number;
 }
 
 export type TelemetryMode = 'disabled' | 'in-memory' | 'otlp';
@@ -75,6 +82,7 @@ export interface ServerRuntimeConfig {
   readonly releaseSha?: string;
   readonly providerAdapterMode: ProviderAdapterMode;
   readonly telemetry: ServerTelemetryConfig;
+  readonly authentication: ServerAuthenticationConfig;
   readonly secrets: ServerSecrets;
 }
 
@@ -249,6 +257,14 @@ export function loadServerEnvironment(
   validateEnvironmentIsolation(source, applicationEnvironment, credentialEnvironment, issues);
   const providerAdapterMode = readProviderAdapterMode(source, applicationEnvironment, issues);
   const telemetry = readTelemetryConfiguration(source, applicationEnvironment, issues);
+  const authentication = Object.freeze({
+    idleMilliseconds: readBoundedInteger(source, 'NOMA_AUTH_IDLE_MS', 7 * 24 * 60 * 60_000, 60_000, 30 * 24 * 60 * 60_000, issues),
+    absoluteMilliseconds: readBoundedInteger(source, 'NOMA_AUTH_ABSOLUTE_MS', 30 * 24 * 60 * 60_000, 60_000, 90 * 24 * 60 * 60_000, issues),
+    touchAfterMilliseconds: readBoundedInteger(source, 'NOMA_AUTH_TOUCH_AFTER_MS', 15 * 60_000, 60_000, 24 * 60 * 60_000, issues),
+  });
+  if (authentication.idleMilliseconds > authentication.absoluteMilliseconds) {
+    issues.push({ key: 'NOMA_AUTH_IDLE_MS', code: 'invalid', message: 'must not exceed NOMA_AUTH_ABSOLUTE_MS' });
+  }
 
   const remote = ['preview', 'staging', 'production'].includes(applicationEnvironment);
   const production = applicationEnvironment === 'production';
@@ -267,10 +283,6 @@ export function loadServerEnvironment(
     requireTls: remote,
   });
 
-  const sessionSecret = readSecret(source, 'SESSION_SECRET', issues, {
-    required: production || (applicationEnvironment === 'staging' && runtime === 'api'),
-    minimumLength: 32,
-  });
   const databaseUrl = readUrl(source, 'DATABASE_URL', issues, {
     required: deployedBackend,
     protocols: ['postgres:', 'postgresql:'],
@@ -280,6 +292,15 @@ export function loadServerEnvironment(
     required: deployedBackend,
     protocols: ['redis:', 'rediss:'],
     requireTls: production,
+  });
+  const authConfigured = runtime === 'api' && Boolean(databaseUrl) && Boolean(redisUrl);
+  const sessionSecret = readSecret(source, 'SESSION_SECRET', issues, {
+    required: production || (applicationEnvironment === 'staging' && runtime === 'api'),
+    minimumLength: 32,
+  });
+  const authCorrelationSecret = readSecret(source, 'AUTH_CORRELATION_SECRET', issues, {
+    required: authConfigured,
+    minimumLength: 32,
   });
   const telemetryAuthorization = readSecret(source, 'NOMA_OTLP_AUTHORIZATION', issues, {
     required: telemetry.mode === 'otlp' && ['staging', 'production'].includes(applicationEnvironment),
@@ -339,12 +360,14 @@ export function loadServerEnvironment(
     runtime,
     providerAdapterMode,
     telemetry,
+    authentication,
     address,
     publicWebOrigin,
     apiPublicUrl,
     ...(releaseSha ? { releaseSha } : {}),
     secrets: createSecretContainer({
       ...(sessionSecret ? { sessionSecret } : {}),
+      ...(authCorrelationSecret ? { authCorrelationSecret } : {}),
       ...(databaseUrl ? { databaseUrl } : {}),
       ...(redisUrl ? { redisUrl } : {}),
       ...(telemetryAuthorization ? { telemetryAuthorization } : {}),
@@ -373,12 +396,14 @@ export function describeServerEnvironment(config: ServerRuntimeConfig): Readonly
       shutdownTimeoutMilliseconds: config.telemetry.shutdownTimeoutMilliseconds,
       endpointConfigured: Boolean(config.telemetry.endpoint),
     }),
+    authentication: config.authentication,
     address: config.address,
     publicWebOrigin: config.publicWebOrigin,
     apiPublicUrl: config.apiPublicUrl,
     releaseSha: config.releaseSha ?? null,
     configuredSecrets: Object.freeze({
       sessionSecret: Boolean(config.secrets.sessionSecret),
+      authCorrelationSecret: Boolean(config.secrets.authCorrelationSecret),
       databaseUrl: Boolean(config.secrets.databaseUrl),
       redisUrl: Boolean(config.secrets.redisUrl),
       telemetryAuthorization: Boolean(config.secrets.telemetryAuthorization),

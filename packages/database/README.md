@@ -8,4 +8,6 @@ DEV-005 adds only the technical `outbox_events`, `job_executions`, and append-on
 
 IAM-001 adds the bounded PostgreSQL implementation of `@noma/platform/identity`: one User identity, conservative active email identity, encoded password-credential metadata, opaque session digests, atomic high-entropy identity-token consumption, and append-only recovery evidence. It exposes no authentication workflow or generic identity CRUD. See [`IDENTITY_PERSISTENCE.md`](../../IDENTITY_PERSISTENCE.md).
 
+IAM-002 adds bounded authentication operations without a schema migration. `registerPasswordIdentity` commits User, primary email, and password credential atomically; rotation, conditional touch, digest revocation, candidate lookup, and policy-version rehash remain behavior-specific rather than generic CRUD. See [`AUTHENTICATION.md`](../../AUTHENTICATION.md).
+
 Canonical guidance and commands are in [`DATABASE.md`](../../DATABASE.md) and [`QUEUE.md`](../../QUEUE.md).

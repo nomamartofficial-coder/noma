@@ -166,6 +166,7 @@ describe('DEV-010 real infrastructure observability', () => {
         REDIS_URL: harness.runtimeEnvironment.REDIS_URL,
         PUBLIC_WEB_ORIGIN: harness.runtimeEnvironment.PUBLIC_WEB_ORIGIN,
         API_PUBLIC_URL: harness.runtimeEnvironment.API_PUBLIC_URL,
+        AUTH_CORRELATION_SECRET: 'synthetic-observability-auth-correlation-key',
         NOMA_TELEMETRY_MODE: 'in-memory',
       });
       dependencyService = new RuntimeDependenciesService(config, telemetry);

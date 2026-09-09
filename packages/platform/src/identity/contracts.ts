@@ -86,6 +86,30 @@ export interface StorePasswordCredentialInput {
   readonly createdAt: Date;
 }
 
+export interface RegisterPasswordIdentityInput extends CreateUserIdentityInput {
+  readonly credential: Omit<StorePasswordCredentialInput, 'userId'>;
+}
+
+export interface RegisteredPasswordIdentity {
+  readonly user: UserIdentityRecord;
+  readonly email: UserEmailRecord;
+  readonly credential: PasswordCredentialRecord;
+}
+
+export interface PasswordAuthenticationCandidate {
+  readonly user: UserIdentityRecord;
+  readonly credential: PasswordCredentialRecord;
+}
+
+export interface ReplacePasswordCredentialHashInput {
+  readonly credentialId: string;
+  readonly expectedVersion: number;
+  readonly encodedHash: string;
+  readonly hashAlgorithm: string;
+  readonly hashPolicyVersion: number;
+  readonly rotatedAt: Date;
+}
+
 export interface SessionRecord {
   readonly id: string;
   readonly userId: string;
@@ -126,6 +150,26 @@ export interface RevokeSessionInput {
   readonly revokedAt: Date;
   readonly revocationCode: string;
   readonly transitionId: string;
+}
+
+export interface RotatePasswordSessionInput {
+  readonly session: CreateSessionInput;
+  readonly replacedTokenDigest?: string;
+  readonly revokedAt: Date;
+  readonly revocationTransitionId: string;
+}
+
+export interface TouchSessionInput {
+  readonly sessionId: string;
+  readonly expectedVersion: number;
+  readonly touchedAt: Date;
+  readonly idleExpiresAt: Date;
+  readonly transitionId: string;
+}
+
+export interface AuthenticatedSessionRecord {
+  readonly session: SessionRecord;
+  readonly user: UserIdentityRecord;
 }
 
 export interface IdentityTokenRecord {
@@ -181,8 +225,15 @@ export interface IdentityPersistence {
   findUserByNormalizedEmail(email: string): Promise<UserIdentityRecord | null>;
   storePasswordCredential(input: StorePasswordCredentialInput): Promise<PasswordCredentialRecord>;
   readActivePasswordCredential(userId: string): Promise<PasswordCredentialRecord | null>;
+  registerPasswordIdentity(input: RegisterPasswordIdentityInput): Promise<RegisteredPasswordIdentity>;
+  readPasswordAuthenticationCandidate(normalizedEmail: string): Promise<PasswordAuthenticationCandidate | null>;
+  replacePasswordCredentialHash(input: ReplacePasswordCredentialHashInput): Promise<PasswordCredentialRecord | null>;
   createSession(input: CreateSessionInput): Promise<SessionRecord>;
   resolveActiveSessionCandidate(tokenDigest: string, at: Date): Promise<SessionRecord | null>;
+  resolveAuthenticatedSession(tokenDigest: string, at: Date): Promise<AuthenticatedSessionRecord | null>;
+  rotatePasswordSession(input: RotatePasswordSessionInput): Promise<SessionRecord>;
+  touchSession(input: TouchSessionInput): Promise<SessionRecord | null>;
+  revokeSessionByTokenDigest(tokenDigest: string, revokedAt: Date, revocationCode: string, transitionId: string): Promise<boolean>;
   revokeSession(input: RevokeSessionInput): Promise<SessionRecord | null>;
   issueIdentityToken(input: IssueIdentityTokenInput): Promise<IdentityTokenRecord>;
   consumeIdentityToken(input: ConsumeIdentityTokenInput): Promise<IdentityTokenRecord | null>;

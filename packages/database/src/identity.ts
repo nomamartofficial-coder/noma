@@ -1,5 +1,6 @@
 import {
   normalizeIdentityEmail,
+  IdentityRegistrationConflictError,
   type ConsumeIdentityTokenInput,
   type CreateSessionInput,
   type CreateUserIdentityInput,
@@ -8,11 +9,15 @@ import {
   type IdentityTokenRecord,
   type IssueIdentityTokenInput,
   type PasswordCredentialRecord,
+  type RegisterPasswordIdentityInput,
+  type ReplacePasswordCredentialHashInput,
   type RecordRecoveryAttemptInput,
   type RecoveryAttemptRecord,
   type RevokeSessionInput,
+  type RotatePasswordSessionInput,
   type SessionRecord,
   type StorePasswordCredentialInput,
+  type TouchSessionInput,
   type UserEmailRecord,
   type UserIdentityRecord,
 } from '@noma/platform/identity';
@@ -26,6 +31,7 @@ import type {
   User,
   UserEmail,
 } from './generated/prisma/client.js';
+import { Prisma } from './generated/prisma/client.js';
 import { runInDatabaseTransaction } from './transaction.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -182,11 +188,45 @@ function mapRecoveryAttempt(attempt: RecoveryAttempt): RecoveryAttemptRecord {
   });
 }
 
+function validateCreateSessionInput(input: CreateSessionInput) {
+  const issuedAt = requireDate('issuedAt', input.issuedAt);
+  const idleExpiresAt = requireDate('idleExpiresAt', input.idleExpiresAt);
+  const absoluteExpiresAt = requireDate('absoluteExpiresAt', input.absoluteExpiresAt);
+  if (idleExpiresAt <= issuedAt || absoluteExpiresAt < idleExpiresAt) {
+    throw new Error('session expiry instants are inconsistent');
+  }
+  return {
+    id: requireUuid('session id', input.id),
+    userId: requireUuid('userId', input.userId),
+    tokenDigest: requireDigest('tokenDigest', input.tokenDigest),
+    assurance: input.assurance,
+    issuedSecurityVersion: requireNonNegativeInteger('issuedSecurityVersion', input.issuedSecurityVersion),
+    issuedAt,
+    lastUsedAt: issuedAt,
+    idleExpiresAt,
+    absoluteExpiresAt,
+    deviceLabel: requireText('deviceLabel', input.deviceLabel, 80),
+    clientFamily: input.clientFamily ? requireText('clientFamily', input.clientFamily, 80) : null,
+    lastTransitionAt: issuedAt,
+    lastTransitionId: requireUuid('transitionId', input.transitionId),
+    createdAt: issuedAt,
+    updatedAt: issuedAt,
+  } as const;
+}
+
 function validateTokenPurpose(value: IdentityTokenPurpose): IdentityTokenPurpose {
   if (value !== 'EMAIL_VERIFICATION' && value !== 'PASSWORD_RECOVERY') {
     throw new Error('identity token purpose is unsupported');
   }
   return value;
+}
+
+function isNormalizedEmailConflict(error: unknown): boolean {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') return false;
+  const target = String(error.meta?.target ?? '').toLowerCase();
+  return error.meta?.modelName === 'UserEmail'
+    || target.includes('normalized_email')
+    || target.includes('user_emails_normalized_active_key');
 }
 
 export function createIdentityPersistence(client: DatabaseClient): IdentityPersistence {
@@ -264,31 +304,102 @@ export function createIdentityPersistence(client: DatabaseClient): IdentityPersi
       return credential ? mapCredential(credential) : null;
     },
 
-    async createSession(input: CreateSessionInput) {
-      const issuedAt = requireDate('issuedAt', input.issuedAt);
-      const idleExpiresAt = requireDate('idleExpiresAt', input.idleExpiresAt);
-      const absoluteExpiresAt = requireDate('absoluteExpiresAt', input.absoluteExpiresAt);
-      if (idleExpiresAt <= issuedAt || absoluteExpiresAt < idleExpiresAt) {
-        throw new Error('session expiry instants are inconsistent');
+    async registerPasswordIdentity(input: RegisterPasswordIdentityInput) {
+      const occurredAt = requireDate('occurredAt', input.occurredAt);
+      const publicReference = input.publicReference.trim();
+      if (!PUBLIC_REFERENCE_PATTERN.test(publicReference)) {
+        throw new Error('publicReference must be 6 to 32 uppercase safe characters');
       }
-      const session = await client.session.create({
-        data: {
-          id: requireUuid('session id', input.id),
-          userId: requireUuid('userId', input.userId),
-          tokenDigest: requireDigest('tokenDigest', input.tokenDigest),
-          assurance: input.assurance,
-          issuedSecurityVersion: requireNonNegativeInteger('issuedSecurityVersion', input.issuedSecurityVersion),
-          issuedAt,
-          lastUsedAt: issuedAt,
-          idleExpiresAt,
-          absoluteExpiresAt,
-          deviceLabel: requireText('deviceLabel', input.deviceLabel, 80),
-          clientFamily: input.clientFamily ? requireText('clientFamily', input.clientFamily, 80) : null,
-          lastTransitionAt: issuedAt,
-          lastTransitionId: requireUuid('transitionId', input.transitionId),
-          createdAt: issuedAt,
-          updatedAt: issuedAt,
+      const displayEmail = requireText('displayEmail', input.email.displayEmail, 320);
+      const normalizedEmail = normalizeIdentityEmail(displayEmail);
+      const encodedHash = input.credential.encodedHash.trim();
+      if (encodedHash.length < 20) throw new Error('encodedHash must contain encoded hash metadata');
+      try {
+        return await runInDatabaseTransaction(client, async (transaction) => {
+        const user = await transaction.user.create({
+          data: {
+            id: requireUuid('user id', input.id),
+            publicReference,
+            displayName: requireText('displayName', input.displayName, 160),
+            locale: requireText('locale', input.locale ?? 'en-NG', 35),
+            lastTransitionAt: occurredAt,
+            lastTransitionId: requireUuid('transitionId', input.transitionId),
+            createdAt: occurredAt,
+            updatedAt: occurredAt,
+          },
+        });
+        const email = await transaction.userEmail.create({
+          data: {
+            id: requireUuid('email id', input.email.id),
+            userId: user.id,
+            displayEmail,
+            normalizedEmail,
+            primaryAt: occurredAt,
+            createdAt: occurredAt,
+            updatedAt: occurredAt,
+          },
+        });
+        const credential = await transaction.credential.create({
+          data: {
+            id: requireUuid('credential id', input.credential.id),
+            userId: user.id,
+            type: 'PASSWORD',
+            encodedHash,
+            hashAlgorithm: requireCode('hashAlgorithm', input.credential.hashAlgorithm),
+            hashPolicyVersion: requirePositiveInteger('hashPolicyVersion', input.credential.hashPolicyVersion),
+            createdAt: requireDate('credential createdAt', input.credential.createdAt),
+          },
+        });
+          return Object.freeze({ user: mapUser(user), email: mapEmail(email), credential: mapCredential(credential) });
+        });
+      } catch (error) {
+        if (isNormalizedEmailConflict(error)) throw new IdentityRegistrationConflictError();
+        throw error;
+      }
+    },
+
+    async readPasswordAuthenticationCandidate(normalizedEmail: string) {
+      const email = await client.userEmail.findFirst({
+        where: { normalizedEmail: normalizeIdentityEmail(normalizedEmail), retiredAt: null },
+        include: {
+          user: {
+            include: {
+              credentials: { where: { type: 'PASSWORD', revokedAt: null }, take: 1 },
+            },
+          },
         },
+      });
+      const credential = email?.user.credentials[0];
+      return email && credential
+        ? Object.freeze({ user: mapUser(email.user), credential: mapCredential(credential) })
+        : null;
+    },
+
+    async replacePasswordCredentialHash(input: ReplacePasswordCredentialHashInput) {
+      const encodedHash = input.encodedHash.trim();
+      if (encodedHash.length < 20) throw new Error('encodedHash must contain encoded hash metadata');
+      const result = await client.credential.updateMany({
+        where: {
+          id: requireUuid('credentialId', input.credentialId),
+          type: 'PASSWORD',
+          version: requireNonNegativeInteger('expectedVersion', input.expectedVersion),
+          revokedAt: null,
+        },
+        data: {
+          encodedHash,
+          hashAlgorithm: requireCode('hashAlgorithm', input.hashAlgorithm),
+          hashPolicyVersion: requirePositiveInteger('hashPolicyVersion', input.hashPolicyVersion),
+          rotatedAt: requireDate('rotatedAt', input.rotatedAt),
+          version: { increment: 1 },
+        },
+      });
+      if (result.count !== 1) return null;
+      return mapCredential(await client.credential.findUniqueOrThrow({ where: { id: input.credentialId } }));
+    },
+
+    async createSession(input: CreateSessionInput) {
+      const session = await client.session.create({
+        data: validateCreateSessionInput(input),
       });
       return mapSession(session);
     },
@@ -323,6 +434,99 @@ export function createIdentityPersistence(client: DatabaseClient): IdentityPersi
           AND s."issued_security_version" = u."security_version"
         LIMIT 1`;
       return rows[0] ? Object.freeze(rows[0]) : null;
+    },
+
+    async resolveAuthenticatedSession(tokenDigest: string, at: Date) {
+      const candidate = await client.session.findFirst({
+        where: {
+          tokenDigest: requireDigest('tokenDigest', tokenDigest),
+          status: { in: ['ACTIVE', 'STEP_UP_REQUIRED'] },
+          revokedAt: null,
+          idleExpiresAt: { gt: requireDate('at', at) },
+          absoluteExpiresAt: { gt: at },
+        },
+        include: { user: true },
+      });
+      if (!candidate || candidate.issuedSecurityVersion !== candidate.user.securityVersion) return null;
+      return Object.freeze({ session: mapSession(candidate), user: mapUser(candidate.user) });
+    },
+
+    async rotatePasswordSession(input: RotatePasswordSessionInput) {
+      const revokedAt = requireDate('revokedAt', input.revokedAt);
+      return runInDatabaseTransaction(client, async (transaction) => {
+        if (input.replacedTokenDigest) {
+          await transaction.session.updateMany({
+            where: {
+              tokenDigest: requireDigest('replacedTokenDigest', input.replacedTokenDigest),
+              status: { in: ['ACTIVE', 'STEP_UP_REQUIRED'] },
+              revokedAt: null,
+            },
+            data: {
+              status: 'REVOKED',
+              revokedAt,
+              revocationCode: 'SESSION_ROTATED',
+              statusReasonCode: 'SESSION_ROTATED',
+              lastTransitionAt: revokedAt,
+              lastTransitionId: requireUuid('revocationTransitionId', input.revocationTransitionId),
+              version: { increment: 1 },
+              updatedAt: revokedAt,
+            },
+          });
+        }
+        return mapSession(await transaction.session.create({ data: validateCreateSessionInput(input.session) }));
+      });
+    },
+
+    async touchSession(input: TouchSessionInput) {
+      const touchedAt = requireDate('touchedAt', input.touchedAt);
+      const idleExpiresAt = requireDate('idleExpiresAt', input.idleExpiresAt);
+      if (idleExpiresAt <= touchedAt) throw new Error('touched idle expiry must follow touch time');
+      const rows = await client.$queryRaw<SessionRecord[]>`
+        UPDATE "sessions"
+        SET "last_used_at" = ${touchedAt},
+            "idle_expires_at" = ${idleExpiresAt},
+            "last_transition_at" = ${touchedAt},
+            "last_transition_id" = CAST(${requireUuid('transitionId', input.transitionId)} AS uuid),
+            "version" = "version" + 1,
+            "updated_at" = ${touchedAt}
+        WHERE "id" = CAST(${requireUuid('sessionId', input.sessionId)} AS uuid)
+          AND "version" = ${requireNonNegativeInteger('expectedVersion', input.expectedVersion)}
+          AND "status" IN ('ACTIVE', 'STEP_UP_REQUIRED')
+          AND "revoked_at" IS NULL
+          AND "idle_expires_at" > ${touchedAt}
+          AND "absolute_expires_at" > ${touchedAt}
+          AND "absolute_expires_at" >= ${idleExpiresAt}
+        RETURNING
+          "id", "user_id" AS "userId", "token_digest" AS "tokenDigest", "status", "assurance",
+          "issued_security_version" AS "issuedSecurityVersion", "issued_at" AS "issuedAt",
+          "last_used_at" AS "lastUsedAt", "idle_expires_at" AS "idleExpiresAt",
+          "absolute_expires_at" AS "absoluteExpiresAt", "revoked_at" AS "revokedAt",
+          "revocation_code" AS "revocationCode", "device_label" AS "deviceLabel",
+          "client_family" AS "clientFamily", "version", "last_transition_at" AS "lastTransitionAt",
+          "last_transition_id" AS "lastTransitionId"`;
+      return rows[0] ? Object.freeze(rows[0]) : null;
+    },
+
+    async revokeSessionByTokenDigest(tokenDigest: string, revokedAt: Date, revocationCode: string, transitionId: string) {
+      const instant = requireDate('revokedAt', revokedAt);
+      const result = await client.session.updateMany({
+        where: {
+          tokenDigest: requireDigest('tokenDigest', tokenDigest),
+          status: { in: ['ACTIVE', 'STEP_UP_REQUIRED'] },
+          revokedAt: null,
+        },
+        data: {
+          status: 'REVOKED',
+          revokedAt: instant,
+          revocationCode: requireCode('revocationCode', revocationCode),
+          statusReasonCode: requireCode('revocationCode', revocationCode),
+          lastTransitionAt: instant,
+          lastTransitionId: requireUuid('transitionId', transitionId),
+          version: { increment: 1 },
+          updatedAt: instant,
+        },
+      });
+      return result.count === 1;
     },
 
     async revokeSession(input: RevokeSessionInput) {

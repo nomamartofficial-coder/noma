@@ -1,8 +1,8 @@
 # Dependency security policy
 
-> **Task:** `SEC-005`, corrected by `SEC-006`, `SEC-007`, and the bounded Next.js 16.3.3 security correction
+> **Task:** `SEC-005`, corrected by `SEC-006`, `SEC-007`, the bounded Next.js 16.3.3 security correction, and the IAM-002 pre-publication audit correction
 > **Risk:** `P0-RECOVERY`  
-> **Status:** SEC-005 through SEC-007 complete; Next.js 16.3.3 implemented for review; infrastructure activation remains blocked
+> **Status:** prior corrections complete; IAM-002 audit correction implemented for review; infrastructure activation remains blocked
 
 ## Purpose
 
@@ -18,12 +18,16 @@ The reviewed `16.3.3` lockfile update also advances Next's own `@next/env` and p
 |---|---:|---|
 | `next` | `16.3.3` | Active-LTS security release addressing two Critical vulnerabilities while retaining the reviewed PostCSS and Sharp graph |
 | `postcss` | `8.5.23`, `8.5.25` | Covers the four open PostCSS advisories while retaining Vite's already-safe graph |
-| `sharp` | `0.35.3` | Exceeds the `0.35.0` patched minimum through Next's supported optional range |
-| `fast-uri` | `3.1.5` | Compatible convergence override for Ajv's `^3.0.1` range |
+| `sharp` | `0.35.4` | Patched libheif-bearing release selected through Next's supported optional range |
+| `fast-uri` | `3.1.7` | Current patched compatible convergence override for Ajv's declared range |
+| `mysql2` | `3.23.1` | Minimum release fixing credential downgrade and compressed-protocol decompression advisories in Prisma's unused optional MySQL tooling path |
+| `multer` | `2.3.0` | Patched multipart parser forced through the current Nest platform dependency |
+| `qs` | `6.16.0` | Patched query-string parser selected through Express's supported range |
 | `nanoid` | `3.3.18` | Current patched floor for GHSA-2v37-7h3g-55p8 within PostCSS's declared range |
 | `deepmerge-ts` | `8.0.2` | Current patched release for GHSA-ggr8-5vv4-36mx in Prisma's configuration-only graph |
+| `vitest`, `@vitest/coverage-v8`, `@vitest/browser-playwright` | `4.1.11` | Same-major patched test-tool family for the mock redirect path-traversal advisory |
 
-The `fast-uri@` and `nanoid@` keys in `pnpm-workspace.yaml` intentionally use pnpm's convergence-only override form. They apply only where the declaring dependency already accepts the selected version. The forced `deepmerge-ts` override is a bounded exception because the current stable Prisma `7.9.1` parent pins the vulnerable line exactly and no supported parent upgrade exists. Its exact `minimumReleaseAgeExclude` entry records the reviewed advisory response required while the patched release is still inside the local supply-chain cooling period; it does not permit another package or version. Prisma schema validation, generation, migration, build, and runtime checks must therefore prove the patched major remains compatible before review. PostCSS, Sharp, and deepmerge-ts are not added as direct application dependencies; ownership remains with their parents.
+The `fast-uri@` and `nanoid@` keys in `pnpm-workspace.yaml` intentionally use pnpm's convergence-only override form. They apply only where the declaring dependency already accepts the selected version. The forced `mysql2`, `multer`, `qs`, `sharp`, and `deepmerge-ts` overrides are narrow advisory responses for transitive parents; none becomes an application-owned direct dependency. The exact `deepmerge-ts` `minimumReleaseAgeExclude` entry remains the sole reviewed cooling-period exception. Prisma schema validation, generation, migration, Nest runtime checks, Next production build, and the complete Vitest/Storybook browser suites must prove compatibility before review.
 
 ## Commands
 
@@ -34,7 +38,7 @@ pnpm security:dependencies:verify
 pnpm audit --audit-level moderate
 ```
 
-The first three commands are deterministic and network-free. They validate exact manifest pins, reviewed overrides, lockfile package sets, and the Next→PostCSS/Sharp, Ajv→fast-uri, and PostCSS→nanoid edges. The self-test mutates each protected boundary in memory and proves the validator rejects weaker fixtures.
+The first three commands are deterministic and network-free. They validate exact manifest pins, reviewed overrides, lockfile package sets, and relevant parent-to-transitive resolutions. The self-test mutates every protected boundary in memory and proves the validator rejects vulnerable or weaker fixtures.
 
 The live `pnpm audit` command is required review evidence but is not embedded in a stable required CI gate because registry availability is external and time-varying. No advisory ignore is permitted. `pnpm audit --audit-level moderate` and `pnpm audit --prod --audit-level moderate` must remain clean. GitHub's pinned Dependency Review action independently rejects newly introduced vulnerabilities at `moderate` severity or above without advisory allowances.
 

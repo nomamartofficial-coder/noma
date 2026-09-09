@@ -37,7 +37,8 @@ Unknown `NEXT_PUBLIC_*` values fail validation. Secret-like public names are pro
 | `PUBLIC_WEB_ORIGIN` | internal URL | required and HTTPS in preview/staging/production |
 | `API_PUBLIC_URL` | internal URL | required and HTTPS in preview/staging/production |
 | `NOMA_RELEASE_SHA` | internal evidence | required in staging and production; deployed staging supplies the full Render commit |
-| `SESSION_SECRET` | secret | required by staging API and production; at least 32 non-placeholder characters; not supplied to staging Worker |
+| `SESSION_SECRET` | secret | required by the staging API and by production under the existing remote-environment policy; at least 32 non-placeholder characters |
+| `AUTH_CORRELATION_SECRET` | secret | distinct HMAC key required when API authentication is configured; at least 32 non-placeholder characters; never a Redis key or log field |
 | `DATABASE_URL` | secret | required in staging and production; PostgreSQL URL with encrypted transport |
 | `REDIS_URL` | secret | required in staging and production; staging uses authenticated internal Render Key Value; production requires `rediss://` |
 | `NOMA_PROVIDER_MODE` | internal control | `disabled` by default; explicit `simulator` is prohibited in production; `real` fails closed until owning adapter tasks |
@@ -48,8 +49,13 @@ Unknown `NEXT_PUBLIC_*` values fail validation. Secret-like public names are pro
 | `NOMA_TELEMETRY_EXPORT_INTERVAL_MS` | internal bound | 5000–300000; default 30000 |
 | `NOMA_TELEMETRY_EXPORT_TIMEOUT_MS` | internal bound | 500–10000; default 3000 |
 | `NOMA_TELEMETRY_SHUTDOWN_TIMEOUT_MS` | internal bound | 500–15000; default 5000 |
+| `NOMA_AUTH_IDLE_MS` | internal bound | 60000–2592000000; default 604800000 (7 days) |
+| `NOMA_AUTH_ABSOLUTE_MS` | internal bound | 60000–7776000000; default 2592000000 (30 days); must be at least the idle duration |
+| `NOMA_AUTH_TOUCH_AFTER_MS` | internal bound | 60000–86400000; default 900000 (15 minutes) |
 
 API and Worker dependency mode requires `DATABASE_URL` and `REDIS_URL` together in every environment. Both absent preserves local scaffold compatibility with `not-configured` readiness; exactly one is a startup error. Staging requires both. When configured, each runtime probes both dependencies, becomes unready on dependency loss, and never serializes either URL into logs or health responses.
+
+For API authentication, the dependency pair additionally requires the distinct `AUTH_CORRELATION_SECRET`. Opaque session tokens are stored only as SHA-256 digests and do not use a signing secret. The existing remote-environment policy still requires `SESSION_SECRET` for staging API and production compatibility. Worker configuration does not receive the authentication-correlation secret because IAM-002 adds no Worker processor.
 
 Provider-specific secrets remain optional until their adapter tasks. Live Paystack keys are rejected outside production, and test Paystack keys are rejected in production.
 
