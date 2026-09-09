@@ -4,6 +4,7 @@
 - Date: 2026-08-31
 - Task: `IAM-002`
 - Tracking issue: `#54`
+- Draft PR: `#55`
 - Requirement: `REQ-IAM-002`
 - Authority: `docs/03-user-journeys.md` J01/J30, `docs/06-technical-architecture.md`, `docs/08-state-machines.md` M01/M02, `docs/10-security-and-compliance.md`, `docs/11-testing-strategy.md`
 
