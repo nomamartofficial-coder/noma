@@ -1,7 +1,8 @@
 import type { AccountStatus, AuthenticatedSessionRecord, IdentityPersistence } from './contracts.js';
 import { normalizeIdentityEmail } from './normalization.js';
 
-export const PASSWORD_SIGN_IN_ACCOUNT_STATUSES = ['PENDING_EMAIL', 'ACTIVE'] as const satisfies readonly AccountStatus[];
+export const PASSWORD_AUTHENTICATION_ACCOUNT_STATUSES = ['PENDING_EMAIL', 'ACTIVE'] as const satisfies readonly AccountStatus[];
+export const PASSWORD_SIGN_IN_ACCOUNT_STATUSES = PASSWORD_AUTHENTICATION_ACCOUNT_STATUSES;
 export const AUTH_RATE_LIMIT_ACTIONS = ['REGISTER', 'SIGN_IN'] as const;
 export type AuthRateLimitAction = (typeof AUTH_RATE_LIMIT_ACTIONS)[number];
 
@@ -188,7 +189,7 @@ export class IdentityAuthenticationService {
       this.#record('identity.sign_in.failed', 'failed', { reason: 'INVALID_CREDENTIALS' });
       throw new AuthenticationFailure('INVALID_CREDENTIALS');
     }
-    if (!accountAllowsPasswordSignIn(candidate.user.status)) {
+    if (!accountAllowsPasswordAuthentication(candidate.user.status)) {
       this.#record('identity.sign_in.failed', 'failed', { reason: 'ACCOUNT_UNAVAILABLE' });
       throw new AuthenticationFailure('ACCOUNT_UNAVAILABLE');
     }
@@ -253,8 +254,9 @@ export class IdentityAuthenticationService {
       throw new AuthenticationFailure('INVALID_SESSION');
     }
     const now = this.#now();
-    let record = await this.#ports.persistence.resolveAuthenticatedSession(tokenDigest, now);
-    if (!record) throw new AuthenticationFailure('INVALID_SESSION');
+    let record = requirePasswordAuthenticationSession(
+      await this.#ports.persistence.resolveAuthenticatedSession(tokenDigest, now),
+    );
     if (now.getTime() - record.session.lastUsedAt.getTime() >= this.#options.touchAfterMilliseconds) {
       const idleExpiresAt = new Date(Math.min(
         now.getTime() + this.#options.idleMilliseconds,
@@ -268,8 +270,9 @@ export class IdentityAuthenticationService {
         transitionId: this.#options.nextUuid(),
       });
       if (!touched) {
-        record = await this.#ports.persistence.resolveAuthenticatedSession(tokenDigest, now);
-        if (!record) throw new AuthenticationFailure('INVALID_SESSION');
+        record = requirePasswordAuthenticationSession(
+          await this.#ports.persistence.resolveAuthenticatedSession(tokenDigest, now),
+        );
       } else {
         record = Object.freeze({ ...record, session: touched });
       }
@@ -317,8 +320,17 @@ export class IdentityAuthenticationService {
   }
 }
 
-export function accountAllowsPasswordSignIn(status: AccountStatus): boolean {
-  return PASSWORD_SIGN_IN_ACCOUNT_STATUSES.includes(status as 'PENDING_EMAIL' | 'ACTIVE');
+export function accountAllowsPasswordAuthentication(status: AccountStatus): boolean {
+  return PASSWORD_AUTHENTICATION_ACCOUNT_STATUSES.includes(status as 'PENDING_EMAIL' | 'ACTIVE');
+}
+
+export const accountAllowsPasswordSignIn = accountAllowsPasswordAuthentication;
+
+function requirePasswordAuthenticationSession(record: AuthenticatedSessionRecord | null): AuthenticatedSessionRecord {
+  if (!record || !accountAllowsPasswordAuthentication(record.user.status)) {
+    throw new AuthenticationFailure('INVALID_SESSION');
+  }
+  return record;
 }
 
 export function toAuthenticationPrincipal(record: AuthenticatedSessionRecord): AuthenticationPrincipal {
