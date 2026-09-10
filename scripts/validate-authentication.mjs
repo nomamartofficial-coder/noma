@@ -48,6 +48,20 @@ export function validateAuthenticationSources(sources) {
   if (!/touchSession[\s\S]+"revoked_at" IS NULL[\s\S]+"absolute_expires_at" >=/.test(database)) {
     fail('conditional session touch must not revive revocation or extend absolute expiry');
   }
+  if (!platform.includes("PASSWORD_AUTHENTICATION_ACCOUNT_STATUSES = ['PENDING_EMAIL', 'ACTIVE'] as const")
+    || !platform.includes('if (!accountAllowsPasswordAuthentication(candidate.user.status))')) {
+    fail('ordinary password sign-in must use the canonical account eligibility rule');
+  }
+  if ((platform.match(/requirePasswordAuthenticationSession\(/g) ?? []).length !== 3
+    || !platform.includes('!record || !accountAllowsPasswordAuthentication(record.user.status)')) {
+    fail('session continuation must reject ineligible accounts before and after touch contention');
+  }
+  if (!database.includes('user: { status: { in: [...PASSWORD_AUTHENTICATION_ACCOUNT_STATUSES] } }')) {
+    fail('authenticated session resolution must filter current authoritative account status');
+  }
+  if (!/touchSession[\s\S]+u\."status" = ANY\([\s\S]+Prisma\.join\(PASSWORD_AUTHENTICATION_ACCOUNT_STATUSES\)[\s\S]+u\."security_version" = "sessions"\."issued_security_version"/.test(database)) {
+    fail('session touch must atomically recheck account eligibility and security version');
+  }
   if (!limiter.includes("createHmac('sha256'")
     || limiter.includes('const identity = input.normalizedEmail')
     || limiter.includes('const network = input.networkSignal')) {
@@ -126,6 +140,10 @@ function selfTest(original) {
     ['network password lookup', 'security', "const BLOCKED_PASSWORDS", "fetch('https://passwords.invalid');\nconst BLOCKED_PASSWORDS"],
     ['split registration transaction', 'database', 'transaction.credential.create', 'client.credential.create'],
     ['non-atomic rotation', 'database', 'transaction.session.create', 'client.session.create'],
+    ['broadened password account eligibility', 'platform', "PASSWORD_AUTHENTICATION_ACCOUNT_STATUSES = ['PENDING_EMAIL', 'ACTIVE'] as const", "PASSWORD_AUTHENTICATION_ACCOUNT_STATUSES = ['PENDING_EMAIL', 'ACTIVE', 'SUSPENDED'] as const"],
+    ['removed session account guard', 'platform', '!record || !accountAllowsPasswordAuthentication(record.user.status)', '!record'],
+    ['removed database session status filter', 'database', 'user: { status: { in: [...PASSWORD_AUTHENTICATION_ACCOUNT_STATUSES] } }', 'user: {}'],
+    ['removed account guard from session touch', 'database', 'u."status" = ANY(', 'u."status" IS NOT NULL AND ('],
     ['raw Redis identity', 'limiter', "this.#correlate(`identity|${input.normalizedEmail}`)", 'input.normalizedEmail'],
     ['removed origin check', 'controller', "header(request, 'origin') !== this.config.publicWebOrigin", 'false'],
     ['insecure cookie', 'cookie', 'Path=/; HttpOnly; SameSite=Lax', 'Path=/; BrowserReadable; SameSite=Lax'],

@@ -1,4 +1,5 @@
 import {
+  PASSWORD_AUTHENTICATION_ACCOUNT_STATUSES,
   normalizeIdentityEmail,
   IdentityRegistrationConflictError,
   type ConsumeIdentityTokenInput,
@@ -444,6 +445,7 @@ export function createIdentityPersistence(client: DatabaseClient): IdentityPersi
           revokedAt: null,
           idleExpiresAt: { gt: requireDate('at', at) },
           absoluteExpiresAt: { gt: at },
+          user: { status: { in: [...PASSWORD_AUTHENTICATION_ACCOUNT_STATUSES] } },
         },
         include: { user: true },
       });
@@ -496,6 +498,15 @@ export function createIdentityPersistence(client: DatabaseClient): IdentityPersi
           AND "idle_expires_at" > ${touchedAt}
           AND "absolute_expires_at" > ${touchedAt}
           AND "absolute_expires_at" >= ${idleExpiresAt}
+          AND EXISTS (
+            SELECT 1
+            FROM "users" u
+            WHERE u."id" = "sessions"."user_id"
+              AND u."status" = ANY(
+                ARRAY[${Prisma.join(PASSWORD_AUTHENTICATION_ACCOUNT_STATUSES)}]::"account_status"[]
+              )
+              AND u."security_version" = "sessions"."issued_security_version"
+          )
         RETURNING
           "id", "user_id" AS "userId", "token_digest" AS "tokenDigest", "status", "assurance",
           "issued_security_version" AS "issuedSecurityVersion", "issued_at" AS "issuedAt",

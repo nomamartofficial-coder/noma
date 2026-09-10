@@ -124,6 +124,84 @@ describe.sequential('IAM-002 real PostgreSQL and Redis authority', () => {
     expect(await database.credential.count({ where: { userId: owner!.id, type: 'PASSWORD', revokedAt: null } })).toBe(1);
   });
 
+  test('current account status rejects otherwise-valid sessions without relying on revocation or securityVersion changes', async () => {
+    const accountCases = [
+      ['PENDING_EMAIL', true],
+      ['ACTIVE', true],
+      ['RECOVERY_LOCKED', false],
+      ['COMPROMISED_LOCKED', false],
+      ['SUSPENDED', false],
+      ['DEACTIVATION_REQUESTED', false],
+      ['DEACTIVATED', false],
+    ] as const;
+
+    for (const [index, [status, eligible]] of accountCases.entries()) {
+      const registered = await identity.registerPasswordIdentity(
+        registration(`session-state-${index}@noma.test`, `NOMA-AUTH-STATE-${String(index).padStart(2, '0')}`),
+      );
+      const tokenDigest = digest(`synthetic-account-state-session-${index}`);
+      const session = await identity.createSession({
+        id: ids.nextUuid(), userId: registered.user.id, tokenDigest, assurance: 'AUTHENTICATED',
+        issuedSecurityVersion: registered.user.securityVersion, issuedAt: instant,
+        idleExpiresAt: new Date(instant.getTime() + 7 * 86_400_000),
+        absoluteExpiresAt: new Date(instant.getTime() + 30 * 86_400_000),
+        deviceLabel: 'Synthetic browser', transitionId: ids.nextUuid(),
+      });
+      if (status !== 'PENDING_EMAIL') {
+        await database.user.update({
+          where: { id: registered.user.id },
+          data: {
+            status,
+            ...(status === 'DEACTIVATED' ? { deactivatedAt: new Date(instant.getTime() + 30_000) } : {}),
+          },
+        });
+      }
+
+      const authoritativeUser = await database.user.findUniqueOrThrow({ where: { id: registered.user.id } });
+      const unchangedSession = await database.session.findUniqueOrThrow({ where: { id: session.id } });
+      expect(authoritativeUser.status).toBe(status);
+      expect(authoritativeUser.securityVersion).toBe(registered.user.securityVersion);
+      expect(unchangedSession).toMatchObject({
+        status: 'ACTIVE', revokedAt: null, issuedSecurityVersion: registered.user.securityVersion,
+      });
+
+      const resolved = await identity.resolveAuthenticatedSession(tokenDigest, new Date(instant.getTime() + 60_000));
+      if (eligible) {
+        expect(resolved?.user.status).toBe(status);
+      } else {
+        expect(resolved).toBeNull();
+      }
+    }
+  });
+
+  test('an ineligible account cannot receive an activity touch', async () => {
+    const registered = await identity.registerPasswordIdentity(registration('blocked-touch@noma.test', 'NOMA-AUTH-TOUCH'));
+    const tokenDigest = digest('synthetic-blocked-touch-session');
+    const session = await identity.createSession({
+      id: ids.nextUuid(), userId: registered.user.id, tokenDigest, assurance: 'AUTHENTICATED',
+      issuedSecurityVersion: registered.user.securityVersion, issuedAt: instant,
+      idleExpiresAt: new Date(instant.getTime() + 7 * 86_400_000),
+      absoluteExpiresAt: new Date(instant.getTime() + 30 * 86_400_000),
+      deviceLabel: 'Synthetic browser', transitionId: ids.nextUuid(),
+    });
+    await database.user.update({ where: { id: registered.user.id }, data: { status: 'SUSPENDED' } });
+    const before = await database.session.findUniqueOrThrow({ where: { id: session.id } });
+
+    await expect(identity.touchSession({
+      sessionId: session.id,
+      expectedVersion: session.version,
+      touchedAt: new Date(instant.getTime() + 3_600_000),
+      idleExpiresAt: new Date(instant.getTime() + 8 * 86_400_000),
+      transitionId: ids.nextUuid(),
+    })).resolves.toBeNull();
+
+    const after = await database.session.findUniqueOrThrow({ where: { id: session.id } });
+    expect(after.lastUsedAt).toEqual(before.lastUsedAt);
+    expect(after.idleExpiresAt).toEqual(before.idleExpiresAt);
+    expect(after.version).toBe(before.version);
+    expect(after).toMatchObject({ status: 'ACTIVE', revokedAt: null });
+  });
+
   test('rotation is atomic and touch cannot resurrect a concurrently revoked session', async () => {
     const registered = await identity.registerPasswordIdentity(registration('session-auth@noma.test', 'NOMA-AUTH-0005'));
     const oldDigest = digest('synthetic-old-session-secret');
@@ -212,6 +290,7 @@ describe.sequential('IAM-002 real PostgreSQL and Redis authority', () => {
         DATABASE_URL: harness.postgres.connection.databaseUrl, REDIS_URL: harness.redis.connection.redisUrl,
         SESSION_SECRET: 'synthetic-session-secret-with-more-than-32-characters',
         AUTH_CORRELATION_SECRET: 'synthetic-auth-correlation-secret-with-more-than-32-characters',
+        NOMA_AUTH_TOUCH_AFTER_MS: '60000',
         NOMA_TELEMETRY_MODE: 'in-memory',
       },
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -257,6 +336,29 @@ describe.sequential('IAM-002 real PostgreSQL and Redis authority', () => {
       const session = await request('/api/v1/auth/session', { headers: { Cookie: browserCookie } });
       expect(session.status).toBe(200);
       expect(await session.json()).toMatchObject({ userId: principal.userId, sessionId: principal.sessionId });
+
+      const sessionId = String(principal.sessionId);
+      const userId = String(principal.userId);
+      const staleActivity = new Date(Date.now() - 120_000);
+      await database.session.update({
+        where: { id: sessionId },
+        data: { issuedAt: staleActivity, lastUsedAt: staleActivity, lastTransitionAt: staleActivity },
+      });
+      await database.user.update({ where: { id: userId }, data: { status: 'SUSPENDED' } });
+      const beforeBlockedRequest = await database.session.findUniqueOrThrow({ where: { id: sessionId } });
+      const blockedUser = await database.user.findUniqueOrThrow({ where: { id: userId } });
+      expect(beforeBlockedRequest).toMatchObject({
+        status: 'ACTIVE', revokedAt: null, issuedSecurityVersion: blockedUser.securityVersion,
+      });
+
+      const blockedSession = await request('/api/v1/auth/session', { headers: { Cookie: browserCookie } });
+      expect(blockedSession.status).toBe(401);
+      expect(await blockedSession.json()).toEqual({ code: 'AUTHENTICATION_FAILED' });
+      const afterBlockedRequest = await database.session.findUniqueOrThrow({ where: { id: sessionId } });
+      expect(afterBlockedRequest.lastUsedAt).toEqual(beforeBlockedRequest.lastUsedAt);
+      expect(afterBlockedRequest.idleExpiresAt).toEqual(beforeBlockedRequest.idleExpiresAt);
+      expect(afterBlockedRequest.version).toBe(beforeBlockedRequest.version);
+      expect(afterBlockedRequest).toMatchObject({ status: 'ACTIVE', revokedAt: null });
 
       const crossOrigin = await fetch(`${origin}/api/v1/auth/sign-out`, { method: 'POST', headers: { Origin: 'https://attacker.invalid', Cookie: browserCookie } });
       expect(crossOrigin.status).toBe(403);

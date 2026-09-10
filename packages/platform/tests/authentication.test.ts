@@ -7,12 +7,13 @@ import {
   type IdentityPersistence,
   type PasswordAuthenticationCandidate,
   type SessionRecord,
+  type UserIdentityRecord,
 } from '../src/identity/index.js';
 
 const instant = new Date('2026-08-31T12:00:00.000Z');
 let sequence = 0;
 const nextUuid = () => `00000000-0000-4000-8000-${String(++sequence).padStart(12, '0')}`;
-const user = Object.freeze({
+const user: UserIdentityRecord = Object.freeze({
   id: '10000000-0000-4000-8000-000000000001', publicReference: 'NOMA-AUTH-001', status: 'PENDING_EMAIL' as const,
   displayName: 'Synthetic User', locale: 'en-NG', version: 0, securityVersion: 0,
   lastTransitionAt: instant, lastTransitionId: '10000000-0000-4000-8000-000000000002',
@@ -33,20 +34,27 @@ function sessionRecord(tokenDigest = 'd'.repeat(64)): SessionRecord {
   });
 }
 
-function persistence(candidate: PasswordAuthenticationCandidate | null = { user, credential }) {
+function userWithStatus(status: UserIdentityRecord['status']): UserIdentityRecord {
+  return Object.freeze({ ...user, status });
+}
+
+function persistence(
+  candidate: PasswordAuthenticationCandidate | null = { user, credential },
+  resolvedUser: UserIdentityRecord = user,
+) {
   const store = {
     registerPasswordIdentity: vi.fn(async () => ({ user, email: {}, credential })),
     readPasswordAuthenticationCandidate: vi.fn(async () => candidate),
     replacePasswordCredentialHash: vi.fn(async () => credential),
     rotatePasswordSession: vi.fn(async (input) => sessionRecord(input.session.tokenDigest)),
-    resolveAuthenticatedSession: vi.fn(async () => ({ user, session: sessionRecord() })),
+    resolveAuthenticatedSession: vi.fn(async () => ({ user: resolvedUser, session: sessionRecord() })),
     touchSession: vi.fn(async () => null),
     revokeSessionByTokenDigest: vi.fn(async () => true),
   };
   return store as typeof store & IdentityPersistence;
 }
 
-async function service(identity: ReturnType<typeof persistence>, options: { limiterError?: boolean } = {}) {
+async function service(identity: ReturnType<typeof persistence>, options: { limiterError?: boolean; now?: Date } = {}) {
   const verify = vi.fn(async (encoded: string, password: string) => encoded === `encoded:${password}`);
   const instance = await IdentityAuthenticationService.create({
     persistence: identity,
@@ -64,7 +72,7 @@ async function service(identity: ReturnType<typeof persistence>, options: { limi
     }, close: async () => undefined },
   }, {
     idleMilliseconds: 7 * 86_400_000, absoluteMilliseconds: 30 * 86_400_000, touchAfterMilliseconds: 900_000,
-    now: () => instant, nextUuid, nextPublicReference: () => 'NOMA-AUTH-NEW',
+    now: () => options.now ?? instant, nextUuid, nextPublicReference: () => 'NOMA-AUTH-NEW',
   });
   return { instance, verify };
 }
@@ -103,5 +111,50 @@ describe('IAM-002 authentication application boundary', () => {
     const { instance } = await service(persistence(), { limiterError: true });
     await expect(instance.signIn({ email: 'person@example.test', password: 'correct password', networkSignal: 'campus-nat', deviceLabel: 'Web browser' }))
       .rejects.toEqual(expect.objectContaining<Partial<AuthenticationFailure>>({ code: 'AUTH_DEPENDENCY_UNAVAILABLE' }));
+  });
+
+  test.each([
+    ['PENDING_EMAIL', true],
+    ['ACTIVE', true],
+    ['RECOVERY_LOCKED', false],
+    ['COMPROMISED_LOCKED', false],
+    ['SUSPENDED', false],
+    ['DEACTIVATION_REQUESTED', false],
+    ['DEACTIVATED', false],
+  ] as const)('resolves ordinary password sessions only for eligible %s accounts', async (status, eligible) => {
+    const currentUser = userWithStatus(status);
+    const identity = persistence({ user: currentUser, credential }, currentUser);
+    const { instance } = await service(identity);
+    const result = instance.resolveSession('r'.repeat(43));
+
+    if (eligible) {
+      await expect(result).resolves.toMatchObject({ accountStatus: status });
+    } else {
+      await expect(result).rejects.toMatchObject({ code: 'INVALID_SESSION' });
+    }
+  });
+
+  test('rejects a touch-due session before extending an ineligible account', async () => {
+    const suspended = userWithStatus('SUSPENDED');
+    const identity = persistence({ user: suspended, credential }, suspended);
+    const { instance } = await service(identity, { now: new Date(instant.getTime() + 3_600_000) });
+
+    await expect(instance.resolveSession('r'.repeat(43))).rejects.toMatchObject({ code: 'INVALID_SESSION' });
+    expect(identity.touchSession).not.toHaveBeenCalled();
+  });
+
+  test('rechecks account eligibility after a contended touch', async () => {
+    const active = userWithStatus('ACTIVE');
+    const suspended = userWithStatus('SUSPENDED');
+    const identity = persistence({ user: active, credential }, active);
+    identity.resolveAuthenticatedSession
+      .mockResolvedValueOnce({ user: active, session: sessionRecord() })
+      .mockResolvedValueOnce({ user: suspended, session: sessionRecord() });
+    identity.touchSession.mockResolvedValueOnce(null);
+    const { instance } = await service(identity, { now: new Date(instant.getTime() + 3_600_000) });
+
+    await expect(instance.resolveSession('r'.repeat(43))).rejects.toMatchObject({ code: 'INVALID_SESSION' });
+    expect(identity.touchSession).toHaveBeenCalledOnce();
+    expect(identity.resolveAuthenticatedSession).toHaveBeenCalledTimes(2);
   });
 });
