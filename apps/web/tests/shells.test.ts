@@ -21,7 +21,10 @@ const expectedRoutes = [
   '/account/verification/covenant',
   '/cart',
   '/categories',
+  '/forgot-password',
+  '/reset-password',
   '/search',
+  '/verify-email',
 ] as const;
 
 async function pageRoutes(): Promise<string[]> {

@@ -13,6 +13,8 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('identity-self-test', 'Run IAM-001 persistence-boundary negative tests', 'pnpm', ['identity:self-test']),
       command('auth-validate', 'Validate IAM-002 password, session, rate-limit, and API boundaries', 'pnpm', ['auth:validate']),
       command('auth-self-test', 'Run IAM-002 authentication security negative tests', 'pnpm', ['auth:self-test']),
+      command('iam003-validate', 'Validate IAM-003 proof, delivery, recovery, privacy, and authority boundaries', 'pnpm', ['iam003:validate']),
+      command('iam003-self-test', 'Run IAM-003 proof-flow security negative tests', 'pnpm', ['iam003:self-test']),
       command('providers-validate', 'Validate provider boundaries', 'pnpm', ['providers:validate']),
       command('providers-self-test', 'Run provider boundary negative tests', 'pnpm', ['providers:self-test']),
       command('observability-validate', 'Validate observability, propagation, redaction, and health policy', 'pnpm', ['observability:validate']),
@@ -37,6 +39,7 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('traceability-ui006', 'Resolve UI-006 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'UI-006']),
       command('traceability-iam001', 'Resolve IAM-001 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'IAM-001']),
       command('traceability-iam002', 'Resolve IAM-002 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'IAM-002']),
+      command('traceability-iam003', 'Resolve IAM-003 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'IAM-003']),
     ]),
     static: Object.freeze([
       command('lint', 'Lint all workspace packages', 'pnpm', ['lint']),
@@ -49,6 +52,7 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('unit-component-coverage', 'Run unit and component tests with V8 coverage and JUnit', 'pnpm', ['test:ci']),
       command('auth-unit', 'Run IAM-002 password and application unit tests', 'pnpm', ['auth:test']),
       command('auth-calibration', 'Verify reviewed Argon2id parameters and runtime budget', 'pnpm', ['auth:calibrate']),
+      command('iam003-unit', 'Run IAM-003 token, authority, provider, and browser-flow tests', 'pnpm', ['iam003:test']),
       command('tracked-diff', 'Reject tracked test mutations', 'git', ['diff', '--exit-code', '--', '.']),
     ]),
     runtime: Object.freeze([
@@ -74,6 +78,7 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('database-verify', 'Run PostgreSQL migration and restore verification', 'pnpm', ['db:verify']),
       command('identity-integration', 'Run IAM-001 PostgreSQL constraint and concurrency verification', 'pnpm', ['identity:integration-test']),
       command('auth-integration', 'Run IAM-002 PostgreSQL, Redis, concurrency, and real API verification', 'pnpm', ['auth:integration-test']),
+      command('iam003-integration', 'Run IAM-003 PostgreSQL, Redis, delivery, and concurrency verification', 'pnpm', ['iam003:integration-test']),
     ]),
     queue: Object.freeze([
       command('build-for-queue', 'Build queue workspace dependencies on the clean runner', 'pnpm', ['build']),
@@ -108,6 +113,9 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('auth-self-test', 'Run IAM-002 authentication security negative tests', 'pnpm', ['auth:self-test']),
       command('auth-unit', 'Run IAM-002 native Argon2id and application tests on Windows', 'pnpm', ['auth:test']),
       command('auth-calibration', 'Verify IAM-002 Argon2id runtime budget on Windows', 'pnpm', ['auth:calibrate']),
+      command('iam003-validate', 'Validate IAM-003 proof, delivery, recovery, privacy, and authority boundaries on Windows', 'pnpm', ['iam003:validate']),
+      command('iam003-self-test', 'Run IAM-003 proof-flow security negative tests on Windows', 'pnpm', ['iam003:self-test']),
+      command('iam003-unit', 'Run IAM-003 deterministic and native application tests on Windows', 'pnpm', ['iam003:test']),
       command('providers-validate', 'Validate provider boundaries', 'pnpm', ['providers:validate']),
       command('observability-validate', 'Validate observability boundaries and runtime wiring', 'pnpm', ['observability:validate']),
       command('observability-self-test', 'Run observability policy negative tests', 'pnpm', ['observability:self-test']),

@@ -2,7 +2,7 @@
 
 > **Task:** `DEV-007`
 > **Risk:** `P0-FINANCIAL`
-> **Status:** contracts and local simulators only; no provider is active
+> **Status:** contracts, local simulators, and an inactive IAM-003 Postmark email adapter; no provider is active
 
 ## Authority and dependency direction
 
@@ -56,7 +56,7 @@ Ports do not create Payment, Refund, Payout, File, Notification, provider-attemp
 - Default is `disabled` in every environment.
 - Local/test/preview/staging may select `simulator` explicitly; this merge does not wire a runtime to it.
 - Production rejects `simulator`.
-- `real` fails closed because DEV-007 intentionally implements no real adapter.
+- `real` supports only the IAM-003 Postmark transactional-email adapter and requires its Worker-only configuration; other real adapters remain deferred.
 - Provider credentials remain optional and no new public Web variable exists.
 
 ## Security, privacy, and financial controls

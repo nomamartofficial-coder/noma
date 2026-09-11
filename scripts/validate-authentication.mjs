@@ -103,8 +103,8 @@ export function validateAuthenticationSources(sources) {
   }
   for (const expected of [
     'IAM-001,EP03,"Implement User, credential, session, and recovery persistence",P0,P0-AUTHORITY,COMPLETE',
-    'IAM-002,EP03,"Implement password registration, sign-in, sign-out, and session rotation",P0,P0-AUTHORITY,IN_REVIEW',
-    'IAM-003,EP03,Implement email verification and password recovery,P0,P0-AUTHORITY,NOT_STARTED',
+    'IAM-002,EP03,"Implement password registration, sign-in, sign-out, and session rotation",P0,P0-AUTHORITY,COMPLETE',
+    'IAM-003,EP03,Implement email verification and password recovery,P0,P0-AUTHORITY,IN_REVIEW',
   ]) {
     if (!taskIndex.includes(expected)) fail(`IAM traceability lifecycle mismatch: ${expected.split(',')[0]}`);
   }
@@ -148,7 +148,7 @@ function selfTest(original) {
     ['removed origin check', 'controller', "header(request, 'origin') !== this.config.publicWebOrigin", 'false'],
     ['insecure cookie', 'cookie', 'Path=/; HttpOnly; SameSite=Lax', 'Path=/; BrowserReadable; SameSite=Lax'],
     ['worker auth job', 'worker', '', 'identity.sign_in.failed'],
-    ['premature IAM-003', 'taskIndex', 'IAM-003,EP03,Implement email verification and password recovery,P0,P0-AUTHORITY,NOT_STARTED', 'IAM-003,EP03,Implement email verification and password recovery,P0,P0-AUTHORITY,IN_REVIEW'],
+    ['regressed IAM-003', 'taskIndex', 'IAM-003,EP03,Implement email verification and password recovery,P0,P0-AUTHORITY,IN_REVIEW', 'IAM-003,EP03,Implement email verification and password recovery,P0,P0-AUTHORITY,NOT_STARTED'],
   ];
   for (const [name, key, before, after] of fixtures) {
     if (before && !original[key].includes(before)) fail(`authentication self-test fixture is stale: ${name}`);
