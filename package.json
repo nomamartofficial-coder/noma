@@ -45,7 +45,7 @@
     "auth:verify": "pnpm auth:validate && pnpm auth:self-test && pnpm auth:test && pnpm auth:calibrate && pnpm auth:integration-test && node scripts/test-protected-role-routes.mjs",
     "iam003:validate": "node scripts/validate-identity-verification-recovery.mjs",
     "iam003:self-test": "node scripts/validate-identity-verification-recovery.mjs --self-test",
-    "iam003:test": "pnpm --filter @noma/contracts build && pnpm --filter @noma/platform build && pnpm --filter @noma/security build && pnpm --filter @noma/integrations build && pnpm --filter @noma/worker build && vitest run --project unit packages/security/tests/identity-token.test.ts packages/platform/tests/authentication.test.ts packages/platform/tests/verification-recovery.test.ts packages/integrations/tests/postmark-email.test.ts apps/worker/tests/identity-email-handler.test.mjs && vitest run --project component tests/component/identity-public-flow.component.test.tsx",
+    "iam003:test": "pnpm --filter @noma/worker... build && vitest run --project unit packages/security/tests/identity-token.test.ts packages/platform/tests/authentication.test.ts packages/platform/tests/verification-recovery.test.ts packages/integrations/tests/postmark-email.test.ts apps/worker/tests/identity-email-handler.test.mjs && vitest run --project component tests/component/identity-public-flow.component.test.tsx",
     "iam003:integration-test": "pnpm build && vitest run --project integration packages/testing/tests/identity-verification-recovery.integration.test.ts",
     "iam003:verify": "pnpm iam003:validate && pnpm iam003:self-test && pnpm iam003:test && pnpm iam003:integration-test",
     "queue:foundation:validate": "node scripts/validate-queue-foundation.mjs",
