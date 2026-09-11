@@ -175,6 +175,8 @@ export interface TransactionalEmailInput extends ProviderRequestContext {
   readonly templateKey: string;
   readonly templateVersion: string;
   readonly recipientReference: string;
+  /** Delivery-only address. Adapters and simulators must never include it in inspection snapshots. */
+  readonly recipientAddress?: string;
   readonly locale: string;
   readonly variables: Readonly<Record<string, string | number | boolean>>;
   readonly metadata: Readonly<Record<string, string>>;

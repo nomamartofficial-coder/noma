@@ -88,6 +88,7 @@ export interface StorePasswordCredentialInput {
 
 export interface RegisterPasswordIdentityInput extends CreateUserIdentityInput {
   readonly credential: Omit<StorePasswordCredentialInput, 'userId'>;
+  readonly verificationDelivery?: IdentityDeliveryIntent;
 }
 
 export interface RegisteredPasswordIdentity {
@@ -99,6 +100,7 @@ export interface RegisteredPasswordIdentity {
 export interface PasswordAuthenticationCandidate {
   readonly user: UserIdentityRecord;
   readonly credential: PasswordCredentialRecord;
+  readonly emailVerified: boolean;
 }
 
 export interface ReplacePasswordCredentialHashInput {
@@ -216,6 +218,73 @@ export interface RecoveryAttemptRecord {
 
 export type RecordRecoveryAttemptInput = RecoveryAttemptRecord;
 
+export interface IdentityDeliveryIntent {
+  readonly eventId: string;
+  readonly correlationId: string;
+  readonly occurredAt: Date;
+  readonly purpose: IdentityTokenPurpose;
+}
+
+export interface RequestIdentityDeliveryInput extends IdentityDeliveryIntent {
+  readonly normalizedEmail: string;
+}
+
+export interface IdentityDeliveryCandidate {
+  readonly user: UserIdentityRecord;
+  readonly email: UserEmailRecord;
+}
+
+export interface IdentityEmailContact {
+  readonly user: UserIdentityRecord;
+  readonly email: UserEmailRecord;
+}
+
+export interface IssueReplacementIdentityTokenInput extends IssueIdentityTokenInput {}
+
+export type IssueReplacementIdentityTokenResult =
+  | { readonly disposition: 'issued'; readonly token: IdentityTokenRecord; readonly recipientAddress: string; readonly locale: string }
+  | { readonly disposition: 'already-issued' }
+  | { readonly disposition: 'superseded' }
+  | { readonly disposition: 'ineligible' };
+
+export interface ConfirmEmailVerificationInput {
+  readonly tokenDigest: string;
+  readonly verifiedAt: Date;
+  readonly transitionId: string;
+  readonly noticeEventId: string;
+  readonly correlationId: string;
+  readonly presentedSessionTokenDigest?: string;
+}
+
+export interface ConfirmEmailVerificationResult {
+  readonly userId: string;
+  readonly emailId: string;
+  readonly elevatedSessionId: string | null;
+}
+
+export interface PasswordRecoveryPreflight {
+  readonly userId: string;
+  readonly emailId: string;
+  readonly credentialId: string;
+  readonly credentialVersion: number;
+  readonly userVersion: number;
+  readonly securityVersion: number;
+}
+
+export interface CompletePasswordRecoveryInput extends PasswordRecoveryPreflight {
+  readonly tokenDigest: string;
+  readonly encodedHash: string;
+  readonly hashAlgorithm: string;
+  readonly hashPolicyVersion: number;
+  readonly completedAt: Date;
+  readonly transitionId: string;
+  readonly containmentTransitionId: string;
+  readonly noticeEventId: string;
+  readonly recoveryAttemptId: string;
+  readonly subjectDigest: string;
+  readonly correlationId: string;
+}
+
 export interface IdentityPersistence {
   createUserIdentity(input: CreateUserIdentityInput): Promise<{
     readonly user: UserIdentityRecord;
@@ -236,6 +305,14 @@ export interface IdentityPersistence {
   revokeSessionByTokenDigest(tokenDigest: string, revokedAt: Date, revocationCode: string, transitionId: string): Promise<boolean>;
   revokeSession(input: RevokeSessionInput): Promise<SessionRecord | null>;
   issueIdentityToken(input: IssueIdentityTokenInput): Promise<IdentityTokenRecord>;
+  requestIdentityDelivery(input: RequestIdentityDeliveryInput): Promise<boolean>;
+  readIdentityDeliveryCandidate(userEmailId: string, purpose: IdentityTokenPurpose): Promise<IdentityDeliveryCandidate | null>;
+  issueReplacementIdentityToken(input: IssueReplacementIdentityTokenInput): Promise<IssueReplacementIdentityTokenResult>;
+  invalidateIdentityToken(tokenId: string, invalidatedAt: Date, code: string): Promise<boolean>;
+  readIdentityEmailContact(userEmailId: string): Promise<IdentityEmailContact | null>;
   consumeIdentityToken(input: ConsumeIdentityTokenInput): Promise<IdentityTokenRecord | null>;
+  confirmEmailVerification(input: ConfirmEmailVerificationInput): Promise<ConfirmEmailVerificationResult | null>;
+  preflightPasswordRecovery(tokenDigest: string, at: Date): Promise<PasswordRecoveryPreflight | null>;
+  completePasswordRecovery(input: CompletePasswordRecoveryInput): Promise<boolean>;
   recordRecoveryAttempt(input: RecordRecoveryAttemptInput): Promise<RecoveryAttemptRecord>;
 }

@@ -3,7 +3,14 @@ import { normalizeIdentityEmail } from './normalization.js';
 
 export const PASSWORD_AUTHENTICATION_ACCOUNT_STATUSES = ['PENDING_EMAIL', 'ACTIVE'] as const satisfies readonly AccountStatus[];
 export const PASSWORD_SIGN_IN_ACCOUNT_STATUSES = PASSWORD_AUTHENTICATION_ACCOUNT_STATUSES;
-export const AUTH_RATE_LIMIT_ACTIONS = ['REGISTER', 'SIGN_IN'] as const;
+export const AUTH_RATE_LIMIT_ACTIONS = [
+  'REGISTER',
+  'SIGN_IN',
+  'EMAIL_VERIFICATION_REQUEST',
+  'EMAIL_VERIFICATION_CONFIRM',
+  'PASSWORD_RECOVERY_REQUEST',
+  'PASSWORD_RECOVERY_COMPLETE',
+] as const;
 export type AuthRateLimitAction = (typeof AUTH_RATE_LIMIT_ACTIONS)[number];
 
 export interface PasswordPolicy {
@@ -66,6 +73,13 @@ export class IdentityRegistrationConflictError extends Error {
   constructor() {
     super('an identity already owns the normalized email');
     this.name = 'IdentityRegistrationConflictError';
+  }
+}
+
+export class IdentityAuthenticationAuthorityChangedError extends Error {
+  constructor() {
+    super('authentication authority changed concurrently');
+    this.name = 'IdentityAuthenticationAuthorityChangedError';
   }
 }
 
@@ -168,6 +182,12 @@ export class IdentityAuthenticationService {
           hashPolicyVersion: this.#ports.passwordHasher.policyVersion,
           createdAt: occurredAt,
         },
+        verificationDelivery: {
+          eventId: this.#options.nextUuid(),
+          correlationId: this.#options.nextUuid(),
+          occurredAt,
+          purpose: 'EMAIL_VERIFICATION',
+        },
       });
       this.#record('identity.registration.accepted', 'succeeded');
     } catch (error) {
@@ -213,24 +233,31 @@ export class IdentityAuthenticationService {
       issuedAt.getTime() + this.#options.idleMilliseconds,
       absoluteExpiresAt.getTime(),
     ));
-    const session = await this.#ports.persistence.rotatePasswordSession({
-      session: {
-        id: this.#options.nextUuid(),
-        userId: candidate.user.id,
-        tokenDigest: token.tokenDigest,
-        assurance: 'AUTHENTICATED',
-        issuedSecurityVersion: candidate.user.securityVersion,
-        issuedAt,
-        idleExpiresAt,
-        absoluteExpiresAt,
-        deviceLabel: input.deviceLabel,
-        ...(input.clientFamily ? { clientFamily: input.clientFamily } : {}),
-        transitionId: this.#options.nextUuid(),
-      },
-      ...(input.presentedSessionToken ? { replacedTokenDigest: this.#ports.sessionTokens.digest(input.presentedSessionToken) } : {}),
-      revokedAt: issuedAt,
-      revocationTransitionId: this.#options.nextUuid(),
-    });
+    let session;
+    try {
+      session = await this.#ports.persistence.rotatePasswordSession({
+        session: {
+          id: this.#options.nextUuid(),
+          userId: candidate.user.id,
+          tokenDigest: token.tokenDigest,
+          assurance: candidate.emailVerified ? 'CONTACT_VERIFIED' : 'AUTHENTICATED',
+          issuedSecurityVersion: candidate.user.securityVersion,
+          issuedAt,
+          idleExpiresAt,
+          absoluteExpiresAt,
+          deviceLabel: input.deviceLabel,
+          ...(input.clientFamily ? { clientFamily: input.clientFamily } : {}),
+          transitionId: this.#options.nextUuid(),
+        },
+        ...(input.presentedSessionToken ? { replacedTokenDigest: this.#ports.sessionTokens.digest(input.presentedSessionToken) } : {}),
+        revokedAt: issuedAt,
+        revocationTransitionId: this.#options.nextUuid(),
+      });
+    } catch (error) {
+      if (!(error instanceof IdentityAuthenticationAuthorityChangedError)) throw error;
+      this.#record('identity.sign_in.failed', 'failed', { reason: 'INVALID_CREDENTIALS' });
+      throw new AuthenticationFailure('INVALID_CREDENTIALS');
+    }
     this.#record('identity.sign_in.succeeded', 'succeeded');
     return Object.freeze({
       rawSessionToken: token.rawToken,
