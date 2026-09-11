@@ -23,12 +23,74 @@ export interface ServerSecrets {
   readonly databaseUrl?: string;
   readonly redisUrl?: string;
   readonly telemetryAuthorization?: string;
+  readonly postmarkServerToken?: string;
+}
+
+export interface ServerEmailConfig {
+  readonly fromAddress?: string;
+  readonly messageStream: string;
 }
 
 export interface ServerAuthenticationConfig {
   readonly idleMilliseconds: number;
   readonly absoluteMilliseconds: number;
   readonly touchAfterMilliseconds: number;
+  readonly proofRateLimits: Readonly<Record<
+    'EMAIL_VERIFICATION_REQUEST' | 'EMAIL_VERIFICATION_CONFIRM' | 'PASSWORD_RECOVERY_REQUEST' | 'PASSWORD_RECOVERY_COMPLETE',
+    Readonly<{ windowMilliseconds: number; identity: number; pair: number; network: number }>
+  >>;
+}
+
+const EMAIL_LOCAL_PUNCTUATION = ".!#$%&'*+-/=?^_`{|}~";
+
+function isAsciiAlphaNumeric(code: number): boolean {
+  return (code >= 48 && code <= 57) || (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+}
+
+function isValidMailboxAddress(value: string): boolean {
+  if (value.length < 3 || value.length > 320) return false;
+  let at = -1;
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    if (code <= 32 || code >= 127) return false;
+    if (value[index] === '@') {
+      if (at !== -1) return false;
+      at = index;
+    }
+  }
+  if (at < 1 || at > 64 || at >= value.length - 2) return false;
+  const local = value.slice(0, at);
+  const domain = value.slice(at + 1);
+  if (domain.length > 255 || local.startsWith('.') || local.endsWith('.') || local.includes('..')) return false;
+  for (let index = 0; index < local.length; index += 1) {
+    if (!isAsciiAlphaNumeric(local.charCodeAt(index)) && !EMAIL_LOCAL_PUNCTUATION.includes(local[index] ?? '')) return false;
+  }
+  let labelStart = 0;
+  let hasDot = false;
+  for (let index = 0; index < domain.length; index += 1) {
+    const character = domain[index];
+    if (character === '.') {
+      if (index === labelStart || domain[index - 1] === '-') return false;
+      labelStart = index + 1;
+      hasDot = true;
+    } else if (!isAsciiAlphaNumeric(domain.charCodeAt(index)) && character !== '-') return false;
+    else if (character === '-' && index === labelStart) return false;
+  }
+  return hasDot && labelStart < domain.length && !domain.endsWith('-');
+}
+
+function readAuthRateLimitPolicy(
+  source: EnvironmentSource,
+  prefix: string,
+  defaults: Readonly<{ windowMilliseconds: number; identity: number; pair: number; network: number }>,
+  issues: EnvironmentValidationIssue[],
+) {
+  return Object.freeze({
+    windowMilliseconds: readBoundedInteger(source, `${prefix}_WINDOW_MS`, defaults.windowMilliseconds, 60_000, 24 * 60 * 60_000, issues),
+    identity: readBoundedInteger(source, `${prefix}_IDENTITY_LIMIT`, defaults.identity, 1, 1_000, issues),
+    pair: readBoundedInteger(source, `${prefix}_PAIR_LIMIT`, defaults.pair, 1, 2_000, issues),
+    network: readBoundedInteger(source, `${prefix}_NETWORK_LIMIT`, defaults.network, 1, 20_000, issues),
+  });
 }
 
 export type TelemetryMode = 'disabled' | 'in-memory' | 'otlp';
@@ -83,6 +145,7 @@ export interface ServerRuntimeConfig {
   readonly providerAdapterMode: ProviderAdapterMode;
   readonly telemetry: ServerTelemetryConfig;
   readonly authentication: ServerAuthenticationConfig;
+  readonly email: ServerEmailConfig;
   readonly secrets: ServerSecrets;
 }
 
@@ -161,9 +224,6 @@ function readProviderAdapterMode(
   const mode = raw as ProviderAdapterMode;
   if (applicationEnvironment === 'production' && mode === 'simulator') {
     issues.push({ key: 'NOMA_PROVIDER_MODE', code: 'environment-mismatch', message: 'simulator mode is prohibited in production' });
-  }
-  if (mode === 'real') {
-    issues.push({ key: 'NOMA_PROVIDER_MODE', code: 'invalid', message: 'real provider adapters are not implemented by DEV-007' });
   }
   return mode;
 }
@@ -261,6 +321,12 @@ export function loadServerEnvironment(
     idleMilliseconds: readBoundedInteger(source, 'NOMA_AUTH_IDLE_MS', 7 * 24 * 60 * 60_000, 60_000, 30 * 24 * 60 * 60_000, issues),
     absoluteMilliseconds: readBoundedInteger(source, 'NOMA_AUTH_ABSOLUTE_MS', 30 * 24 * 60 * 60_000, 60_000, 90 * 24 * 60 * 60_000, issues),
     touchAfterMilliseconds: readBoundedInteger(source, 'NOMA_AUTH_TOUCH_AFTER_MS', 15 * 60_000, 60_000, 24 * 60 * 60_000, issues),
+    proofRateLimits: Object.freeze({
+      EMAIL_VERIFICATION_REQUEST: readAuthRateLimitPolicy(source, 'NOMA_EMAIL_VERIFICATION_REQUEST', { windowMilliseconds: 60 * 60_000, identity: 5, pair: 8, network: 100 }, issues),
+      EMAIL_VERIFICATION_CONFIRM: readAuthRateLimitPolicy(source, 'NOMA_EMAIL_VERIFICATION_CONFIRM', { windowMilliseconds: 15 * 60_000, identity: 10, pair: 20, network: 200 }, issues),
+      PASSWORD_RECOVERY_REQUEST: readAuthRateLimitPolicy(source, 'NOMA_PASSWORD_RECOVERY_REQUEST', { windowMilliseconds: 60 * 60_000, identity: 5, pair: 8, network: 100 }, issues),
+      PASSWORD_RECOVERY_COMPLETE: readAuthRateLimitPolicy(source, 'NOMA_PASSWORD_RECOVERY_COMPLETE', { windowMilliseconds: 15 * 60_000, identity: 8, pair: 12, network: 100 }, issues),
+    }),
   });
   if (authentication.idleMilliseconds > authentication.absoluteMilliseconds) {
     issues.push({ key: 'NOMA_AUTH_IDLE_MS', code: 'invalid', message: 'must not exceed NOMA_AUTH_ABSOLUTE_MS' });
@@ -282,6 +348,13 @@ export function loadServerEnvironment(
     protocols: ['http:', 'https:'],
     requireTls: remote,
   });
+  for (const [key, value] of [['PUBLIC_WEB_ORIGIN', publicWebOrigin], ['API_PUBLIC_URL', apiPublicUrl]] as const) {
+    if (!value) continue;
+    const url = new URL(value);
+    if (url.username || url.password || (url.pathname !== '/' && url.pathname !== '') || url.search || url.hash) {
+      issues.push({ key, code: 'invalid', message: 'must be an origin without credentials, path, query, or fragment' });
+    }
+  }
 
   const databaseUrl = readUrl(source, 'DATABASE_URL', issues, {
     required: deployedBackend,
@@ -306,6 +379,21 @@ export function loadServerEnvironment(
     required: telemetry.mode === 'otlp' && ['staging', 'production'].includes(applicationEnvironment),
     minimumLength: 16,
   });
+  const postmarkServerToken = readSecret(source, 'POSTMARK_SERVER_TOKEN', issues, {
+    required: runtime === 'worker' && providerAdapterMode === 'real',
+    minimumLength: 20,
+  });
+  const postmarkFromAddress = source.POSTMARK_FROM_ADDRESS?.trim();
+  if (runtime === 'worker' && providerAdapterMode === 'real' && !postmarkFromAddress) {
+    issues.push({ key: 'POSTMARK_FROM_ADDRESS', code: 'missing', message: 'is required for real transactional email delivery' });
+  }
+  if (postmarkFromAddress && !isValidMailboxAddress(postmarkFromAddress)) {
+    issues.push({ key: 'POSTMARK_FROM_ADDRESS', code: 'invalid', message: 'must be a valid sender address' });
+  }
+  const postmarkMessageStream = source.POSTMARK_MESSAGE_STREAM?.trim() || 'outbound';
+  if (!/^[a-z0-9][a-z0-9-]{0,49}$/.test(postmarkMessageStream)) {
+    issues.push({ key: 'POSTMARK_MESSAGE_STREAM', code: 'invalid', message: 'must be a safe Postmark message stream' });
+  }
   if (telemetry.mode !== 'otlp' && telemetryAuthorization) {
     issues.push({ key: 'NOMA_OTLP_AUTHORIZATION', code: 'invalid', message: 'is allowed only when NOMA_TELEMETRY_MODE=otlp' });
   }
@@ -361,6 +449,7 @@ export function loadServerEnvironment(
     providerAdapterMode,
     telemetry,
     authentication,
+    email: Object.freeze({ ...(postmarkFromAddress ? { fromAddress: postmarkFromAddress } : {}), messageStream: postmarkMessageStream }),
     address,
     publicWebOrigin,
     apiPublicUrl,
@@ -371,6 +460,7 @@ export function loadServerEnvironment(
       ...(databaseUrl ? { databaseUrl } : {}),
       ...(redisUrl ? { redisUrl } : {}),
       ...(telemetryAuthorization ? { telemetryAuthorization } : {}),
+      ...(postmarkServerToken ? { postmarkServerToken } : {}),
     }),
   };
 
@@ -397,6 +487,7 @@ export function describeServerEnvironment(config: ServerRuntimeConfig): Readonly
       endpointConfigured: Boolean(config.telemetry.endpoint),
     }),
     authentication: config.authentication,
+    email: Object.freeze({ fromAddressConfigured: Boolean(config.email.fromAddress), messageStream: config.email.messageStream }),
     address: config.address,
     publicWebOrigin: config.publicWebOrigin,
     apiPublicUrl: config.apiPublicUrl,
@@ -407,6 +498,7 @@ export function describeServerEnvironment(config: ServerRuntimeConfig): Readonly
       databaseUrl: Boolean(config.secrets.databaseUrl),
       redisUrl: Boolean(config.secrets.redisUrl),
       telemetryAuthorization: Boolean(config.secrets.telemetryAuthorization),
+      postmarkServerToken: Boolean(config.secrets.postmarkServerToken),
     }),
   });
 }

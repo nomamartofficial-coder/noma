@@ -84,7 +84,15 @@ async function validate() {
   if (!integrations.exports?.['./testing']) fail('@noma/integrations/testing export is required');
   if (!JSON.parse(await read('packages/testing/package.json')).exports?.['./providers']) fail('@noma/testing/providers export is required');
   const server = await read('packages/config/src/server.ts');
-  if (!server.includes('NOMA_PROVIDER_MODE') || !server.includes("mode === 'real'")) fail('provider environment selection must fail closed');
+  for (const token of [
+    'NOMA_PROVIDER_MODE',
+    "applicationEnvironment === 'production' && mode === 'simulator'",
+    "runtime === 'worker' && providerAdapterMode === 'real'",
+    'POSTMARK_SERVER_TOKEN',
+    'POSTMARK_FROM_ADDRESS',
+  ]) {
+    if (!server.includes(token)) fail(`provider environment selection is missing its fail-closed boundary: ${token}`);
+  }
   return { ports: REQUIRED_PORTS.length, operations: (simulator.match(/^\s*'[^']+',?$/gm) ?? []).length };
 }
 

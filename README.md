@@ -102,7 +102,7 @@ The repository documentation is the source of truth.
 | [`CODEX_EXECUTION.md`](CODEX_EXECUTION.md) | Post-UI-006 model/effort routing, escalation, context discipline, and quality invariants |
 | [`README.md`](README.md) | Repository orientation, setup contract, commands, and contribution entry point |
 | [`IDENTITY_PERSISTENCE.md`](IDENTITY_PERSISTENCE.md) | IAM-001 identity/session storage authority and bounded repository seam |
-| [`AUTHENTICATION.md`](AUTHENTICATION.md) | IAM-002 password, registration, rate-limit, cookie, rotation, and session-resolution contract |
+| [`AUTHENTICATION.md`](AUTHENTICATION.md) | IAM-002/003 password, session, email-verification, and recovery authority contract |
 
 For a conflict, follow the authority hierarchy in [`AGENTS.md`](AGENTS.md). Do not silently reconcile competing rules in code.
 
@@ -257,7 +257,7 @@ pnpm db:migrate:dev
 pnpm dev
 ```
 
-The PostgreSQL foundation and local endpoint are documented in [`DATABASE.md`](DATABASE.md). The Redis/BullMQ and transactional-outbox foundation is documented in [`QUEUE.md`](QUEUE.md). Identity persistence is documented in [`IDENTITY_PERSISTENCE.md`](IDENTITY_PERSISTENCE.md), and the bounded password/session lifecycle is documented in [`AUTHENTICATION.md`](AUTHENTICATION.md). Structured logging, W3C correlation, health, metrics, and optional backend OTLP export are documented in [`OBSERVABILITY.md`](OBSERVABILITY.md). Reviewed dependency floors, audit evidence, and the infrastructure-activation stop-line are documented in [`SECURITY_DEPENDENCIES.md`](SECURITY_DEPENDENCIES.md). Provider activation remains dependency-ordered work.
+The PostgreSQL foundation and local endpoint are documented in [`DATABASE.md`](DATABASE.md). The Redis/BullMQ and transactional-outbox foundation is documented in [`QUEUE.md`](QUEUE.md). Identity persistence is documented in [`IDENTITY_PERSISTENCE.md`](IDENTITY_PERSISTENCE.md), and the bounded password/session plus email-proof lifecycle is documented in [`AUTHENTICATION.md`](AUTHENTICATION.md). Structured logging, W3C correlation, health, metrics, and optional backend OTLP export are documented in [`OBSERVABILITY.md`](OBSERVABILITY.md). Reviewed dependency floors, audit evidence, and the infrastructure-activation stop-line are documented in [`SECURITY_DEPENDENCIES.md`](SECURITY_DEPENDENCIES.md). Provider activation remains dependency-ordered work.
 
 If the repository uses a bootstrap script, it must remain transparent and equivalent to the documented steps rather than hiding destructive or production actions.
 

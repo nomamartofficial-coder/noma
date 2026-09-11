@@ -5,12 +5,14 @@ const ROOT = resolve(import.meta.dirname, '..');
 const EXPECTED_ROUTES = Object.freeze([
   '/', '/account', '/account/cases', '/account/messages', '/account/notifications',
   '/account/orders', '/account/profile', '/account/refunds', '/account/reviews',
-  '/account/verification/covenant', '/cart', '/categories', '/search',
+  '/account/verification/covenant', '/cart', '/categories', '/forgot-password',
+  '/reset-password', '/search', '/verify-email',
 ]);
 const ALLOWED_CLIENT_FILES = new Set([
   'apps/web/src/app/(buyer)/account/error.tsx',
   'apps/web/src/shells/active-navigation.tsx',
   'apps/web/src/shells/compact-account-navigation.tsx',
+  'apps/web/src/identity/identity-public-flow.tsx',
   'apps/web/src/shells/protected/compact-shell-navigation.tsx',
   'apps/web/src/shells/surface-switcher.tsx',
 ]);

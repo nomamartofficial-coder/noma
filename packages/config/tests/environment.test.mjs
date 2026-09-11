@@ -105,9 +105,26 @@ test('telemetry configuration is typed, bounded, and environment isolated', () =
 
 test('provider adapter selection is explicit and fails closed', () => {
   assert.equal(loadServerEnvironment('api', { NOMA_PROVIDER_MODE: 'simulator' }).providerAdapterMode, 'simulator');
+  assert.equal(loadServerEnvironment('api', { NOMA_PROVIDER_MODE: 'real' }).providerAdapterMode, 'real');
   assert.throws(
-    () => loadServerEnvironment('api', { NOMA_PROVIDER_MODE: 'real' }),
-    (error) => error instanceof EnvironmentValidationError && error.issues.some((issue) => issue.key === 'NOMA_PROVIDER_MODE'),
+    () => loadServerEnvironment('worker', { NOMA_PROVIDER_MODE: 'real' }),
+    (error) => error instanceof EnvironmentValidationError
+      && error.issues.some((issue) => issue.key === 'POSTMARK_SERVER_TOKEN')
+      && error.issues.some((issue) => issue.key === 'POSTMARK_FROM_ADDRESS'),
+  );
+  assert.equal(loadServerEnvironment('worker', {
+    NOMA_PROVIDER_MODE: 'real',
+    POSTMARK_SERVER_TOKEN: 'synthetic-postmark-server-token-for-tests',
+    POSTMARK_FROM_ADDRESS: 'identity@example.invalid',
+  }).providerAdapterMode, 'real');
+  assert.throws(
+    () => loadServerEnvironment('worker', {
+      NOMA_PROVIDER_MODE: 'real',
+      POSTMARK_SERVER_TOKEN: 'synthetic-postmark-server-token-for-tests',
+      POSTMARK_FROM_ADDRESS: `!@!.${'!.'.repeat(400)}`,
+    }),
+    (error) => error instanceof EnvironmentValidationError
+      && error.issues.some((issue) => issue.key === 'POSTMARK_FROM_ADDRESS'),
   );
   assert.throws(
     () => loadServerEnvironment('api', { ...productionEnvironment, NOMA_PROVIDER_MODE: 'simulator' }),
@@ -120,6 +137,21 @@ test('invalid explicit runtime ports fail instead of silently defaulting', () =>
     () => loadServerEnvironment('worker', { WORKER_PORT: '70000' }),
     EnvironmentValidationError,
   );
+});
+
+test('public service origins reject paths, credentials, queries, and fragments', () => {
+  for (const PUBLIC_WEB_ORIGIN of [
+    'https://noma.example/path',
+    'https://user@noma.example',
+    'https://noma.example?redirect=elsewhere',
+    'https://noma.example#fragment',
+  ]) {
+    assert.throws(
+      () => loadServerEnvironment('api', { PUBLIC_WEB_ORIGIN }),
+      (error) => error instanceof EnvironmentValidationError
+        && error.issues.some((issue) => issue.key === 'PUBLIC_WEB_ORIGIN'),
+    );
+  }
 });
 
 test('Worker database and Redis dependencies must be configured together', () => {
@@ -160,6 +192,19 @@ test('API database and Redis dependencies must be configured together', () => {
   assert.equal(configured.authentication.idleMilliseconds, 7 * 24 * 60 * 60_000);
   assert.equal(configured.authentication.absoluteMilliseconds, 30 * 24 * 60 * 60_000);
   assert.equal(configured.authentication.touchAfterMilliseconds, 15 * 60_000);
+  assert.deepEqual(configured.authentication.proofRateLimits.PASSWORD_RECOVERY_COMPLETE, {
+    windowMilliseconds: 15 * 60_000,
+    identity: 8,
+    pair: 12,
+    network: 100,
+  });
+  const overridden = loadServerEnvironment('api', {
+    DATABASE_URL: 'postgresql://noma:synthetic@127.0.0.1:55432/noma',
+    REDIS_URL: 'redis://default:synthetic@127.0.0.1:56379',
+    AUTH_CORRELATION_SECRET: 'synthetic-correlation-secret-at-least-32-characters',
+    NOMA_PASSWORD_RECOVERY_COMPLETE_IDENTITY_LIMIT: '4',
+  });
+  assert.equal(overridden.authentication.proofRateLimits.PASSWORD_RECOVERY_COMPLETE.identity, 4);
 });
 
 test('staging requires release identity, dependencies, API session secret, and encrypted database transport', () => {
@@ -250,6 +295,7 @@ test('valid production configuration is typed and serialises without secrets', (
     sessionSecret: true,
     authCorrelationSecret: false,
     databaseUrl: true,
+    postmarkServerToken: false,
     redisUrl: true,
     telemetryAuthorization: false,
   });

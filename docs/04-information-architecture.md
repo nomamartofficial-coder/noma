@@ -2443,6 +2443,8 @@ Analytics payloads must exclude secrets, complete bank data, private message con
 
 ## 23. Journey-to-page traceability
 
+IAM-003 owns the public token landing routes `/verify-email`, `/forgot-password`, and `/reset-password`. Each is a non-authoritative browser surface; only its corresponding API `POST` command may change identity state.
+
 | Journey | Required primary pages/workspaces |
 |---|---|
 | `J01` | Homepage, register/sign-in, account overview |

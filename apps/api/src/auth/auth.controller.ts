@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import {
   Body,
   Controller,
@@ -12,7 +14,7 @@ import {
 } from '@nestjs/common';
 import type { ServerRuntimeConfig } from '@noma/config/server';
 import { PasswordPolicyError } from '@noma/security';
-import { AuthenticationFailure, type AuthenticationPrincipal } from '@noma/platform/identity';
+import { AuthenticationFailure, IdentityProofFailure, type AuthenticationPrincipal } from '@noma/platform/identity';
 
 import { API_RUNTIME_CONFIG } from '../runtime-dependencies.service.js';
 import {
@@ -118,6 +120,78 @@ export class AuthController {
     }
   }
 
+  @Post('email-verification/request')
+  @HttpCode(HttpStatus.ACCEPTED)
+  async requestEmailVerification(@Body() candidate: unknown, @Req() request: RequestLike) {
+    this.#requireOrigin(request);
+    const body = requireObjectBody(candidate);
+    this.#rejectUnknownFields(body, ['email']);
+    try {
+      return await this.#proofs().requestEmailVerification({
+        email: requireString(body, 'email', 320),
+        networkSignal: request.socket?.remoteAddress ?? 'unknown-network',
+        correlationId: randomUUID(),
+      });
+    } catch (error) {
+      this.#throwPublic(error, false);
+    }
+  }
+
+  @Post('email-verification/confirm')
+  @HttpCode(HttpStatus.OK)
+  async confirmEmailVerification(@Body() candidate: unknown, @Req() request: RequestLike) {
+    this.#requireOrigin(request);
+    const body = requireObjectBody(candidate);
+    this.#rejectUnknownFields(body, ['token']);
+    try {
+      const presentedSessionToken = readAuthenticationCookie(header(request, 'cookie'), this.#cookiePolicy);
+      return await this.#proofs().confirmEmailVerification({
+        rawToken: requireString(body, 'token', 128),
+        networkSignal: request.socket?.remoteAddress ?? 'unknown-network',
+        ...(presentedSessionToken ? { presentedSessionToken } : {}),
+      });
+    } catch (error) {
+      this.#throwPublic(error, false);
+    }
+  }
+
+  @Post('password-recovery/request')
+  @HttpCode(HttpStatus.ACCEPTED)
+  async requestPasswordRecovery(@Body() candidate: unknown, @Req() request: RequestLike) {
+    this.#requireOrigin(request);
+    const body = requireObjectBody(candidate);
+    this.#rejectUnknownFields(body, ['email']);
+    try {
+      return await this.#proofs().requestPasswordRecovery({
+        email: requireString(body, 'email', 320),
+        networkSignal: request.socket?.remoteAddress ?? 'unknown-network',
+        correlationId: randomUUID(),
+      });
+    } catch (error) {
+      this.#throwPublic(error, false);
+    }
+  }
+
+  @Post('password-recovery/complete')
+  @HttpCode(HttpStatus.OK)
+  async completePasswordRecovery(@Body() candidate: unknown, @Req() request: RequestLike, @Res({ passthrough: true }) response: ResponseLike) {
+    this.#requireOrigin(request);
+    const body = requireObjectBody(candidate);
+    this.#rejectUnknownFields(body, ['token', 'newPassword']);
+    try {
+      const result = await this.#proofs().completePasswordRecovery({
+        rawToken: requireString(body, 'token', 128),
+        newPassword: requireString(body, 'newPassword', 1_024),
+        networkSignal: request.socket?.remoteAddress ?? 'unknown-network',
+        correlationId: randomUUID(),
+      });
+      response.setHeader('Set-Cookie', this.#clearCookie());
+      return result;
+    } catch (error) {
+      this.#throwPublic(error, false);
+    }
+  }
+
   @Post('sign-out')
   @HttpCode(HttpStatus.NO_CONTENT)
   async signOut(@Req() request: RequestLike, @Res({ passthrough: true }) response: ResponseLike): Promise<void> {
@@ -140,6 +214,11 @@ export class AuthController {
   #auth() {
     if (!this.runtime.configured()) throw new HttpException({ code: 'AUTHENTICATION_UNAVAILABLE' }, 503);
     return this.runtime.authentication();
+  }
+
+  #proofs() {
+    if (!this.runtime.configured()) throw new HttpException({ code: 'AUTHENTICATION_UNAVAILABLE' }, 503);
+    return this.runtime.verificationRecovery();
   }
 
   #requireOrigin(request: RequestLike): void {
@@ -177,6 +256,7 @@ export class AuthController {
   #throwPublic(error: unknown, signIn: boolean): never {
     if (error instanceof HttpException) throw error;
     if (error instanceof PasswordPolicyError) throw new HttpException({ code: 'PASSWORD_REJECTED' }, 400);
+    if (error instanceof IdentityProofFailure) throw new HttpException({ code: error.code }, 400);
     if (error instanceof AuthenticationFailure) {
       if (error.code === 'AUTH_RATE_LIMITED') {
         throw new HttpException({ code: 'AUTH_RATE_LIMITED', retryAfterSeconds: error.retryAfterSeconds }, 429);

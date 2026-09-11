@@ -9,6 +9,7 @@ import {
 import type { DependencyHealth } from '@noma/contracts';
 import {
   BullMqPublisher,
+  PostmarkTransactionalEmailAdapter,
   QueueContractRegistry,
   createBullMqWorkers,
 } from '@noma/integrations';
@@ -18,7 +19,12 @@ import {
   type QueueMetricRecorder,
   type QueueMetricRecord,
 } from '@noma/observability/server';
+import {
+  IDENTITY_EMAIL_DELIVERY_CONTRACT,
+  IDENTITY_SECURITY_NOTICE_CONTRACT,
+} from '@noma/platform/identity';
 import { OutboxDispatcher } from './outbox-dispatcher.js';
+import { createIdentityEmailQueueRegistrations } from './identity-email-handler.js';
 
 export const WORKER_RUNTIME_CONFIG = Symbol('WORKER_RUNTIME_CONFIG');
 export const WORKER_OBSERVABILITY = Symbol('WORKER_OBSERVABILITY');
@@ -73,6 +79,23 @@ export class QueueRuntimeService implements OnApplicationBootstrap, OnApplicatio
     this.#queueHealth = 'ready';
 
     const workerIdentity = `noma_worker_${this.config.applicationEnvironment}`;
+    if (this.config.providerAdapterMode === 'real') {
+      const serverToken = this.config.secrets.postmarkServerToken;
+      const fromAddress = this.config.email.fromAddress;
+      if (!serverToken || !fromAddress) throw new Error('Postmark email delivery configuration is incomplete');
+      const provider = new PostmarkTransactionalEmailAdapter({
+        serverToken,
+        fromAddress,
+        messageStream: this.config.email.messageStream,
+      });
+      for (const registration of createIdentityEmailQueueRegistrations({
+        database: this.#database,
+        provider,
+        publicWebOrigin: this.config.publicWebOrigin,
+        applicationEnvironment: this.config.applicationEnvironment,
+        workerIdentity,
+      })) this.#registry.register(registration);
+    }
     this.#workers = createBullMqWorkers({
       redisUrl,
       applicationEnvironment: this.config.applicationEnvironment,
@@ -87,6 +110,14 @@ export class QueueRuntimeService implements OnApplicationBootstrap, OnApplicatio
       registry: this.#registry,
       metrics: this.#metrics,
       identity: workerIdentity,
+      ...(this.config.providerAdapterMode === 'real'
+        ? {}
+        : {
+            deferredJobNames: [
+              IDENTITY_EMAIL_DELIVERY_CONTRACT.jobName,
+              IDENTITY_SECURITY_NOTICE_CONTRACT.jobName,
+            ],
+          }),
       onDatabaseHealth: (ready) => { this.#databaseHealth = ready ? 'ready' : 'unavailable'; },
       onQueueHealth: (ready) => { this.#queueHealth = ready ? 'ready' : 'unavailable'; },
       ...(this.observability ? { telemetry: this.observability } : {}),

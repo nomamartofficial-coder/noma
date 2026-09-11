@@ -39,14 +39,14 @@ function userWithStatus(status: UserIdentityRecord['status']): UserIdentityRecor
 }
 
 function persistence(
-  candidate: PasswordAuthenticationCandidate | null = { user, credential },
+  candidate: PasswordAuthenticationCandidate | null = { user, credential, emailVerified: false },
   resolvedUser: UserIdentityRecord = user,
 ) {
   const store = {
     registerPasswordIdentity: vi.fn(async () => ({ user, email: {}, credential })),
     readPasswordAuthenticationCandidate: vi.fn(async () => candidate),
     replacePasswordCredentialHash: vi.fn(async () => credential),
-    rotatePasswordSession: vi.fn(async (input) => sessionRecord(input.session.tokenDigest)),
+    rotatePasswordSession: vi.fn(async (input) => Object.freeze({ ...sessionRecord(input.session.tokenDigest), assurance: input.session.assurance })),
     resolveAuthenticatedSession: vi.fn(async () => ({ user: resolvedUser, session: sessionRecord() })),
     touchSession: vi.fn(async () => null),
     revokeSessionByTokenDigest: vi.fn(async () => true),
@@ -107,6 +107,15 @@ describe('IAM-002 authentication application boundary', () => {
     }));
   });
 
+  test('issues contact-verified assurance only after the primary email is verified', async () => {
+    const active = userWithStatus('ACTIVE');
+    const identity = persistence({ user: active, credential, emailVerified: true }, active);
+    const { instance } = await service(identity);
+    const result = await instance.signIn({ email: 'person@example.test', password: 'correct password', networkSignal: 'campus-nat', deviceLabel: 'Web browser' });
+    expect(result.principal.assurance).toBe('CONTACT_VERIFIED');
+    expect(identity.rotatePasswordSession).toHaveBeenCalledWith(expect.objectContaining({ session: expect.objectContaining({ assurance: 'CONTACT_VERIFIED' }) }));
+  });
+
   test('fails new authentication closed when the limiter is unavailable', async () => {
     const { instance } = await service(persistence(), { limiterError: true });
     await expect(instance.signIn({ email: 'person@example.test', password: 'correct password', networkSignal: 'campus-nat', deviceLabel: 'Web browser' }))
@@ -123,7 +132,7 @@ describe('IAM-002 authentication application boundary', () => {
     ['DEACTIVATED', false],
   ] as const)('resolves ordinary password sessions only for eligible %s accounts', async (status, eligible) => {
     const currentUser = userWithStatus(status);
-    const identity = persistence({ user: currentUser, credential }, currentUser);
+    const identity = persistence({ user: currentUser, credential, emailVerified: false }, currentUser);
     const { instance } = await service(identity);
     const result = instance.resolveSession('r'.repeat(43));
 
@@ -136,7 +145,7 @@ describe('IAM-002 authentication application boundary', () => {
 
   test('rejects a touch-due session before extending an ineligible account', async () => {
     const suspended = userWithStatus('SUSPENDED');
-    const identity = persistence({ user: suspended, credential }, suspended);
+    const identity = persistence({ user: suspended, credential, emailVerified: false }, suspended);
     const { instance } = await service(identity, { now: new Date(instant.getTime() + 3_600_000) });
 
     await expect(instance.resolveSession('r'.repeat(43))).rejects.toMatchObject({ code: 'INVALID_SESSION' });
@@ -146,7 +155,7 @@ describe('IAM-002 authentication application boundary', () => {
   test('rechecks account eligibility after a contended touch', async () => {
     const active = userWithStatus('ACTIVE');
     const suspended = userWithStatus('SUSPENDED');
-    const identity = persistence({ user: active, credential }, active);
+    const identity = persistence({ user: active, credential, emailVerified: false }, active);
     identity.resolveAuthenticatedSession
       .mockResolvedValueOnce({ user: active, session: sessionRecord() })
       .mockResolvedValueOnce({ user: suspended, session: sessionRecord() });

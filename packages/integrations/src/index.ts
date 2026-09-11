@@ -3,3 +3,4 @@ export type IntegrationsPackage = typeof integrationsPackage;
 export * from './queue.js';
 export * from './redis-health.js';
 export * from './identity-auth-rate-limiter.js';
+export * from './postmark-email.js';

@@ -1,4 +1,14 @@
-# Password authentication and session lifecycle
+# Password authentication, email verification, and recovery
+
+## IAM-003 email verification and password recovery
+
+Email verification and password recovery use separate 30-minute, one-time, purpose-bound proofs. The raw 256-bit base64url value exists only in Worker, trusted-link, browser-exchange, and the API exchange request's short-lived memory; PostgreSQL stores SHA-256 digests and lifecycle evidence only. Redis, the outbox, and BullMQ never receive it.
+
+Provider-disabled Worker deployments preserve eligible IAM-003 outbox intents as deferred PostgreSQL work. They do not publish them, mark them delivered, or turn the intentionally unavailable handler into a false dead letter. Provider activation requires the reviewed Postmark credentials and templates.
+
+Public request endpoints return the same accepted response after bounded HMAC-correlated rate limiting. Delivery is never identity truth. Verification activates only a valid `PENDING_EMAIL` identity and may elevate only the same presented session. Recovery performs proof preflight before Argon2, then atomically rotates the password, advances `securityVersion`, revokes every session, invalidates competing proofs, and requires a normal sign-in.
+
+Use `pnpm iam003:verify` for the focused policy, unit, provider, PostgreSQL, Redis, and race suite.
 
 > **Task:** `IAM-002`
 > **Tracking issue:** `#54`
@@ -10,7 +20,7 @@ IAM-002 adds password registration, sign-in, sign-out, and authenticated-session
 
 ## Registration and password policy
 
-`POST /api/v1/auth/register` returns the same truthful `202 REQUEST_ACCEPTED` result for a new or existing normalized email. A new registration commits `User`, primary `UserEmail`, and active `PASSWORD` `Credential` in one PostgreSQL transaction. It starts at `PENDING_EMAIL`, does not authenticate the browser, and does not issue or send an email-verification token.
+`POST /api/v1/auth/register` returns the same truthful `202 REQUEST_ACCEPTED` result for a new or existing normalized email. A new registration commits `User`, primary `UserEmail`, active `PASSWORD` `Credential`, and one safe verification-delivery intent in one PostgreSQL transaction. It starts at `PENDING_EMAIL`, does not authenticate the browser, and the API never creates or handles the raw email-verification token.
 
 Passwords are NFC-normalized without trimming or case folding. The supported range is 15–128 Unicode code points, spaces are allowed, control characters and unpaired surrogates are rejected, and no composition rule is imposed. The exact-pinned `@zxcvbn-ts/language-common@4.1.3` dictionaries plus three Noma/Covenant-specific expected values form an offline whole-password blocklist. Corpus size is not a security invariant; substring matching, scoring, remote transmission, and raw-password telemetry are prohibited.
 
@@ -28,7 +38,9 @@ Idle expiry is seven days and absolute expiry is 30 days. Session continuation r
 
 Registration and sign-in require an exact `Origin` match to `PUBLIC_WEB_ORIGIN`. The minimum IAM limiter uses authenticated Redis and HMAC-SHA-256 correlation keys derived from `AUTH_CORRELATION_SECRET`; raw email and network signals are not Redis keys. It combines action, identity, network, and pair limits, uses a high shared-network ceiling, and creates no permanent lock. Redis failure returns `503 AUTHENTICATION_UNAVAILABLE` for new authentication while PostgreSQL session resolution remains independent.
 
-Failed passwords, unknown accounts, rate limits, and successful material transitions use existing structured, redacted security logs. IAM-002 deliberately creates no outbox event or Worker handler: no material asynchronous effect exists yet, and one durable job per attacker-amplifiable request would create a denial-of-service persistence surface. IAM-003 will own verification delivery; IAM-008 will own the final append-only Audit service.
+Activation also requires the hosting/CDN access-log policy to omit or redact `token` query values before links reach the Web runtime. The Web removes the query immediately and sends `Referrer-Policy: no-referrer`, but upstream request logs and automated link scanners remain deployment concerns. Network rate-limit signals use the socket peer address until an explicitly reviewed trusted-proxy topology is configured; forwarding headers are not accepted as authority by this task.
+
+Failed passwords, unknown accounts, rate limits, and successful material transitions use structured, redacted security logs. Attacker-amplifiable invalid requests still create no durable job. IAM-003 uses the outbox only for eligible verification/recovery delivery and post-commit security notices; IAM-008 still owns the final append-only Audit service.
 
 ## Commands
 
@@ -45,4 +57,4 @@ Real integration tests use isolated PostgreSQL and authenticated Redis container
 
 ## Deferred and rollback
 
-IAM-003 through IAM-006, SEC-001, SEC-002, email delivery/verification, recovery, MFA, authorization, and protected-surface activation remain deferred. Before merge, rollback is a reviewed source revert. No schema migration, data backfill, deployment, provider action, or infrastructure activation is part of IAM-002.
+IAM-004 through IAM-006, SEC-001, SEC-002, MFA, authorization, and protected-surface activation remain deferred. Before merge, rollback is a reviewed source revert. IAM-003 adds no schema migration, data backfill, deployment, provider activation, or infrastructure provisioning.

@@ -41,7 +41,10 @@ Unknown `NEXT_PUBLIC_*` values fail validation. Secret-like public names are pro
 | `AUTH_CORRELATION_SECRET` | secret | distinct HMAC key required when API authentication is configured; at least 32 non-placeholder characters; never a Redis key or log field |
 | `DATABASE_URL` | secret | required in staging and production; PostgreSQL URL with encrypted transport |
 | `REDIS_URL` | secret | required in staging and production; staging uses authenticated internal Render Key Value; production requires `rediss://` |
-| `NOMA_PROVIDER_MODE` | internal control | `disabled` by default; explicit `simulator` is prohibited in production; `real` fails closed until owning adapter tasks |
+| `NOMA_PROVIDER_MODE` | internal control | `disabled` by default; explicit `simulator` is prohibited in production; `real` enables only implemented, separately configured adapters |
+| `POSTMARK_SERVER_TOKEN` | secret | Required only by a Worker with `NOMA_PROVIDER_MODE=real`; non-enumerable and redacted |
+| `POSTMARK_FROM_ADDRESS` | server configuration | Required only for real IAM-003 transactional email |
+| `POSTMARK_MESSAGE_STREAM` | server configuration | Optional safe stream; defaults to `outbound` |
 | `NOMA_TELEMETRY_MODE` | internal control | `disabled`, `in-memory`, or `otlp`; remote environments prohibit `in-memory` |
 | `NOMA_TRACE_SAMPLE_RATIO` | internal control | required in `otlp` mode; bounded from 0 through 1; parent-based sampling is never implicit remotely |
 | `NOMA_OTLP_ENDPOINT` | internal URL | permitted only in `otlp` mode; HTTPS remotely; credentials/query/fragment prohibited |
@@ -52,6 +55,10 @@ Unknown `NEXT_PUBLIC_*` values fail validation. Secret-like public names are pro
 | `NOMA_AUTH_IDLE_MS` | internal bound | 60000–2592000000; default 604800000 (7 days) |
 | `NOMA_AUTH_ABSOLUTE_MS` | internal bound | 60000–7776000000; default 2592000000 (30 days); must be at least the idle duration |
 | `NOMA_AUTH_TOUCH_AFTER_MS` | internal bound | 60000–86400000; default 900000 (15 minutes) |
+| `NOMA_EMAIL_VERIFICATION_REQUEST_{WINDOW_MS,IDENTITY_LIMIT,PAIR_LIMIT,NETWORK_LIMIT}` | internal bounds | Verification-request policy, defaulting to 60 minutes and 5/8/100 identity/pair/network attempts. |
+| `NOMA_EMAIL_VERIFICATION_CONFIRM_{WINDOW_MS,IDENTITY_LIMIT,PAIR_LIMIT,NETWORK_LIMIT}` | internal bounds | Verification-confirmation policy, defaulting to 15 minutes and 10/20/200 attempts. |
+| `NOMA_PASSWORD_RECOVERY_REQUEST_{WINDOW_MS,IDENTITY_LIMIT,PAIR_LIMIT,NETWORK_LIMIT}` | internal bounds | Recovery-request policy, defaulting to 60 minutes and 5/8/100 attempts. |
+| `NOMA_PASSWORD_RECOVERY_COMPLETE_{WINDOW_MS,IDENTITY_LIMIT,PAIR_LIMIT,NETWORK_LIMIT}` | internal bounds | Recovery-completion policy, defaulting to 15 minutes and 8/12/100 attempts. |
 
 API and Worker dependency mode requires `DATABASE_URL` and `REDIS_URL` together in every environment. Both absent preserves local scaffold compatibility with `not-configured` readiness; exactly one is a startup error. Staging requires both. When configured, each runtime probes both dependencies, becomes unready on dependency loss, and never serializes either URL into logs or health responses.
 
@@ -59,7 +66,7 @@ For API authentication, the dependency pair additionally requires the distinct `
 
 Provider-specific secrets remain optional until their adapter tasks. Live Paystack keys are rejected outside production, and test Paystack keys are rejected in production.
 
-DEV-007 adds no provider credential. Simulator selection is explicit and server-only. Local/test/preview/staging may request `simulator`; production rejects it. `real` currently fails with a safe `NOMA_PROVIDER_MODE` issue because no production adapter exists. Public Web configuration remains unchanged.
+Simulator selection is explicit and server-only, and production rejects it. IAM-003 adds redacted Postmark configuration and a real transactional-email adapter without provisioning credentials or activating delivery. Public Web configuration remains unchanged.
 
 DEV-010 adds optional server telemetry. The default remains disabled; `test` may use deterministic full in-memory capture. OTLP is explicit, requires a reviewed parent-based trace sample ratio, is bounded and HTTPS-only remotely, and keeps authorization in the non-enumerable secret container. Endpoint credentials, query strings, browser-visible variables, implicit remote sampling, and remote in-memory mode fail closed. See [`OBSERVABILITY.md`](OBSERVABILITY.md).
 

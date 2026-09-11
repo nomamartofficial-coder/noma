@@ -5,8 +5,8 @@ import type { ServerRuntimeConfig } from '@noma/config/server';
 import { createDatabaseClient, createIdentityPersistence, disconnectDatabaseClient, type DatabaseClient } from '@noma/database';
 import { RedisIdentityAuthRateLimiter, type RedisIdentityAuthRateLimiter as RateLimiter } from '@noma/integrations';
 import type { ServerObservability } from '@noma/observability/server';
-import { IdentityAuthenticationService } from '@noma/platform/identity';
-import { Argon2idPasswordHasher, OfflinePasswordPolicy, OpaqueSessionTokenIssuer } from '@noma/security';
+import { IdentityAuthenticationService, IdentityVerificationRecoveryService } from '@noma/platform/identity';
+import { Argon2idPasswordHasher, OfflinePasswordPolicy, OpaqueSessionTokenIssuer, OneTimeIdentityTokenIssuer } from '@noma/security';
 
 import { API_OBSERVABILITY, API_RUNTIME_CONFIG } from '../runtime-dependencies.service.js';
 
@@ -15,6 +15,7 @@ export class AuthRuntimeService implements OnModuleInit, OnApplicationShutdown {
   #database: DatabaseClient | undefined;
   #rateLimiter: RateLimiter | undefined;
   #authentication: IdentityAuthenticationService | undefined;
+  #verificationRecovery: IdentityVerificationRecoveryService | undefined;
 
   constructor(
     @Inject(API_RUNTIME_CONFIG) private readonly config: ServerRuntimeConfig,
@@ -37,38 +38,57 @@ export class AuthRuntimeService implements OnModuleInit, OnApplicationShutdown {
       redisUrl,
       applicationEnvironment: this.config.applicationEnvironment,
       correlationSecret: authCorrelationSecret,
+      policies: this.config.authentication.proofRateLimits,
     });
+    const persistence = createIdentityPersistence(this.#database);
+    const passwordPolicy = new OfflinePasswordPolicy();
+    const passwordHasher = new Argon2idPasswordHasher();
+    const sessionTokens = new OpaqueSessionTokenIssuer();
+    const recordSecurityEvent = (event: string, outcome: 'succeeded' | 'failed' | 'unavailable', fields?: Readonly<Record<string, string | number | boolean>>) => {
+      const level = outcome === 'succeeded' ? 'info' : 'warn';
+      this.observability.logger[level](event, outcome, fields);
+      if (event.startsWith('identity.auth_rate_limit.')) {
+        this.observability.metrics.record({ name: 'noma.identity.auth_rate_limit.total', value: 1, attributes: { action: String(fields?.action ?? 'unknown').toLowerCase(), outcome } });
+      } else if (event.startsWith('identity.registration.') || event.startsWith('identity.sign_in.')) {
+        this.observability.metrics.record({ name: 'noma.identity.authentication.total', value: 1, attributes: { action: event.startsWith('identity.registration.') ? 'register' : 'sign_in', outcome } });
+      } else if (event.startsWith('identity.email_verification.') || event.startsWith('identity.password_recovery.')) {
+        this.observability.metrics.record({ name: 'noma.identity.proof_flow.total', value: 1, attributes: { action: event.includes('email_verification') ? 'email_verification' : 'password_recovery', outcome } });
+      }
+    };
     this.#authentication = await IdentityAuthenticationService.create({
-      persistence: createIdentityPersistence(this.#database),
-      passwordPolicy: new OfflinePasswordPolicy(),
-      passwordHasher: new Argon2idPasswordHasher(),
-      sessionTokens: new OpaqueSessionTokenIssuer(),
+      persistence,
+      passwordPolicy,
+      passwordHasher,
+      sessionTokens,
       rateLimiter: this.#rateLimiter,
     }, {
       ...this.config.authentication,
       nextUuid: randomUUID,
       nextPublicReference: () => `NOMA-${randomBytes(6).toString('hex').toUpperCase()}`,
-      recordSecurityEvent: (event, outcome, fields) => {
-        const level = outcome === 'succeeded' ? 'info' : 'warn';
-        this.observability.logger[level](event, outcome, fields);
-        if (event.startsWith('identity.auth_rate_limit.')) {
-          this.observability.metrics.record({
-            name: 'noma.identity.auth_rate_limit.total', value: 1,
-            attributes: { action: String(fields?.action ?? 'unknown').toLowerCase(), outcome },
-          });
-        } else if (event.startsWith('identity.registration.') || event.startsWith('identity.sign_in.')) {
-          this.observability.metrics.record({
-            name: 'noma.identity.authentication.total', value: 1,
-            attributes: { action: event.startsWith('identity.registration.') ? 'register' : 'sign_in', outcome },
-          });
-        }
-      },
+      recordSecurityEvent,
+    });
+    this.#verificationRecovery = new IdentityVerificationRecoveryService({
+      persistence,
+      passwordPolicy,
+      passwordHasher,
+      proofTokens: new OneTimeIdentityTokenIssuer(),
+      sessionTokens,
+      rateLimiter: this.#rateLimiter,
+    }, {
+      nextUuid: randomUUID,
+      tokenTtlMilliseconds: 30 * 60_000,
+      recordSecurityEvent,
     });
   }
 
   authentication(): IdentityAuthenticationService {
     if (!this.#authentication) throw new Error('authentication is not configured');
     return this.#authentication;
+  }
+
+  verificationRecovery(): IdentityVerificationRecoveryService {
+    if (!this.#verificationRecovery) throw new Error('identity verification and recovery are not configured');
+    return this.#verificationRecovery;
   }
 
   configured(): boolean {
@@ -79,6 +99,7 @@ export class AuthRuntimeService implements OnModuleInit, OnApplicationShutdown {
     await this.#rateLimiter?.close();
     if (this.#database) await disconnectDatabaseClient(this.#database);
     this.#authentication = undefined;
+    this.#verificationRecovery = undefined;
     this.#rateLimiter = undefined;
     this.#database = undefined;
   }

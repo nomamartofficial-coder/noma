@@ -116,6 +116,7 @@ export const RUNTIME_METRIC_NAMES = [
   'noma.dependency.probe.duration_ms',
   'noma.telemetry.export.failure.total',
   'noma.identity.authentication.total',
+  'noma.identity.proof_flow.total',
   'noma.identity.auth_rate_limit.total',
 ] as const;
 
