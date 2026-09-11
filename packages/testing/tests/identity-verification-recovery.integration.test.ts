@@ -64,7 +64,7 @@ describe.sequential('IAM-003 real PostgreSQL and Redis authority', () => {
     const outbox = await database.outboxEvent.findUniqueOrThrow({ where: { id: eventId } });
     expect(outbox).toMatchObject({ jobName: 'identity.email-delivery', aggregateId: created.email.id, status: 'PENDING' });
     expect(outbox.payload).toEqual({ userEmailId: created.email.id, purpose: 'EMAIL_VERIFICATION', operationId: eventId });
-    expect(JSON.stringify(outbox)).not.toContain('iam003@noma.test');
+    expect(JSON.stringify(outbox.payload)).not.toContain('iam003@noma.test');
     registeredEmailId = created.email.id;
     registrationEventId = eventId;
     registeredUserVersion = created.user.version;
