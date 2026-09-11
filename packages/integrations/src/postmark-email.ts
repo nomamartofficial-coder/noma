@@ -7,7 +7,7 @@ import {
 } from '@noma/platform/providers';
 
 const POSTMARK_ENDPOINT = 'https://api.postmarkapp.com/email/withTemplate';
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_LOCAL_PUNCTUATION = ".!#$%&'*+-/=?^_`{|}~";
 
 export interface PostmarkTransactionalEmailOptions {
   readonly serverToken: string;
@@ -22,9 +22,45 @@ function requireSecret(value: string): string {
   return value;
 }
 
+function isAsciiAlphaNumeric(code: number): boolean {
+  return (code >= 48 && code <= 57) || (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+}
+
+function isValidMailboxAddress(value: string): boolean {
+  if (value.length < 3 || value.length > 320) return false;
+  let at = -1;
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    if (code <= 32 || code >= 127) return false;
+    if (value[index] === '@') {
+      if (at !== -1) return false;
+      at = index;
+    }
+  }
+  if (at < 1 || at > 64 || at >= value.length - 2) return false;
+  const local = value.slice(0, at);
+  const domain = value.slice(at + 1);
+  if (domain.length > 255 || local.startsWith('.') || local.endsWith('.') || local.includes('..')) return false;
+  for (let index = 0; index < local.length; index += 1) {
+    if (!isAsciiAlphaNumeric(local.charCodeAt(index)) && !EMAIL_LOCAL_PUNCTUATION.includes(local[index] ?? '')) return false;
+  }
+  let labelStart = 0;
+  let hasDot = false;
+  for (let index = 0; index < domain.length; index += 1) {
+    const character = domain[index];
+    if (character === '.') {
+      if (index === labelStart || domain[index - 1] === '-') return false;
+      labelStart = index + 1;
+      hasDot = true;
+    } else if (!isAsciiAlphaNumeric(domain.charCodeAt(index)) && character !== '-') return false;
+    else if (character === '-' && index === labelStart) return false;
+  }
+  return hasDot && labelStart < domain.length && !domain.endsWith('-');
+}
+
 function requireAddress(value: string, name: string): string {
   const address = value.trim();
-  if (!EMAIL_PATTERN.test(address) || address.length > 320) throw new Error(`${name} is invalid`);
+  if (!isValidMailboxAddress(address)) throw new Error(`${name} is invalid`);
   return address;
 }
 

@@ -118,6 +118,15 @@ test('provider adapter selection is explicit and fails closed', () => {
     POSTMARK_FROM_ADDRESS: 'identity@example.invalid',
   }).providerAdapterMode, 'real');
   assert.throws(
+    () => loadServerEnvironment('worker', {
+      NOMA_PROVIDER_MODE: 'real',
+      POSTMARK_SERVER_TOKEN: 'synthetic-postmark-server-token-for-tests',
+      POSTMARK_FROM_ADDRESS: `!@!.${'!.'.repeat(400)}`,
+    }),
+    (error) => error instanceof EnvironmentValidationError
+      && error.issues.some((issue) => issue.key === 'POSTMARK_FROM_ADDRESS'),
+  );
+  assert.throws(
     () => loadServerEnvironment('api', { ...productionEnvironment, NOMA_PROVIDER_MODE: 'simulator' }),
     (error) => error instanceof EnvironmentValidationError && error.issues.some((issue) => issue.code === 'environment-mismatch'),
   );

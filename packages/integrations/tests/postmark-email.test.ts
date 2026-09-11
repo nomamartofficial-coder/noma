@@ -50,4 +50,12 @@ describe('IAM-003 Postmark transactional email adapter', () => {
     expect(result).toMatchObject({ kind: 'rejected', code: 'RECIPIENT_ADDRESS_REQUIRED' });
     expect(JSON.stringify(result)).not.toContain('person@example.test');
   });
+
+  test('rejects malformed and adversarially long addresses with bounded validation', () => {
+    expect(() => new PostmarkTransactionalEmailAdapter({
+      serverToken: 'server-token-value-1234567890',
+      fromAddress: `!@!.${'!.'.repeat(400)}`,
+      fetch: vi.fn(),
+    })).toThrow('Postmark from address is invalid');
+  });
 });

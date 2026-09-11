@@ -26,6 +26,7 @@ async function sources() {
 function validate(source) {
   const failures = [];
   const require = (condition, code) => { if (!condition) failures.push(code); };
+  const postmarkLines = new Set(source.postmark.split(/\r?\n/u).map((line) => line.trim()));
   require(source.token.includes('randomBytes(32)') && source.token.includes("createHash('sha256')") && source.token.includes("toString('base64url')"), 'TOKEN_ISSUER');
   require(source.contracts.includes('confirmEmailVerification') && source.contracts.includes('completePasswordRecovery') && source.contracts.includes('issueReplacementIdentityToken'), 'PERSISTENCE_AUTHORITY');
   require(source.database.includes("status: 'RECOVERY_LOCKED'") && source.database.includes("securityVersion: { increment: 1 }") && source.database.includes("revocationCode: 'PASSWORD_RECOVERED'"), 'RECOVERY_ATOMICITY');
@@ -33,7 +34,7 @@ function validate(source) {
   require(source.queue.includes("queueName: 'email'") && source.queue.includes("privacyClassification: 'account-private'") && !source.queue.includes('rawToken'), 'SAFE_DURABLE_PAYLOAD');
   require(source.worker.includes('proofTokens.issue()') && source.worker.includes('EMAIL_PROVIDER_ACCEPTANCE_UNKNOWN') && source.worker.includes('already-issued') && source.worker.includes('superseded') && source.worker.includes('job.event.occurredAt') && source.worker.includes('context.attemptsMade + 1') && source.worker.includes('deriveIdentityDeliveryAttemptId(job.jobId, context.attemptsMade)'), 'DELIVERY_AMBIGUITY');
   require(source.dispatcher.includes('deferredJobNames') && source.dispatcher.includes('JOB_CONTRACT_DEFERRED') && source.workerRuntime.includes('IDENTITY_EMAIL_DELIVERY_CONTRACT.jobName') && source.workerRuntime.includes("providerAdapterMode === 'real'"), 'INACTIVE_PROVIDER_PRESERVES_OUTBOX');
-  require(source.postmark.includes("https://api.postmarkapp.com/email/withTemplate") && source.postmark.includes("redirect: 'error'") && !source.postmark.includes('console.'), 'POSTMARK_BOUNDARY');
+  require(postmarkLines.has("const POSTMARK_ENDPOINT = 'https://api.postmarkapp.com/email/withTemplate';") && source.postmark.includes("redirect: 'error'") && !source.postmark.includes('console.'), 'POSTMARK_BOUNDARY');
   for (const action of ['EMAIL_VERIFICATION_REQUEST', 'EMAIL_VERIFICATION_CONFIRM', 'PASSWORD_RECOVERY_REQUEST', 'PASSWORD_RECOVERY_COMPLETE']) {
     require(source.limiter.includes(action), `RATE_LIMIT_${action}`);
     require(source.server.includes(`NOMA_${action}`), `RATE_LIMIT_CONFIG_${action}`);
@@ -55,6 +56,7 @@ if (process.argv.includes('--self-test')) {
     ['blind uncertainty retry', { ...current, worker: current.worker.replace('EMAIL_PROVIDER_ACCEPTANCE_UNKNOWN', 'EMAIL_PROVIDER_RETRY') }],
     ['database lease drives new proof', { ...current, worker: current.worker.replace('context.attemptsMade + 1', 'acquisition.attemptNumber') }],
     ['provider-disabled dead letter', { ...current, dispatcher: current.dispatcher.replace('JOB_CONTRACT_DEFERRED', 'UNREGISTERED_JOB_CONTRACT') }],
+    ['alternate provider endpoint', { ...current, postmark: current.postmark.replace('https://api.postmarkapp.com/email/withTemplate', 'https://api.postmarkapp.com/email/withTemplate.attacker.invalid') }],
     ['unvalidated public environment', { ...current, web: current.web.replace('publicEnvironment.apiBaseUrl', 'process.env.NEXT_PUBLIC_API_BASE_URL') }],
     ['missing preflight', { ...current, service: current.service.replace('preflightPasswordRecovery', 'removedPreflight') }],
     ['premature IAM-004', { ...current, taskIndex: current.taskIndex.replace('IAM-004,EP03,Implement privileged MFA and recent-authentication assurance,P0,P0-AUTHORITY,NOT_STARTED', 'IAM-004,EP03,Implement privileged MFA and recent-authentication assurance,P0,P0-AUTHORITY,IN_REVIEW') }],
