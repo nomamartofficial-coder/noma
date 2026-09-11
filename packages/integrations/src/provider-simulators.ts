@@ -337,6 +337,9 @@ export function createLocalProviderSimulators(options: CreateProviderSimulatorOp
   };
   const email: TransactionalEmailProviderPort = {
     sendEmail: (input, signal) => {
+      if (input.recipientAddress !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.recipientAddress)) {
+        throw new TypeError('email recipient address is invalid');
+      }
       assertSafeProviderValue(input.variables, 'email variables');
       assertSafeProviderValue(input.metadata, 'email metadata');
       return run('email.send', input, { messageIdentity: safeReference(input.messageIdentity, 'message identity'), templateKey: safeReference(input.templateKey, 'template key'), templateVersion: safeReference(input.templateVersion, 'template version'), recipientReference: safeReference(input.recipientReference, 'recipient reference') }, signal);

@@ -25,7 +25,18 @@ return {blocked, retry}`;
 const DEFAULTS = Object.freeze({
   REGISTER: Object.freeze({ windowMilliseconds: 60 * 60_000, identity: 5, pair: 10, network: 100 }),
   SIGN_IN: Object.freeze({ windowMilliseconds: 15 * 60_000, identity: 10, pair: 20, network: 200 }),
+  EMAIL_VERIFICATION_REQUEST: Object.freeze({ windowMilliseconds: 60 * 60_000, identity: 5, pair: 8, network: 100 }),
+  EMAIL_VERIFICATION_CONFIRM: Object.freeze({ windowMilliseconds: 15 * 60_000, identity: 10, pair: 20, network: 200 }),
+  PASSWORD_RECOVERY_REQUEST: Object.freeze({ windowMilliseconds: 60 * 60_000, identity: 5, pair: 8, network: 100 }),
+  PASSWORD_RECOVERY_COMPLETE: Object.freeze({ windowMilliseconds: 15 * 60_000, identity: 8, pair: 12, network: 100 }),
 });
+
+export type IdentityAuthRateLimitPolicy = Readonly<{
+  windowMilliseconds: number;
+  identity: number;
+  pair: number;
+  network: number;
+}>;
 
 export class AuthRateLimiterUnavailableError extends Error {
   constructor() {
@@ -60,11 +71,18 @@ export class RedisIdentityAuthRateLimiter implements IdentityAuthRateLimiter {
   readonly #redis: Redis;
   readonly #secret: Buffer;
   readonly #prefix: string;
+  readonly #policies: Readonly<Record<AuthRateLimitAction, IdentityAuthRateLimitPolicy>>;
 
-  constructor(options: { readonly redisUrl: string; readonly applicationEnvironment: string; readonly correlationSecret: string }) {
+  constructor(options: {
+    readonly redisUrl: string;
+    readonly applicationEnvironment: string;
+    readonly correlationSecret: string;
+    readonly policies?: Partial<Readonly<Record<AuthRateLimitAction, IdentityAuthRateLimitPolicy>>>;
+  }) {
     const environment = safeEnvironment(options.applicationEnvironment);
     this.#prefix = `noma:${environment}:auth-rate`;
     this.#secret = requireSecret(options.correlationSecret);
+    this.#policies = Object.freeze({ ...DEFAULTS, ...options.policies });
     this.#redis = new Redis(requireRedisUrl(options.redisUrl), {
       commandTimeout: 2_000,
       connectTimeout: 2_000,
@@ -77,7 +95,7 @@ export class RedisIdentityAuthRateLimiter implements IdentityAuthRateLimiter {
   }
 
   async check(input: IdentityAuthRateLimitInput): Promise<IdentityAuthRateLimitDecision> {
-    const policy = DEFAULTS[input.action];
+    const policy = this.#policies[input.action];
     const identity = this.#correlate(`identity|${input.normalizedEmail}`);
     const network = this.#correlate(`network|${normalizeNetworkSignal(input.networkSignal)}`);
     const pair = this.#correlate(`pair|${input.normalizedEmail}|${normalizeNetworkSignal(input.networkSignal)}`);

@@ -1,18 +1,26 @@
 import {
   PASSWORD_AUTHENTICATION_ACCOUNT_STATUSES,
+  IDENTITY_EMAIL_DELIVERY_CONTRACT,
+  IDENTITY_SECURITY_NOTICE_CONTRACT,
   normalizeIdentityEmail,
   IdentityRegistrationConflictError,
+  IdentityAuthenticationAuthorityChangedError,
   type ConsumeIdentityTokenInput,
+  type CompletePasswordRecoveryInput,
+  type ConfirmEmailVerificationInput,
   type CreateSessionInput,
   type CreateUserIdentityInput,
   type IdentityPersistence,
   type IdentityTokenPurpose,
   type IdentityTokenRecord,
   type IssueIdentityTokenInput,
+  type IssueReplacementIdentityTokenInput,
+  type PasswordRecoveryPreflight,
   type PasswordCredentialRecord,
   type RegisterPasswordIdentityInput,
   type ReplacePasswordCredentialHashInput,
   type RecordRecoveryAttemptInput,
+  type RequestIdentityDeliveryInput,
   type RecoveryAttemptRecord,
   type RevokeSessionInput,
   type RotatePasswordSessionInput,
@@ -33,11 +41,14 @@ import type {
   UserEmail,
 } from './generated/prisma/client.js';
 import { Prisma } from './generated/prisma/client.js';
+import { createOutboxEvent, createOutboxEventEnvelope } from './outbox.js';
 import { runInDatabaseTransaction } from './transaction.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SAFE_CODE_PATTERN = /^[A-Z][A-Z0-9_]{1,79}$/;
 const PUBLIC_REFERENCE_PATTERN = /^[A-Z0-9][A-Z0-9_-]{5,31}$/;
+
+class IdentityProofAuthorityChangedError extends Error {}
 
 function requireUuid(name: string, value: string): string {
   if (!UUID_PATTERN.test(value)) throw new Error(`${name} must be a UUID`);
@@ -230,6 +241,72 @@ function isNormalizedEmailConflict(error: unknown): boolean {
     || target.includes('user_emails_normalized_active_key');
 }
 
+async function enqueueIdentityDelivery(
+  transaction: Prisma.TransactionClient,
+  input: {
+    readonly eventId: string;
+    readonly userEmailId: string;
+    readonly userVersion: number;
+    readonly purpose: IdentityTokenPurpose;
+    readonly correlationId: string;
+    readonly occurredAt: Date;
+  },
+): Promise<void> {
+  const occurredAt = requireDate('delivery occurredAt', input.occurredAt);
+  await createOutboxEvent(transaction, {
+    contract: IDENTITY_EMAIL_DELIVERY_CONTRACT,
+    event: createOutboxEventEnvelope({
+      eventId: requireUuid('delivery eventId', input.eventId),
+      eventType: 'identity.email-delivery.requested',
+      eventVersion: 1,
+      aggregateType: 'identity-user-email',
+      aggregateId: requireUuid('delivery userEmailId', input.userEmailId),
+      aggregateVersion: String(requireNonNegativeInteger('delivery userVersion', input.userVersion)),
+      payload: Object.freeze({
+        userEmailId: input.userEmailId,
+        purpose: validateTokenPurpose(input.purpose),
+        operationId: input.eventId,
+      }),
+      privacyClassification: 'account-private',
+      servicePrincipal: 'noma_api_identity',
+      correlationId: requireText('delivery correlationId', input.correlationId, 200),
+      occurredAt,
+      availableAt: occurredAt,
+    }),
+  });
+}
+
+async function enqueueSecurityNotice(
+  transaction: Prisma.TransactionClient,
+  input: {
+    readonly eventId: string;
+    readonly userEmailId: string;
+    readonly userVersion: number;
+    readonly eventCode: 'EMAIL_VERIFIED' | 'PASSWORD_RECOVERED';
+    readonly correlationId: string;
+    readonly occurredAt: Date;
+  },
+): Promise<void> {
+  const occurredAt = requireDate('notice occurredAt', input.occurredAt);
+  await createOutboxEvent(transaction, {
+    contract: IDENTITY_SECURITY_NOTICE_CONTRACT,
+    event: createOutboxEventEnvelope({
+      eventId: requireUuid('notice eventId', input.eventId),
+      eventType: 'identity.security-notice.requested',
+      eventVersion: 1,
+      aggregateType: 'identity-user-email',
+      aggregateId: requireUuid('notice userEmailId', input.userEmailId),
+      aggregateVersion: String(requireNonNegativeInteger('notice userVersion', input.userVersion)),
+      payload: Object.freeze({ userEmailId: input.userEmailId, eventCode: input.eventCode, operationId: input.eventId }),
+      privacyClassification: 'account-private',
+      servicePrincipal: 'noma_api_identity',
+      correlationId: requireText('notice correlationId', input.correlationId, 200),
+      occurredAt,
+      availableAt: occurredAt,
+    }),
+  });
+}
+
 export function createIdentityPersistence(client: DatabaseClient): IdentityPersistence {
   return Object.freeze({
     async createUserIdentity(input: CreateUserIdentityInput) {
@@ -351,6 +428,16 @@ export function createIdentityPersistence(client: DatabaseClient): IdentityPersi
             createdAt: requireDate('credential createdAt', input.credential.createdAt),
           },
         });
+          if (input.verificationDelivery) {
+            if (input.verificationDelivery.purpose !== 'EMAIL_VERIFICATION') {
+              throw new Error('registration delivery must be email verification');
+            }
+            await enqueueIdentityDelivery(transaction, {
+              ...input.verificationDelivery,
+              userEmailId: email.id,
+              userVersion: user.version,
+            });
+          }
           return Object.freeze({ user: mapUser(user), email: mapEmail(email), credential: mapCredential(credential) });
         });
       } catch (error) {
@@ -372,7 +459,7 @@ export function createIdentityPersistence(client: DatabaseClient): IdentityPersi
       });
       const credential = email?.user.credentials[0];
       return email && credential
-        ? Object.freeze({ user: mapUser(email.user), credential: mapCredential(credential) })
+        ? Object.freeze({ user: mapUser(email.user), credential: mapCredential(credential), emailVerified: email.verifiedAt !== null })
         : null;
     },
 
@@ -456,6 +543,17 @@ export function createIdentityPersistence(client: DatabaseClient): IdentityPersi
     async rotatePasswordSession(input: RotatePasswordSessionInput) {
       const revokedAt = requireDate('revokedAt', input.revokedAt);
       return runInDatabaseTransaction(client, async (transaction) => {
+        const authority = await transaction.user.findUnique({
+          where: { id: requireUuid('session.userId', input.session.userId) },
+          select: { securityVersion: true, status: true },
+        });
+        if (
+          !authority
+          || authority.securityVersion !== input.session.issuedSecurityVersion
+          || !(PASSWORD_AUTHENTICATION_ACCOUNT_STATUSES as readonly string[]).includes(authority.status)
+        ) {
+          throw new IdentityAuthenticationAuthorityChangedError();
+        }
         if (input.replacedTokenDigest) {
           await transaction.session.updateMany({
             where: {
@@ -584,6 +682,108 @@ export function createIdentityPersistence(client: DatabaseClient): IdentityPersi
       return mapToken(token);
     },
 
+    async requestIdentityDelivery(input: RequestIdentityDeliveryInput) {
+      const occurredAt = requireDate('occurredAt', input.occurredAt);
+      return runInDatabaseTransaction(client, async (transaction) => {
+        const email = await transaction.userEmail.findFirst({
+          where: { normalizedEmail: normalizeIdentityEmail(input.normalizedEmail), retiredAt: null, primaryAt: { not: null } },
+          include: { user: { include: { credentials: { where: { type: 'PASSWORD', revokedAt: null }, take: 1 } } } },
+        });
+        if (!email) return false;
+        const eligible = input.purpose === 'EMAIL_VERIFICATION'
+          ? email.user.status === 'PENDING_EMAIL' && email.verifiedAt === null
+          : (email.user.status === 'ACTIVE' || email.user.status === 'RECOVERY_LOCKED')
+            && email.verifiedAt !== null
+            && email.user.credentials.length === 1;
+        if (!eligible) return false;
+        await enqueueIdentityDelivery(transaction, {
+          eventId: input.eventId,
+          userEmailId: email.id,
+          userVersion: email.user.version,
+          purpose: input.purpose,
+          correlationId: input.correlationId,
+          occurredAt,
+        });
+        return true;
+      });
+    },
+
+    async readIdentityDeliveryCandidate(userEmailId: string, purpose: IdentityTokenPurpose) {
+      const email = await client.userEmail.findUnique({
+        where: { id: requireUuid('userEmailId', userEmailId) },
+        include: { user: { include: { credentials: { where: { type: 'PASSWORD', revokedAt: null }, take: 1 } } } },
+      });
+      if (!email || email.retiredAt || !email.primaryAt) return null;
+      const eligible = purpose === 'EMAIL_VERIFICATION'
+        ? email.user.status === 'PENDING_EMAIL' && email.verifiedAt === null
+        : (email.user.status === 'ACTIVE' || email.user.status === 'RECOVERY_LOCKED')
+          && email.verifiedAt !== null
+          && email.user.credentials.length === 1;
+      return eligible ? Object.freeze({ user: mapUser(email.user), email: mapEmail(email) }) : null;
+    },
+
+    async issueReplacementIdentityToken(input: IssueReplacementIdentityTokenInput) {
+      const issuedAt = requireDate('issuedAt', input.issuedAt);
+      const expiresAt = requireDate('expiresAt', input.expiresAt);
+      if (expiresAt <= issuedAt) throw new Error('identity token expiry must follow issuance');
+      return runInDatabaseTransaction(client, async (transaction) => {
+        await transaction.$queryRaw`SELECT "id" FROM "user_emails" WHERE "id" = CAST(${requireUuid('userEmailId', input.userEmailId)} AS uuid) FOR UPDATE`;
+        if (await transaction.identityToken.findUnique({ where: { id: requireUuid('identity token id', input.id) } })) {
+          return Object.freeze({ disposition: 'already-issued' as const });
+        }
+        const purpose = validateTokenPurpose(input.purpose);
+        if (await transaction.identityToken.findFirst({
+          where: { userEmailId: input.userEmailId, purpose, issuedAt: { gt: issuedAt } },
+          select: { id: true },
+        })) {
+          return Object.freeze({ disposition: 'superseded' as const });
+        }
+        const email = await transaction.userEmail.findUnique({
+          where: { id: input.userEmailId },
+          include: { user: { include: { credentials: { where: { type: 'PASSWORD', revokedAt: null }, take: 1 } } } },
+        });
+        if (!email || email.retiredAt || !email.primaryAt || email.user.securityVersion !== input.issuedSecurityVersion) {
+          return Object.freeze({ disposition: 'ineligible' as const });
+        }
+        const eligible = purpose === 'EMAIL_VERIFICATION'
+          ? email.user.status === 'PENDING_EMAIL' && email.verifiedAt === null
+          : (email.user.status === 'ACTIVE' || email.user.status === 'RECOVERY_LOCKED')
+            && email.verifiedAt !== null
+            && email.user.credentials.length === 1;
+        if (!eligible) return Object.freeze({ disposition: 'ineligible' as const });
+        const token = await transaction.identityToken.create({
+          data: {
+            id: input.id,
+            userEmailId: email.id,
+            purpose,
+            tokenDigest: requireDigest('tokenDigest', input.tokenDigest),
+            issuedSecurityVersion: requireNonNegativeInteger('issuedSecurityVersion', input.issuedSecurityVersion),
+            issuedAt,
+            expiresAt,
+            createdAt: issuedAt,
+          },
+        });
+        await transaction.identityToken.updateMany({
+          where: { userEmailId: email.id, purpose, id: { not: token.id }, consumedAt: null, invalidatedAt: null },
+          data: { invalidatedAt: issuedAt, invalidationCode: 'REPLACED_BY_NEW_TOKEN', replacedByTokenId: token.id },
+        });
+        return Object.freeze({ disposition: 'issued' as const, token: mapToken(token), recipientAddress: email.displayEmail, locale: email.user.locale });
+      });
+    },
+
+    async invalidateIdentityToken(tokenId: string, invalidatedAt: Date, code: string) {
+      const result = await client.identityToken.updateMany({
+        where: { id: requireUuid('tokenId', tokenId), consumedAt: null, invalidatedAt: null },
+        data: { invalidatedAt: requireDate('invalidatedAt', invalidatedAt), invalidationCode: requireCode('invalidationCode', code) },
+      });
+      return result.count === 1;
+    },
+
+    async readIdentityEmailContact(userEmailId: string) {
+      const email = await client.userEmail.findUnique({ where: { id: requireUuid('userEmailId', userEmailId) }, include: { user: true } });
+      return email && !email.retiredAt ? Object.freeze({ user: mapUser(email.user), email: mapEmail(email) }) : null;
+    },
+
     async consumeIdentityToken(input: ConsumeIdentityTokenInput) {
       const rows = await client.$queryRaw<IdentityTokenRecord[]>`
         UPDATE "identity_tokens" AS t
@@ -610,6 +810,156 @@ export function createIdentityPersistence(client: DatabaseClient): IdentityPersi
           t."invalidation_code" AS "invalidationCode",
           t."replaced_by_token_id" AS "replacedByTokenId"`;
       return rows[0] ? Object.freeze(rows[0]) : null;
+    },
+
+    async confirmEmailVerification(input: ConfirmEmailVerificationInput) {
+      const verifiedAt = requireDate('verifiedAt', input.verifiedAt);
+      try {
+        return await runInDatabaseTransaction(client, async (transaction) => {
+        const token = await transaction.identityToken.findUnique({
+          where: { tokenDigest: requireDigest('tokenDigest', input.tokenDigest) },
+          include: { userEmail: { include: { user: true } } },
+        });
+        if (!token || token.purpose !== 'EMAIL_VERIFICATION' || token.consumedAt || token.invalidatedAt
+          || token.expiresAt <= verifiedAt || token.issuedSecurityVersion !== token.userEmail.user.securityVersion
+          || token.userEmail.retiredAt || token.userEmail.verifiedAt || !token.userEmail.primaryAt
+          || token.userEmail.user.status !== 'PENDING_EMAIL') return null;
+        const consumed = await transaction.identityToken.updateMany({
+          where: { id: token.id, consumedAt: null, invalidatedAt: null, expiresAt: { gt: verifiedAt } },
+          data: { consumedAt: verifiedAt },
+        });
+        if (consumed.count !== 1) return null;
+        const emailUpdated = await transaction.userEmail.updateMany({
+          where: { id: token.userEmailId, verifiedAt: null, retiredAt: null },
+          data: { verifiedAt, updatedAt: verifiedAt },
+        });
+        const userUpdated = await transaction.user.updateMany({
+          where: { id: token.userEmail.userId, status: 'PENDING_EMAIL', version: token.userEmail.user.version, securityVersion: token.issuedSecurityVersion },
+          data: { status: 'ACTIVE', statusReasonCode: 'EMAIL_VERIFIED', version: { increment: 1 }, lastTransitionAt: verifiedAt, lastTransitionId: requireUuid('transitionId', input.transitionId), updatedAt: verifiedAt },
+        });
+        if (emailUpdated.count !== 1 || userUpdated.count !== 1) throw new IdentityProofAuthorityChangedError();
+        await transaction.identityToken.updateMany({
+          where: { userEmailId: token.userEmailId, purpose: 'EMAIL_VERIFICATION', id: { not: token.id }, consumedAt: null, invalidatedAt: null },
+          data: { invalidatedAt: verifiedAt, invalidationCode: 'EMAIL_VERIFIED' },
+        });
+        let elevatedSessionId: string | null = null;
+        if (input.presentedSessionTokenDigest) {
+          const session = await transaction.session.findFirst({
+            where: {
+              tokenDigest: requireDigest('presentedSessionTokenDigest', input.presentedSessionTokenDigest),
+              userId: token.userEmail.userId,
+              status: 'ACTIVE',
+              assurance: 'AUTHENTICATED',
+              revokedAt: null,
+              idleExpiresAt: { gt: verifiedAt },
+              absoluteExpiresAt: { gt: verifiedAt },
+              issuedSecurityVersion: token.issuedSecurityVersion,
+            },
+          });
+          if (session) {
+            const elevated = await transaction.session.updateMany({
+              where: { id: session.id, version: session.version, assurance: 'AUTHENTICATED', revokedAt: null },
+              data: { assurance: 'CONTACT_VERIFIED', version: { increment: 1 }, lastTransitionAt: verifiedAt, lastTransitionId: input.transitionId, updatedAt: verifiedAt },
+            });
+            if (elevated.count === 1) elevatedSessionId = session.id;
+          }
+        }
+        await enqueueSecurityNotice(transaction, {
+          eventId: input.noticeEventId,
+          userEmailId: token.userEmailId,
+          userVersion: token.userEmail.user.version + 1,
+          eventCode: 'EMAIL_VERIFIED',
+          correlationId: input.correlationId,
+          occurredAt: verifiedAt,
+        });
+        return Object.freeze({ userId: token.userEmail.userId, emailId: token.userEmailId, elevatedSessionId });
+        });
+      } catch (error) {
+        if (error instanceof IdentityProofAuthorityChangedError) return null;
+        throw error;
+      }
+    },
+
+    async preflightPasswordRecovery(tokenDigest: string, at: Date): Promise<PasswordRecoveryPreflight | null> {
+      const instant = requireDate('at', at);
+      const token = await client.identityToken.findUnique({
+        where: { tokenDigest: requireDigest('tokenDigest', tokenDigest) },
+        include: { userEmail: { include: { user: { include: { credentials: { where: { type: 'PASSWORD', revokedAt: null }, take: 1 } } } } } },
+      });
+      const credential = token?.userEmail.user.credentials[0];
+      if (!token || !credential || token.purpose !== 'PASSWORD_RECOVERY' || token.consumedAt || token.invalidatedAt
+        || token.expiresAt <= instant || token.issuedSecurityVersion !== token.userEmail.user.securityVersion
+        || token.userEmail.retiredAt || !token.userEmail.primaryAt || !token.userEmail.verifiedAt
+        || (token.userEmail.user.status !== 'ACTIVE' && token.userEmail.user.status !== 'RECOVERY_LOCKED')) return null;
+      return Object.freeze({
+        userId: token.userEmail.userId,
+        emailId: token.userEmailId,
+        credentialId: credential.id,
+        credentialVersion: credential.version,
+        userVersion: token.userEmail.user.version,
+        securityVersion: token.userEmail.user.securityVersion,
+      });
+    },
+
+    async completePasswordRecovery(input: CompletePasswordRecoveryInput) {
+      const completedAt = requireDate('completedAt', input.completedAt);
+      try {
+        return await runInDatabaseTransaction(client, async (transaction) => {
+        const token = await transaction.identityToken.findUnique({
+          where: { tokenDigest: requireDigest('tokenDigest', input.tokenDigest) },
+          include: { userEmail: { include: { user: true } } },
+        });
+        const credential = await transaction.credential.findUnique({ where: { id: requireUuid('credentialId', input.credentialId) } });
+        if (!token || !credential || token.purpose !== 'PASSWORD_RECOVERY' || token.consumedAt || token.invalidatedAt
+          || token.expiresAt <= completedAt || token.userEmailId !== input.emailId || token.userEmail.userId !== input.userId
+          || token.issuedSecurityVersion !== input.securityVersion || token.userEmail.user.securityVersion !== input.securityVersion
+          || token.userEmail.user.version !== input.userVersion || token.userEmail.retiredAt || !token.userEmail.primaryAt || !token.userEmail.verifiedAt
+          || (token.userEmail.user.status !== 'ACTIVE' && token.userEmail.user.status !== 'RECOVERY_LOCKED')
+          || credential.userId !== input.userId || credential.type !== 'PASSWORD' || credential.revokedAt || credential.version !== input.credentialVersion) return false;
+        const consumed = await transaction.identityToken.updateMany({ where: { id: token.id, consumedAt: null, invalidatedAt: null, expiresAt: { gt: completedAt } }, data: { consumedAt: completedAt } });
+        if (consumed.count !== 1) return false;
+        const containment = await transaction.user.updateMany({
+          where: { id: input.userId, version: input.userVersion, securityVersion: input.securityVersion, status: { in: ['ACTIVE', 'RECOVERY_LOCKED'] } },
+          data: { status: 'RECOVERY_LOCKED', statusReasonCode: 'RECOVERY_PROOF_ACCEPTED', version: { increment: 1 }, lastTransitionAt: completedAt, lastTransitionId: requireUuid('containmentTransitionId', input.containmentTransitionId), updatedAt: completedAt },
+        });
+        if (containment.count !== 1) throw new IdentityProofAuthorityChangedError();
+        const encodedHash = input.encodedHash.trim();
+        if (encodedHash.length < 20) throw new Error('encodedHash must contain encoded hash metadata');
+        const rotated = await transaction.credential.updateMany({
+          where: { id: input.credentialId, userId: input.userId, type: 'PASSWORD', revokedAt: null, version: input.credentialVersion },
+          data: { encodedHash, hashAlgorithm: requireCode('hashAlgorithm', input.hashAlgorithm), hashPolicyVersion: requirePositiveInteger('hashPolicyVersion', input.hashPolicyVersion), rotatedAt: completedAt, version: { increment: 1 } },
+        });
+        if (rotated.count !== 1) throw new IdentityProofAuthorityChangedError();
+        await transaction.session.updateMany({
+          where: { userId: input.userId, status: { in: ['ACTIVE', 'STEP_UP_REQUIRED'] }, revokedAt: null },
+          data: { status: 'REVOKED', revokedAt: completedAt, revocationCode: 'PASSWORD_RECOVERED', statusReasonCode: 'PASSWORD_RECOVERED', version: { increment: 1 }, lastTransitionAt: completedAt, lastTransitionId: input.transitionId, updatedAt: completedAt },
+        });
+        await transaction.identityToken.updateMany({
+          where: { userEmail: { userId: input.userId }, id: { not: token.id }, consumedAt: null, invalidatedAt: null },
+          data: { invalidatedAt: completedAt, invalidationCode: 'SECURITY_VERSION_CHANGED' },
+        });
+        const completed = await transaction.user.updateMany({
+          where: { id: input.userId, version: input.userVersion + 1, securityVersion: input.securityVersion, status: 'RECOVERY_LOCKED' },
+          data: { status: 'ACTIVE', statusReasonCode: 'PASSWORD_RECOVERY_COMPLETED', version: { increment: 1 }, securityVersion: { increment: 1 }, lastTransitionAt: completedAt, lastTransitionId: requireUuid('transitionId', input.transitionId), updatedAt: completedAt },
+        });
+        if (completed.count !== 1) throw new IdentityProofAuthorityChangedError();
+        await transaction.recoveryAttempt.create({
+          data: {
+            id: requireUuid('recoveryAttemptId', input.recoveryAttemptId), userId: input.userId,
+            subjectDigest: requireDigest('subjectDigest', input.subjectDigest), correlationId: requireText('correlationId', input.correlationId, 200),
+            methodCode: 'EMAIL_LINK', outcomeCode: 'RECOVERY_COMPLETED', assuranceEvidenceCode: 'ONE_TIME_EMAIL_PROOF', containmentCode: 'ALL_SESSIONS_REVOKED', occurredAt: completedAt,
+          },
+        });
+        await enqueueSecurityNotice(transaction, {
+          eventId: input.noticeEventId, userEmailId: input.emailId, userVersion: input.userVersion + 2,
+          eventCode: 'PASSWORD_RECOVERED', correlationId: input.correlationId, occurredAt: completedAt,
+        });
+        return true;
+        });
+      } catch (error) {
+        if (error instanceof IdentityProofAuthorityChangedError) return false;
+        throw error;
+      }
     },
 
     async recordRecoveryAttempt(input: RecordRecoveryAttemptInput) {

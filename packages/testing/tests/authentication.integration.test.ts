@@ -314,6 +314,27 @@ describe.sequential('IAM-002 real PostgreSQL and Redis authority', () => {
       expect(await duplicateRegistration.json()).toEqual({ status: 'REQUEST_ACCEPTED' });
       expect(firstRegistration.headers.get('set-cookie')).toBeNull();
 
+      const verificationKnown = await request('/api/v1/auth/email-verification/request', { method: 'POST', body: JSON.stringify({ email: 'api-auth@noma.test' }) });
+      const verificationUnknown = await request('/api/v1/auth/email-verification/request', { method: 'POST', body: JSON.stringify({ email: 'unknown-api@noma.test' }) });
+      expect(verificationKnown.status).toBe(202);
+      expect(await verificationKnown.json()).toEqual({ status: 'REQUEST_ACCEPTED' });
+      expect(verificationUnknown.status).toBe(202);
+      expect(await verificationUnknown.json()).toEqual({ status: 'REQUEST_ACCEPTED' });
+      const recoveryKnown = await request('/api/v1/auth/password-recovery/request', { method: 'POST', body: JSON.stringify({ email: 'api-auth@noma.test' }) });
+      const recoveryUnknown = await request('/api/v1/auth/password-recovery/request', { method: 'POST', body: JSON.stringify({ email: 'unknown-api@noma.test' }) });
+      expect(recoveryKnown.status).toBe(202);
+      expect(await recoveryKnown.json()).toEqual({ status: 'REQUEST_ACCEPTED' });
+      expect(recoveryUnknown.status).toBe(202);
+      expect(await recoveryUnknown.json()).toEqual({ status: 'REQUEST_ACCEPTED' });
+      const invalidVerification = await request('/api/v1/auth/email-verification/confirm', { method: 'POST', body: JSON.stringify({ token: 'A'.repeat(43) }) });
+      expect(invalidVerification.status).toBe(400);
+      expect(await invalidVerification.json()).toEqual({ code: 'VERIFICATION_LINK_INVALID' });
+      const invalidRecovery = await request('/api/v1/auth/password-recovery/complete', { method: 'POST', body: JSON.stringify({ token: 'B'.repeat(43), newPassword: password }) });
+      expect(invalidRecovery.status).toBe(400);
+      expect(await invalidRecovery.json()).toEqual({ code: 'RECOVERY_LINK_INVALID' });
+      const crossOriginRecovery = await fetch(`${origin}/api/v1/auth/password-recovery/request`, { method: 'POST', headers: { Origin: 'https://attacker.invalid', 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'api-auth@noma.test' }) });
+      expect(crossOriginRecovery.status).toBe(403);
+
       const wrong = await request('/api/v1/auth/sign-in', { method: 'POST', body: JSON.stringify({ email: 'api-auth@noma.test', password: 'A wrong synthetic passphrase' }) });
       const unknown = await request('/api/v1/auth/sign-in', { method: 'POST', body: JSON.stringify({ email: 'unknown-api@noma.test', password: 'A wrong synthetic passphrase' }) });
       expect(wrong.status).toBe(401);

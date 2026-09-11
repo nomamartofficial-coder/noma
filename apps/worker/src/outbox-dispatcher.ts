@@ -18,6 +18,7 @@ const DEFAULT_LEASE_MILLISECONDS = 30_000;
 const DEFAULT_RECOVERY_MILLISECONDS = 30_000;
 const MAXIMUM_RETRY_MILLISECONDS = 60_000;
 const UNREGISTERED_ATTENTION_MILLISECONDS = 15 * 60_000;
+const DEFERRED_CONTRACT_RETRY_MILLISECONDS = 60_000;
 
 export interface OutboxDispatcherOptions {
   readonly database: DatabaseClient;
@@ -33,6 +34,7 @@ export interface OutboxDispatcherOptions {
   readonly onDatabaseHealth?: (ready: boolean) => void;
   readonly onQueueHealth?: (ready: boolean) => void;
   readonly telemetry?: ServerObservability;
+  readonly deferredJobNames?: readonly string[];
 }
 
 export class OutboxDispatcher {
@@ -86,6 +88,24 @@ export class OutboxDispatcher {
     }
 
     for (const claimed of events) {
+      if (this.#options.deferredJobNames?.includes(claimed.jobName)) {
+        await releaseOutboxForRetry(this.#options.database, {
+          eventId: claimed.id,
+          leaseOwner: this.#options.identity,
+          retryAt: new Date(now.getTime() + DEFERRED_CONTRACT_RETRY_MILLISECONDS),
+          failure: toSafeJobFailure(
+            'retryable',
+            'JOB_CONTRACT_DEFERRED',
+            'The job contract is intentionally unavailable until its provider is configured',
+          ),
+        });
+        this.#options.metrics.record({
+          name: 'noma.outbox.dispatch.total',
+          value: 1,
+          attributes: { outcome: 'deferred', queue: claimed.queueName },
+        });
+        continue;
+      }
       const registration = this.#options.registry.find(
         claimed.queueName,
         claimed.jobName,
