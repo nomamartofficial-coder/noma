@@ -4,6 +4,7 @@
 - Date: 2026-09-11
 - Task: `IAM-003`
 - Issue: `#58`
+- Draft PR: `#59`
 - Requirement: `REQ-IAM-003`
 
 ## Decision
@@ -21,4 +22,3 @@ The transactional outbox stores only email-record identity, purpose/event code, 
 ## Consequences and rollback
 
 This adds a bounded identity-email Worker and three public landing pages. It does not activate Postmark, add a migration, persist attacker-amplifiable invalid attempts, implement MFA/authorization, or expose protected role surfaces. Before activation, rollback is a reviewed source-only revert. After later activation, issued proofs remain governed by stored expiry, replacement, consumption, and `securityVersion`; no destructive data rollback is permitted.
-
