@@ -97,6 +97,42 @@ enum AttentionStatus {
   @@map("attention_status")
 }
 
+enum EncryptionMigrationStatus {
+  PENDING
+  RUNNING
+  BLOCKED
+  COMPLETED
+
+  @@map("encryption_migration_status")
+}
+
+model EncryptionMigrationRun {
+  id                   String                    @id @db.Uuid
+  consumerId           String                    @map("consumer_id") @db.VarChar(120)
+  environment          String                    @db.VarChar(20)
+  sourcePolicyId       String                    @map("source_policy_id") @db.VarChar(160)
+  targetPolicyId       String                    @map("target_policy_id") @db.VarChar(160)
+  status               EncryptionMigrationStatus @default(PENDING)
+  leaseOwner           String?                   @map("lease_owner") @db.VarChar(160)
+  leaseExpiresAt       DateTime?                 @map("lease_expires_at") @db.Timestamptz(6)
+  cursor               String?                   @db.VarChar(256)
+  discoveredCount      BigInt                    @default(0) @map("discovered_count")
+  alreadyCurrentCount  BigInt                    @default(0) @map("already_current_count")
+  migratedCount        BigInt                    @default(0) @map("migrated_count")
+  failedCount          BigInt                    @default(0) @map("failed_count")
+  remainingCount       BigInt?                   @map("remaining_count")
+  lastFailureCode      String?                   @map("last_failure_code") @db.VarChar(80)
+  correlationId        String                    @map("correlation_id") @db.VarChar(160)
+  version              Int                       @default(0)
+  createdAt            DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  completedAt          DateTime?                 @map("completed_at") @db.Timestamptz(6)
+
+  @@index([status, leaseExpiresAt], map: "encryption_migration_runs_claim_idx")
+  @@index([consumerId, createdAt], map: "encryption_migration_runs_consumer_idx")
+  @@map("encryption_migration_runs")
+}
+
 model User {
   id               String            @id @db.Uuid
   publicReference  String            @unique(map: "users_public_reference_key") @map("public_reference") @db.VarChar(32)
