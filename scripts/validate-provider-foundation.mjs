@@ -21,6 +21,9 @@ const REQUIRED_PORTS = [
   'HostingConfigurationProviderPort', 'DnsConfigurationProviderPort', 'DeferredProviderPort',
 ];
 const FORBIDDEN_VENDOR_IMPORT = /from\s+['"](?:paystack|postmark|@aws-sdk|aws-sdk|@sentry|posthog|cloudflare|vercel|render)/i;
+const VENDOR_IMPORTS = /from\s+['"]([^'"]+)['"]/gi;
+const KMS_ADAPTER = 'packages/integrations/src/aws-kms-managed-key-provider.ts';
+const KMS_ADAPTER_TEST = 'packages/integrations/tests/aws-kms-managed-key-provider.test.ts';
 const LIVE_HOST = /https:\/\/(?:api\.paystack\.co|api\.postmarkapp\.com|s3[.-][a-z0-9-]*\.amazonaws\.com|api\.cloudflare\.com|api\.vercel\.com|api\.render\.com)/i;
 const SECRET_EXAMPLE = /\b(?:sk|pk)_(?:live|test)_[A-Za-z0-9_-]{8,}\b|-----BEGIN [A-Z ]*PRIVATE KEY-----/i;
 const fail = (message) => { throw new Error(message); };
@@ -37,7 +40,11 @@ async function filesBelow(path) {
 }
 
 function validateSource(path, source) {
-  if (FORBIDDEN_VENDOR_IMPORT.test(source)) fail(`${path}: vendor SDK import crossed the provider boundary`);
+  for (const match of source.matchAll(VENDOR_IMPORTS)) {
+    if (FORBIDDEN_VENDOR_IMPORT.test(match[0]) && !([KMS_ADAPTER, KMS_ADAPTER_TEST].includes(path) && match[1] === '@aws-sdk/client-kms')) {
+      fail(`${path}: vendor SDK import crossed the provider boundary`);
+    }
+  }
   if (/(?:provider|simulator)/i.test(path) && SECRET_EXAMPLE.test(source)) fail(`${path}: production-like provider credential is prohibited`);
   if ((path.includes('provider-simulator') || path.includes('/testing/')) && LIVE_HOST.test(source)) {
     fail(`${path}: simulator/test source contains a live provider host`);
@@ -79,7 +86,9 @@ async function validate() {
   const integrations = JSON.parse(await read('packages/integrations/package.json'));
   const dependencies = { ...(integrations.dependencies ?? {}), ...(integrations.devDependencies ?? {}) };
   for (const dependency of Object.keys(dependencies)) {
-    if (FORBIDDEN_VENDOR_IMPORT.test(`from '${dependency}'`)) fail(`provider SDK dependency is prohibited in DEV-007: ${dependency}`);
+    if (FORBIDDEN_VENDOR_IMPORT.test(`from '${dependency}'`) && !(dependency === '@aws-sdk/client-kms' && dependencies[dependency] === '3.1131.0')) {
+      fail(`unapproved provider SDK dependency: ${dependency}`);
+    }
   }
   if (!integrations.exports?.['./testing']) fail('@noma/integrations/testing export is required');
   if (!JSON.parse(await read('packages/testing/package.json')).exports?.['./providers']) fail('@noma/testing/providers export is required');
@@ -103,6 +112,8 @@ function selfTest() {
     ['apps/api/src/probe.ts', "import '@noma/testing/providers';"],
     ['packages/integrations/src/provider-simulator-probe.ts', "const endpoint = 'https://api.paystack.co';"],
     ['packages/platform/src/probe.ts', "import Paystack from 'paystack';"],
+    ['packages/integrations/src/probe.ts', "import { KMSClient } from '@aws-sdk/client-kms';"],
+    [KMS_ADAPTER, "import Paystack from 'paystack';"],
   ];
   for (const [path, source] of violations) {
     let rejected = false;
@@ -113,7 +124,7 @@ function selfTest() {
 
 try {
   const result = await validate();
-  console.log(`PASS: ${result.ports} provider port families, deterministic simulator boundary, no live SDKs`);
+  console.log(`PASS: ${result.ports} provider port families, deterministic simulator boundary, only the SEC-003 KMS adapter may use its pinned SDK`);
   if (process.argv.includes('--self-test')) {
     selfTest();
     console.log('PASS: injected browser, production-inspection, vendor-SDK, and live-host violations were rejected');

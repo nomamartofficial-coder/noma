@@ -12,7 +12,7 @@ const allowed={
   '@noma/database':new Set(['@noma/contracts','@noma/platform']),
   '@noma/integrations':new Set(['@noma/contracts','@noma/observability','@noma/platform']),
   '@noma/testing':new Set(['@noma/contracts','@noma/integrations','@noma/platform']),
-  '@noma/security':new Set(['@noma/contracts']),
+  '@noma/security':new Set(['@noma/contracts','@noma/platform']),
   '@noma/ui':new Set(), '@noma/contracts':new Set(), '@noma/config':new Set(), '@noma/observability':new Set(),
   '@noma/eslint-config':new Set(), '@noma/tsconfig':new Set(),
 };
