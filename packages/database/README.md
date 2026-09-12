@@ -10,4 +10,6 @@ IAM-001 adds the bounded PostgreSQL implementation of `@noma/platform/identity`:
 
 IAM-002 adds bounded authentication operations without a schema migration. `registerPasswordIdentity` commits User, primary email, and password credential atomically; rotation, conditional touch, digest revocation, candidate lookup, and policy-version rehash remain behavior-specific rather than generic CRUD. See [`AUTHENTICATION.md`](../../AUTHENTICATION.md).
 
+SEC-003 adds only technical `encryption_migration_runs` persistence and bounded lease, CAS checkpoint, blocked-resume, and reconciliation operations. Future consumers must own their encrypted tables and field-level CAS. See [`ENCRYPTION.md`](../../ENCRYPTION.md).
+
 Canonical guidance and commands are in [`DATABASE.md`](../../DATABASE.md) and [`QUEUE.md`](../../QUEUE.md).

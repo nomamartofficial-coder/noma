@@ -17,6 +17,8 @@ The image mounts its named volume at `/var/lib/postgresql`, the PostgreSQL 18 ve
 
 IAM-001 extends this foundation with one additive identity migration, checksum, Prisma models, PostgreSQL CHECK constraints and partial indexes, restrictive relationships, and a bounded repository. Identity-specific architecture and commands are documented in [`IDENTITY_PERSISTENCE.md`](IDENTITY_PERSISTENCE.md).
 
+SEC-003 adds one forward-only technical migration for `encryption_migration_runs`. It preserves business/identity rows, supplies lease and checkpoint evidence, and delegates actual encrypted fields and CAS to later consumers. See [`ENCRYPTION.md`](ENCRYPTION.md).
+
 ## Local start
 
 ```bash

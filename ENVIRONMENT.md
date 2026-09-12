@@ -66,6 +66,8 @@ For API authentication, the dependency pair additionally requires the distinct `
 
 Provider-specific secrets remain optional until their adapter tasks. Live Paystack keys are rejected outside production, and test Paystack keys are rejected in production.
 
+SEC-003 introduces an opt-in `@noma/config/encryption` loader, disabled by default and not wired into runtime startup. Future approved staging/production API or migration composition would require `NOMA_ENCRYPTION_MODE=aws-kms`, approved `NOMA_ENCRYPTION_PURPOSES`, a Frankfurt `NOMA_KMS_KEY_ARN`, and managed `AWS_ROLE_ARN`/`AWS_WEB_IDENTITY_TOKEN_FILE`; migration-only destination keys use `NOMA_KMS_DESTINATION_KEY_ARNS`. Static AWS credentials and remote deterministic test keys are rejected. Worker and Web receive no encryption authority. Provisioning and activation remain blocked as described in [`ENCRYPTION.md`](ENCRYPTION.md).
+
 Simulator selection is explicit and server-only, and production rejects it. IAM-003 adds redacted Postmark configuration and a real transactional-email adapter without provisioning credentials or activating delivery. Public Web configuration remains unchanged.
 
 DEV-010 adds optional server telemetry. The default remains disabled; `test` may use deterministic full in-memory capture. OTLP is explicit, requires a reviewed parent-based trace sample ratio, is bounded and HTTPS-only remotely, and keeps authorization in the non-enumerable secret container. Endpoint credentials, query strings, browser-visible variables, implicit remote sampling, and remote in-memory mode fail closed. See [`OBSERVABILITY.md`](OBSERVABILITY.md).
