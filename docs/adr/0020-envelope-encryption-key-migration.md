@@ -4,7 +4,7 @@
 - Date: 2026-09-12
 - Task: `SEC-003`
 - Issue: `#60`
-- Draft PR: pending
+- Draft PR: `#61`
 
 ## Decision
 
