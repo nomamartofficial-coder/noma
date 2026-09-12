@@ -25,3 +25,4 @@ allowBuilds:
   ssh2: false
 minimumReleaseAgeExclude:
   - deepmerge-ts@8.0.2
+  - '@aws-sdk/client-kms@3.1131.0'

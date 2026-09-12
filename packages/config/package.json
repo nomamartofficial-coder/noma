@@ -9,6 +9,10 @@
     "dist"
   ],
   "exports": {
+    "./encryption": {
+      "types": "./dist/encryption.d.ts",
+      "default": "./dist/encryption.js"
+    },
     "./public": {
       "types": "./dist/public.d.ts",
       "default": "./dist/public.js"
