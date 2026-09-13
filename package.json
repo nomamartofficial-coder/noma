@@ -51,7 +51,7 @@
     "iam004:validate": "node scripts/validate-privileged-mfa.mjs",
     "iam004:self-test": "node scripts/validate-privileged-mfa.mjs --self-test",
     "iam004:test": "pnpm --filter @noma/platform build && pnpm --filter @noma/security build && node node_modules/vitest/vitest.mjs run --project unit packages/security/tests/mfa.test.ts packages/platform/tests/assurance.test.ts",
-    "iam004:integration-test": "pnpm build && node node_modules/vitest/vitest.mjs run --project integration packages/testing/tests/mfa.integration.test.ts",
+    "iam004:integration-test": "pnpm build && node node_modules/vitest/vitest.mjs run --project integration packages/testing/tests/mfa.integration.test.ts apps/api/tests/mfa-step-up.integration.test.ts",
     "iam004:verify": "pnpm iam004:validate && pnpm iam004:self-test && pnpm iam004:test && pnpm iam004:integration-test",
     "queue:foundation:validate": "node scripts/validate-queue-foundation.mjs",
     "queue:self-test": "node scripts/validate-queue-foundation.mjs --self-test",
