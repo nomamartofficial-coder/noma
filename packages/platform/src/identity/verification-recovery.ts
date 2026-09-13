@@ -12,7 +12,7 @@ export interface IdentityEmailDeliveryPayload {
 
 export interface IdentitySecurityNoticePayload {
   readonly userEmailId: string;
-  readonly eventCode: 'EMAIL_VERIFIED' | 'PASSWORD_RECOVERED';
+  readonly eventCode: 'EMAIL_VERIFIED' | 'PASSWORD_RECOVERED' | 'MFA_FACTOR_ACTIVATED' | 'MFA_FACTOR_REPLACED' | 'MFA_FACTOR_REMOVED' | 'MFA_RECOVERY_CODES_REGENERATED';
   readonly operationId: string;
 }
 
@@ -54,8 +54,8 @@ export const IDENTITY_SECURITY_NOTICE_CONTRACT = defineQueueJobContract<Identity
     const input = value as Record<string, unknown>;
     if (Object.keys(input).some((key) => !['userEmailId', 'eventCode', 'operationId'].includes(key))) throw new Error('identity notice payload contains unsupported fields');
     if (typeof input.userEmailId !== 'string' || !UUID_PATTERN.test(input.userEmailId)) throw new Error('identity notice userEmailId must be a UUID');
-    if (input.eventCode !== 'EMAIL_VERIFIED' && input.eventCode !== 'PASSWORD_RECOVERED') throw new Error('identity notice eventCode is invalid');
+    if (!['EMAIL_VERIFIED', 'PASSWORD_RECOVERED', 'MFA_FACTOR_ACTIVATED', 'MFA_FACTOR_REPLACED', 'MFA_FACTOR_REMOVED', 'MFA_RECOVERY_CODES_REGENERATED'].includes(String(input.eventCode))) throw new Error('identity notice eventCode is invalid');
     if (typeof input.operationId !== 'string' || !UUID_PATTERN.test(input.operationId)) throw new Error('identity notice operationId must be a UUID');
-    return Object.freeze({ userEmailId: input.userEmailId, eventCode: input.eventCode, operationId: input.operationId });
+    return Object.freeze({ userEmailId: input.userEmailId, eventCode: input.eventCode as IdentitySecurityNoticePayload['eventCode'], operationId: input.operationId });
   },
 });

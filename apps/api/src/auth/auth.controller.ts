@@ -4,6 +4,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   HttpCode,
   HttpException,
   HttpStatus,
@@ -14,7 +15,7 @@ import {
 } from '@nestjs/common';
 import type { ServerRuntimeConfig } from '@noma/config/server';
 import { PasswordPolicyError } from '@noma/security';
-import { AuthenticationFailure, IdentityProofFailure, type AuthenticationPrincipal } from '@noma/platform/identity';
+import { AuthenticationFailure, IdentityProofFailure, MfaFailure, type AuthenticationPrincipal } from '@noma/platform/identity';
 
 import { API_RUNTIME_CONFIG } from '../runtime-dependencies.service.js';
 import {
@@ -200,6 +201,171 @@ export class AuthController {
     response.setHeader('Set-Cookie', this.#clearCookie());
   }
 
+  @Post('step-up/password')
+  @HttpCode(HttpStatus.OK)
+  async stepUpPassword(@Body() candidate: unknown, @Req() request: RequestLike, @Res({ passthrough: true }) response: ResponseLike) {
+    this.#requireOrigin(request);
+    const body = requireObjectBody(candidate);
+    this.#rejectUnknownFields(body, ['password']);
+    try {
+      const result = await this.#mfa().submitPasswordStepUp({
+        rawSessionToken: this.#sessionToken(request),
+        password: requireString(body, 'password', 1_024),
+        networkSignal: request.socket?.remoteAddress ?? 'unknown-network',
+      });
+      if (result.rawSessionToken) response.setHeader('Set-Cookie', this.#sessionCookie(result.rawSessionToken));
+      return Object.freeze({ status: result.status });
+    } catch (error) { this.#throwMfa(error); }
+  }
+
+  @Post('mfa/password/reauthenticate')
+  @HttpCode(HttpStatus.OK)
+  async reauthenticateMfaPassword(@Body() candidate: unknown, @Req() request: RequestLike) {
+    this.#requireOrigin(request);
+    const body = requireObjectBody(candidate);
+    this.#rejectUnknownFields(body, ['password']);
+    try {
+      await this.#mfa().reauthenticatePassword({
+        rawSessionToken: this.#sessionToken(request), password: requireString(body, 'password', 1_024),
+        networkSignal: request.socket?.remoteAddress ?? 'unknown-network',
+      });
+      return Object.freeze({ status: 'PASSWORD_REAUTHENTICATED' });
+    } catch (error) { this.#throwMfa(error); }
+  }
+
+  @Post('step-up/request')
+  @HttpCode(HttpStatus.ACCEPTED)
+  async requestAccountSecurityStepUp(@Req() request: RequestLike) {
+    this.#requireOrigin(request);
+    try {
+      return await this.#mfa().requireSessionStepUp({
+        rawSessionToken: this.#sessionToken(request), requirement: 'MFA_AND_RECENT',
+        contextCode: 'ACCOUNT_SECURITY_CHANGE',
+      });
+    } catch (error) { this.#throwMfa(error); }
+  }
+
+  @Post('step-up/totp')
+  @HttpCode(HttpStatus.OK)
+  async stepUpTotp(@Body() candidate: unknown, @Req() request: RequestLike, @Res({ passthrough: true }) response: ResponseLike) {
+    this.#requireOrigin(request);
+    const body = requireObjectBody(candidate);
+    this.#rejectUnknownFields(body, ['token']);
+    try {
+      const result = await this.#mfa().submitTotpStepUp({
+        rawSessionToken: this.#sessionToken(request), token: requireString(body, 'token', 6),
+        networkSignal: request.socket?.remoteAddress ?? 'unknown-network',
+      });
+      if (result.rawSessionToken) response.setHeader('Set-Cookie', this.#sessionCookie(result.rawSessionToken));
+      return Object.freeze({ status: result.status });
+    } catch (error) { this.#throwMfa(error); }
+  }
+
+  @Post('step-up/recovery-code')
+  @HttpCode(HttpStatus.OK)
+  async stepUpRecoveryCode(@Body() candidate: unknown, @Req() request: RequestLike, @Res({ passthrough: true }) response: ResponseLike) {
+    this.#requireOrigin(request);
+    const body = requireObjectBody(candidate);
+    this.#rejectUnknownFields(body, ['code']);
+    try {
+      const result = await this.#mfa().submitRecoveryCodeStepUp({
+        rawSessionToken: this.#sessionToken(request), code: requireString(body, 'code', 22),
+        networkSignal: request.socket?.remoteAddress ?? 'unknown-network',
+      });
+      if (result.rawSessionToken) response.setHeader('Set-Cookie', this.#sessionCookie(result.rawSessionToken));
+      return Object.freeze({ status: result.status });
+    } catch (error) { this.#throwMfa(error); }
+  }
+
+  @Post('mfa/totp/enrollment/start')
+  @Header('Cache-Control', 'no-store')
+  @Header('Referrer-Policy', 'no-referrer')
+  @HttpCode(HttpStatus.OK)
+  async startTotpEnrollment(@Req() request: RequestLike) {
+    this.#requireOrigin(request);
+    try {
+      return await this.#mfa().startTotpEnrollment({
+        rawSessionToken: this.#sessionToken(request), networkSignal: request.socket?.remoteAddress ?? 'unknown-network',
+      });
+    } catch (error) { this.#throwMfa(error); }
+  }
+
+  @Post('mfa/totp/enrollment/confirm')
+  @Header('Cache-Control', 'no-store')
+  @Header('Referrer-Policy', 'no-referrer')
+  @HttpCode(HttpStatus.OK)
+  async confirmTotpEnrollment(@Body() candidate: unknown, @Req() request: RequestLike, @Res({ passthrough: true }) response: ResponseLike) {
+    this.#requireOrigin(request);
+    const body = requireObjectBody(candidate);
+    this.#rejectUnknownFields(body, ['factorId', 'token']);
+    try {
+      const result = await this.#mfa().confirmTotpEnrollment({
+        rawSessionToken: this.#sessionToken(request), factorId: requireString(body, 'factorId', 36),
+        token: requireString(body, 'token', 6), networkSignal: request.socket?.remoteAddress ?? 'unknown-network',
+      });
+      response.setHeader('Set-Cookie', this.#sessionCookie(result.rawSessionToken));
+      return Object.freeze({ status: 'ACTIVE', recoveryCodes: result.recoveryCodes });
+    } catch (error) { this.#throwMfa(error); }
+  }
+
+  @Post('mfa/totp/replacement/start')
+  @Header('Cache-Control', 'no-store')
+  @Header('Referrer-Policy', 'no-referrer')
+  @HttpCode(HttpStatus.OK)
+  async startTotpReplacement(@Req() request: RequestLike) {
+    this.#requireOrigin(request);
+    try {
+      return await this.#mfa().startTotpReplacement({
+        rawSessionToken: this.#sessionToken(request), networkSignal: request.socket?.remoteAddress ?? 'unknown-network',
+      });
+    } catch (error) { this.#throwMfa(error); }
+  }
+
+  @Post('mfa/totp/replacement/confirm')
+  @Header('Cache-Control', 'no-store')
+  @Header('Referrer-Policy', 'no-referrer')
+  @HttpCode(HttpStatus.OK)
+  async confirmTotpReplacement(@Body() candidate: unknown, @Req() request: RequestLike, @Res({ passthrough: true }) response: ResponseLike) {
+    this.#requireOrigin(request);
+    const body = requireObjectBody(candidate);
+    this.#rejectUnknownFields(body, ['factorId', 'token']);
+    try {
+      const result = await this.#mfa().confirmTotpEnrollment({
+        rawSessionToken: this.#sessionToken(request), factorId: requireString(body, 'factorId', 36),
+        token: requireString(body, 'token', 6), networkSignal: request.socket?.remoteAddress ?? 'unknown-network',
+      });
+      response.setHeader('Set-Cookie', this.#sessionCookie(result.rawSessionToken));
+      return Object.freeze({ status: 'ACTIVE', recoveryCodes: result.recoveryCodes });
+    } catch (error) { this.#throwMfa(error); }
+  }
+
+  @Post('mfa/recovery-codes/regenerate')
+  @Header('Cache-Control', 'no-store')
+  @Header('Referrer-Policy', 'no-referrer')
+  @HttpCode(HttpStatus.OK)
+  async regenerateRecoveryCodes(@Req() request: RequestLike, @Res({ passthrough: true }) response: ResponseLike) {
+    this.#requireOrigin(request);
+    try {
+      const result = await this.#mfa().regenerateRecoveryCodes({
+        rawSessionToken: this.#sessionToken(request), networkSignal: request.socket?.remoteAddress ?? 'unknown-network',
+      });
+      response.setHeader('Set-Cookie', this.#sessionCookie(result.rawSessionToken));
+      return Object.freeze({ recoveryCodes: result.recoveryCodes });
+    } catch (error) { this.#throwMfa(error); }
+  }
+
+  @Post('mfa/totp/remove')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async removeTotp(@Req() request: RequestLike, @Res({ passthrough: true }) response: ResponseLike): Promise<void> {
+    this.#requireOrigin(request);
+    try {
+      await this.#mfa().removeTotpFactor({
+        rawSessionToken: this.#sessionToken(request), networkSignal: request.socket?.remoteAddress ?? 'unknown-network',
+      });
+      response.setHeader('Set-Cookie', this.#clearCookie());
+    } catch (error) { this.#throwMfa(error); }
+  }
+
   @Get('session')
   async session(@Req() request: RequestLike) {
     const token = readAuthenticationCookie(header(request, 'cookie'), this.#cookiePolicy);
@@ -219,6 +385,29 @@ export class AuthController {
   #proofs() {
     if (!this.runtime.configured()) throw new HttpException({ code: 'AUTHENTICATION_UNAVAILABLE' }, 503);
     return this.runtime.verificationRecovery();
+  }
+
+  #mfa() {
+    if (!this.runtime.mfaConfigured()) throw new HttpException({ code: 'MFA_UNAVAILABLE' }, 503);
+    return this.runtime.mfa();
+  }
+
+  #sessionToken(request: RequestLike): string {
+    const token = readAuthenticationCookie(header(request, 'cookie'), this.#cookiePolicy);
+    if (!token) throw new HttpException({ code: 'AUTHENTICATION_REQUIRED' }, 401);
+    return token;
+  }
+
+  #throwMfa(error: unknown): never {
+    if (error instanceof HttpException) throw error;
+    if (error instanceof MfaFailure) {
+      if (error.code === 'MFA_UNAVAILABLE') throw new HttpException({ code: 'MFA_UNAVAILABLE' }, 503);
+      if (error.code === 'MFA_RATE_LIMITED') throw new HttpException({ code: 'MFA_RATE_LIMITED' }, 429);
+      if (error.code === 'MFA_AUTHORITY_CHANGED') throw new HttpException({ code: 'AUTHORITY_CHANGED' }, 409);
+      if (error.code === 'MFA_RECOVERY_REVIEW_REQUIRED') throw new HttpException({ code: 'MFA_RECOVERY_REVIEW_REQUIRED' }, 403);
+      throw new HttpException({ code: 'MFA_PROOF_FAILED' }, 401);
+    }
+    throw error;
   }
 
   #requireOrigin(request: RequestLike): void {

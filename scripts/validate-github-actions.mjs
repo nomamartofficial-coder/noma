@@ -77,7 +77,7 @@ async function validateRepository(root, { fixture = false } = {}) {
   } catch {
     errors.push(`${COMMAND_CATALOG}: required CI command catalog is missing`);
   }
-  for (const token of ['security:dependencies:validate', 'security:dependencies:self-test', 'security:encryption:validate', 'security:encryption:self-test', 'security:encryption:integration-test', 'identity:validate', 'identity:self-test', 'identity:integration-test', "'UI-005'", "'UI-006'", "'IAM-001'", "'SEC-003'", 'scripts/test-protected-role-routes.mjs', 'ui:storybook:validate', 'ui:storybook:self-test', 'ui:storybook:test', 'ui:visual:test']) {
+  for (const token of ['security:dependencies:validate', 'security:dependencies:self-test', 'security:encryption:validate', 'security:encryption:self-test', 'security:encryption:integration-test', 'iam004:validate', 'iam004:self-test', 'iam004:test', 'iam004:integration-test', 'identity:validate', 'identity:self-test', 'identity:integration-test', "'UI-005'", "'UI-006'", "'IAM-001'", "'IAM-004'", "'SEC-003'", 'scripts/test-protected-role-routes.mjs', 'ui:storybook:validate', 'ui:storybook:self-test', 'ui:storybook:test', 'ui:visual:test']) {
     if (!commandCatalog.includes(token)) errors.push(`${COMMAND_CATALOG}: missing required command token ${token}`);
   }
 
@@ -362,6 +362,8 @@ async function runSelfTest() {
     testCase('dependency advisory allowance', '.github/workflows/ci-security.yml', (s) => s.replace('          fail-on-severity: moderate', '          fail-on-severity: moderate\n          allow-ghsas: GHSA-5p2g-fcmc-qvqq'), 'dependency review advisory allowances are forbidden'),
     testCase('missing dependency floor command', COMMAND_CATALOG, (s) => s.replace('security:dependencies:validate', 'security:dependencies:removed'), 'missing required command token security:dependencies:validate'),
     testCase('missing SEC-003 validation', COMMAND_CATALOG, (s) => s.replaceAll('security:encryption:validate', 'security:encryption:removed'), 'missing required command token security:encryption:validate'),
+    testCase('missing IAM-004 integration', COMMAND_CATALOG, (s) => s.replaceAll('iam004:integration-test', 'iam004:removed'), 'missing required command token iam004:integration-test'),
+    testCase('missing IAM-004 trace lookup', COMMAND_CATALOG, (s) => s.replaceAll("'IAM-004'", "'IAM-REMOVED'"), "missing required command token 'IAM-004'"),
     testCase('missing SEC-003 integration', COMMAND_CATALOG, (s) => s.replaceAll('security:encryption:integration-test', 'security:encryption:removed'), 'missing required command token security:encryption:integration-test'),
     testCase('missing SEC-003 trace lookup', COMMAND_CATALOG, (s) => s.replaceAll("'SEC-003'", "'SEC-REMOVED'"), "missing required command token 'SEC-003'"),
     testCase('missing protected route smoke', COMMAND_CATALOG, (s) => s.replaceAll('scripts/test-protected-role-routes.mjs', 'scripts/protected-smoke-removed.mjs'), 'missing required command token scripts/test-protected-role-routes.mjs'),

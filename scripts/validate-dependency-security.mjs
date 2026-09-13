@@ -21,6 +21,7 @@ const APPROVED = Object.freeze({
   nanoid: '3.3.18',
   deepmergeTs: '8.0.2',
   argon2: '0.45.1',
+  otpauth: '9.5.2',
   passwordDictionary: '4.1.3',
   awsKms: '3.1131.0',
   dictionaryCompression: '3.0.1',
@@ -93,6 +94,9 @@ function validateSources({ root, web, security, integrations, workspace, lock })
   if (securityManifest.dependencies?.argon2 !== APPROVED.argon2) {
     errors.push(`${FILES.security}: argon2 must be pinned exactly to ${APPROVED.argon2}`);
   }
+  if (securityManifest.dependencies?.otpauth !== APPROVED.otpauth) {
+    errors.push(`${FILES.security}: otpauth must be pinned exactly to ${APPROVED.otpauth}`);
+  }
   if (securityManifest.dependencies?.['@zxcvbn-ts/language-common'] !== APPROVED.passwordDictionary) {
     errors.push(`${FILES.security}: @zxcvbn-ts/language-common must be pinned exactly to ${APPROVED.passwordDictionary}`);
   }
@@ -162,6 +166,7 @@ function validateSources({ root, web, security, integrations, workspace, lock })
     ?? yamlNamedEntry(importers, 'packages/security');
   for (const [name, version] of [
     ['argon2', APPROVED.argon2],
+    ['otpauth', APPROVED.otpauth],
     ['@zxcvbn-ts/language-common', APPROVED.passwordDictionary],
   ]) {
     const importerName = name.startsWith('@') ? `'${name}'` : name;
@@ -186,6 +191,7 @@ function validateSources({ root, web, security, integrations, workspace, lock })
   assertVersions(errors, packages, 'qs', [APPROVED.qs]);
   assertVersions(errors, packages, 'deepmerge-ts', [APPROVED.deepmergeTs]);
   assertVersions(errors, packages, 'argon2', [APPROVED.argon2]);
+  assertVersions(errors, packages, 'otpauth', [APPROVED.otpauth]);
   if (!packages.includes(`  '@aws-sdk/client-kms@${APPROVED.awsKms}':`)) {
     errors.push(`${FILES.lock}: missing approved @aws-sdk/client-kms ${APPROVED.awsKms} package`);
   }
@@ -317,6 +323,8 @@ function runSelfTest(original) {
     fixture('reintroduced image-size lock entry', 'lock', 'packages:\n', 'packages:\n  image-size@2.0.2:\n', 'vulnerable Storybook dependency is forbidden'),
     fixture('downgraded Storybook importer', 'lock', '      storybook:\n        specifier: 10.5.10', '      storybook:\n        specifier: 10.5.9', 'apps/web must resolve exact storybook 10.5.10'),
     fixture('ranged Argon2 manifest', 'security', '"argon2": "0.45.1"', '"argon2": "^0.45.1"', 'argon2 must be pinned exactly'),
+    fixture('ranged OTPAuth manifest', 'security', '"otpauth": "9.5.2"', '"otpauth": "^9.5.2"', 'otpauth must be pinned exactly'),
+    fixture('downgraded OTPAuth package', 'lock', 'otpauth@9.5.2:', 'otpauth@9.5.1:', 'otpauth package versions must be'),
     fixture('downgraded password dictionary manifest', 'security', '"@zxcvbn-ts/language-common": "4.1.3"', '"@zxcvbn-ts/language-common": "4.1.2"', '@zxcvbn-ts/language-common must be pinned exactly'),
     fixture('ranged KMS SDK manifest', 'integrations', '"@aws-sdk/client-kms": "3.1131.0"', '"@aws-sdk/client-kms": "^3.1131.0"', '@aws-sdk/client-kms must be pinned exactly'),
     fixture('removed KMS SDK release-age exception', 'workspace', "  - '@aws-sdk/client-kms@3.1131.0'\n", '', 'missing narrow AWS KMS SDK release-age exception'),

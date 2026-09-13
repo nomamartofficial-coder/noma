@@ -2,11 +2,12 @@ import { randomBytes, randomUUID } from 'node:crypto';
 
 import { Inject, Injectable, type OnApplicationShutdown, type OnModuleInit } from '@nestjs/common';
 import type { ServerRuntimeConfig } from '@noma/config/server';
-import { createDatabaseClient, createIdentityPersistence, disconnectDatabaseClient, type DatabaseClient } from '@noma/database';
-import { RedisIdentityAuthRateLimiter, type RedisIdentityAuthRateLimiter as RateLimiter } from '@noma/integrations';
+import { loadEncryptionEnvironment } from '@noma/config/encryption';
+import { createDatabaseClient, createIdentityPersistence, createMfaAuthorityPersistence, disconnectDatabaseClient, type DatabaseClient } from '@noma/database';
+import { createAwsKmsManagedKeyProvider, RedisIdentityAuthRateLimiter, type RedisIdentityAuthRateLimiter as RateLimiter } from '@noma/integrations';
 import type { ServerObservability } from '@noma/observability/server';
-import { IdentityAuthenticationService, IdentityVerificationRecoveryService } from '@noma/platform/identity';
-import { Argon2idPasswordHasher, OfflinePasswordPolicy, OpaqueSessionTokenIssuer, OneTimeIdentityTokenIssuer } from '@noma/security';
+import { IdentityAuthenticationService, IdentityVerificationRecoveryService, PrivilegedMfaService } from '@noma/platform/identity';
+import { Argon2idPasswordHasher, OfflinePasswordPolicy, OpaqueSessionTokenIssuer, OneTimeIdentityTokenIssuer, SensitiveFieldProtector, createTotpSeed, matchTotpTimeStep, generateRecoveryCodes, digestRecoveryCode } from '@noma/security';
 
 import { API_OBSERVABILITY, API_RUNTIME_CONFIG } from '../runtime-dependencies.service.js';
 
@@ -16,6 +17,7 @@ export class AuthRuntimeService implements OnModuleInit, OnApplicationShutdown {
   #rateLimiter: RateLimiter | undefined;
   #authentication: IdentityAuthenticationService | undefined;
   #verificationRecovery: IdentityVerificationRecoveryService | undefined;
+  #mfa: PrivilegedMfaService | undefined;
 
   constructor(
     @Inject(API_RUNTIME_CONFIG) private readonly config: ServerRuntimeConfig,
@@ -79,6 +81,28 @@ export class AuthRuntimeService implements OnModuleInit, OnApplicationShutdown {
       tokenTtlMilliseconds: 30 * 60_000,
       recordSecurityEvent,
     });
+    const encryption = loadEncryptionEnvironment('api', process.env);
+    if (encryption.mode === 'aws-kms') {
+      if (!encryption.keyReference || !encryption.purposes.includes('noma:mfa-seed')) {
+        throw new Error('MFA encryption capability is incomplete');
+      }
+      const protector = new SensitiveFieldProtector(
+        createAwsKmsManagedKeyProvider({ keyReference: encryption.keyReference }),
+        { principal: 'api', purpose: 'noma:mfa-seed', environment: encryption.environment, operations: ['encrypt', 'decrypt'] },
+      );
+      this.#mfa = new PrivilegedMfaService({
+        persistence: createMfaAuthorityPersistence(this.#database, {
+          ...(this.config.authentication.mfaPasswordFreshMilliseconds === undefined ? {} : { passwordFreshMilliseconds: this.config.authentication.mfaPasswordFreshMilliseconds }),
+          ...(this.config.authentication.mfaFreshMilliseconds === undefined ? {} : { mfaFreshMilliseconds: this.config.authentication.mfaFreshMilliseconds }),
+        }), passwordHasher,
+        sessionTokens, rateLimiter: this.#rateLimiter, protector,
+        codes: { createTotpSeed, matchTotpTimeStep, generateRecoveryCodes, digestRecoveryCode },
+      }, { environment: encryption.environment, now: () => new Date(), nextUuid: randomUUID,
+        ...(this.config.authentication.mfaPasswordFreshMilliseconds === undefined ? {} : { passwordFreshMilliseconds: this.config.authentication.mfaPasswordFreshMilliseconds }),
+        ...(this.config.authentication.mfaFreshMilliseconds === undefined ? {} : { mfaFreshMilliseconds: this.config.authentication.mfaFreshMilliseconds }),
+        ...(this.config.authentication.mfaChallengeMilliseconds === undefined ? {} : { challengeLifetimeMilliseconds: this.config.authentication.mfaChallengeMilliseconds }),
+        ...(this.config.authentication.mfaEnrollmentMilliseconds === undefined ? {} : { enrollmentLifetimeMilliseconds: this.config.authentication.mfaEnrollmentMilliseconds }) });
+    }
   }
 
   authentication(): IdentityAuthenticationService {
@@ -91,6 +115,13 @@ export class AuthRuntimeService implements OnModuleInit, OnApplicationShutdown {
     return this.#verificationRecovery;
   }
 
+  mfa(): PrivilegedMfaService {
+    if (!this.#mfa) throw new Error('MFA is not configured');
+    return this.#mfa;
+  }
+
+  mfaConfigured(): boolean { return Boolean(this.#mfa); }
+
   configured(): boolean {
     return Boolean(this.#authentication);
   }
@@ -100,6 +131,7 @@ export class AuthRuntimeService implements OnModuleInit, OnApplicationShutdown {
     if (this.#database) await disconnectDatabaseClient(this.#database);
     this.#authentication = undefined;
     this.#verificationRecovery = undefined;
+    this.#mfa = undefined;
     this.#rateLimiter = undefined;
     this.#database = undefined;
   }

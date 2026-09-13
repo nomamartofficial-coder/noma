@@ -26,6 +26,7 @@ const REQUIRED_FILES = [
   'packages/database/prisma/migrations/20260801000200_queue_outbox_foundation/migration.sql',
   'packages/database/prisma/migrations/20260829000100_iam_001_identity_persistence/migration.sql',
   'packages/database/prisma/migrations/20260912000100_sec_003_encryption_migration_runs/migration.sql',
+  'packages/database/prisma/migrations/20260913000100_iam_004_privileged_mfa/migration.sql',
   'packages/database/src/client.ts',
   'packages/database/src/transaction.ts',
   'packages/database/tests/client.test.mjs',
@@ -159,14 +160,18 @@ async function validate() {
     'IdentityToken',
     'JobExecution',
     'JobExecutionAttempt',
+    'MfaFactor',
+    'MfaRecoveryCode',
+    'MfaRecoveryCodeBatch',
     'OutboxEvent',
     'RecoveryAttempt',
     'Session',
+    'SessionStepUpChallenge',
     'User',
     'UserEmail',
   ];
   if (JSON.stringify(models) !== JSON.stringify(expectedModels)) {
-    fail('Prisma models must exactly match the reviewed DEV-005, IAM-001, and SEC-003 persistence set');
+    fail('Prisma models must exactly match the reviewed DEV-005, IAM-001, SEC-003, and IAM-004 persistence set');
   }
 
   const prismaConfig = await read('packages/database/prisma.config.ts');
