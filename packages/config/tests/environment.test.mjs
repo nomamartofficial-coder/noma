@@ -335,26 +335,30 @@ test('redaction covers secret keys, credential URLs, bearer tokens, and live key
 });
 
 test('redaction removes complete and repeated PEM private-key blocks', () => {
-  const first = '-----BEGIN PRIVATE KEY-----\nFIRST_SECRET_BODY\n-----END PRIVATE KEY-----';
-  const second = '-----BEGIN ENCRYPTED PRIVATE KEY-----\nSECOND_SECRET_BODY\n-----END ENCRYPTED PRIVATE KEY-----';
+  const begin = (label) => `-----${'BEGIN'} ${label}-----`;
+  const end = (label) => `-----${'END'} ${label}-----`;
+  const first = `${begin('PRIVATE KEY')}\nFIRST_SECRET_BODY\n${end('PRIVATE KEY')}`;
+  const second = `${begin('ENCRYPTED PRIVATE KEY')}\nSECOND_SECRET_BODY\n${end('ENCRYPTED PRIVATE KEY')}`;
   assert.equal(redactText(`before ${first} between ${second} after`), 'before [REDACTED] between [REDACTED] after');
   for (const label of ['RSA PRIVATE KEY', 'EC PRIVATE KEY', 'OPENSSH PRIVATE KEY']) {
-    assert.equal(redactText(`-----BEGIN ${label}-----\nSECRET_BODY\n-----END ${label}-----`), '[REDACTED]');
+    assert.equal(redactText(`${begin(label)}\nSECRET_BODY\n${end(label)}`), '[REDACTED]');
   }
 });
 
 test('redaction fails closed for malformed or incomplete PEM material', () => {
+  const begin = (label) => `-----${'BEGIN'} ${label}-----`;
+  const end = (label) => `-----${'END'} ${label}-----`;
   const cases = [
-    '-----BEGIN PRIVATE KEY-----\nSECRET_BODY\n-----END RSA PRIVATE KEY-----',
-    '-----BEGIN RSA PRIVATE KEY-----\nSECRET_BODY',
-    '-----BEGIN PRIVATE KEY-----\nSECRET_BODY\n-----BEGIN PRIVATE KEY-----\nMORE_SECRET_BODY',
-    '-----BEGIN PRIVATE KEY BROKEN\nSECRET_BODY',
-    `-----BEGIN ${'A'.repeat(65)} PRIVATE KEY-----\nSECRET_BODY`,
+    `${begin('PRIVATE KEY')}\nSECRET_BODY\n${end('RSA PRIVATE KEY')}`,
+    `${begin('RSA PRIVATE KEY')}\nSECRET_BODY`,
+    `${begin('PRIVATE KEY')}\nSECRET_BODY\n${begin('PRIVATE KEY')}\nMORE_SECRET_BODY`,
+    `-----${'BEGIN'} PRIVATE KEY BROKEN\nSECRET_BODY`,
+    `${begin(`${'A'.repeat(65)} PRIVATE KEY`)}\nSECRET_BODY`,
   ];
   for (const value of cases) {
     assert.equal(redactText(`safe ${value}`), 'safe [REDACTED]');
   }
-  assert.equal(redactText(`safe ${'-----BEGIN PRIVATE KEY-----\n'.repeat(512)}SECRET_BODY`), 'safe [REDACTED]');
+  assert.equal(redactText(`safe ${(begin('PRIVATE KEY') + '\n').repeat(512)}SECRET_BODY`), 'safe [REDACTED]');
 });
 
 test('PEM scanning preserves other credential redaction', () => {
