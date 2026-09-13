@@ -4,6 +4,7 @@
 - Date: 2026-09-13
 - Task: IAM-004
 - Issue: #62
+- Draft PR: #63
 - Requirement: REQ-IAM-004
 
 ## Decision
@@ -15,4 +16,3 @@ Persist password/MFA proof timestamps and factor/method identity on Session reco
 ## Consequences
 
 Prior sessions do not acquire fresh proof. Lost-factor recovery fails closed for IAM-009 review. No protected role surface opens because IAM-005/006 have not established authorization. TOTP is not phishing-resistant; WebAuthn and stronger factors are separate architecture work. Production use cannot begin until SEC-003's operational KMS/OIDC, privacy, monitoring, recovery, and ownership gates are satisfied. Source rollback is reviewed and database recovery remains forward-only.
-

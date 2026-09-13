@@ -1,6 +1,6 @@
 # IAM-004 privileged MFA and recent-authentication assurance
 
-> Issue: #62 · Status: source implemented for independent review · Risk: P0-AUTHORITY
+> Issue: #62 · Draft PR: #63 · Status: source implemented for independent review · Risk: P0-AUTHORITY
 
 IAM-004 adds a TOTP pilot factor, one-use recovery codes, and server-chosen step-up. It does **not** grant a role, authorize a protected surface, or activate production MFA. IAM-005/006, IAM-008/009/010, WebAuthn, SMS/email MFA, trusted devices, and production AWS provisioning remain separate work.
 
