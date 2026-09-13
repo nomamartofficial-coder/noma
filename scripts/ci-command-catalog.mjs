@@ -15,6 +15,8 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('auth-self-test', 'Run IAM-002 authentication security negative tests', 'pnpm', ['auth:self-test']),
       command('iam003-validate', 'Validate IAM-003 proof, delivery, recovery, privacy, and authority boundaries', 'pnpm', ['iam003:validate']),
       command('iam003-self-test', 'Run IAM-003 proof-flow security negative tests', 'pnpm', ['iam003:self-test']),
+      command('encryption-validate', 'Validate SEC-003 envelope, provider, migration, and runtime boundaries', 'pnpm', ['security:encryption:validate']),
+      command('encryption-self-test', 'Run SEC-003 policy negative tests', 'pnpm', ['security:encryption:self-test']),
       command('providers-validate', 'Validate provider boundaries', 'pnpm', ['providers:validate']),
       command('providers-self-test', 'Run provider boundary negative tests', 'pnpm', ['providers:self-test']),
       command('observability-validate', 'Validate observability, propagation, redaction, and health policy', 'pnpm', ['observability:validate']),
@@ -40,6 +42,7 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('traceability-iam001', 'Resolve IAM-001 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'IAM-001']),
       command('traceability-iam002', 'Resolve IAM-002 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'IAM-002']),
       command('traceability-iam003', 'Resolve IAM-003 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'IAM-003']),
+      command('traceability-sec003', 'Resolve SEC-003 traceability', 'python', ['scripts/validate_traceability.py', '--lookup', 'SEC-003']),
     ]),
     static: Object.freeze([
       command('lint', 'Lint all workspace packages', 'pnpm', ['lint']),
@@ -79,6 +82,7 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('identity-integration', 'Run IAM-001 PostgreSQL constraint and concurrency verification', 'pnpm', ['identity:integration-test']),
       command('auth-integration', 'Run IAM-002 PostgreSQL, Redis, concurrency, and real API verification', 'pnpm', ['auth:integration-test']),
       command('iam003-integration', 'Run IAM-003 PostgreSQL, Redis, delivery, and concurrency verification', 'pnpm', ['iam003:integration-test']),
+      command('encryption-integration', 'Run SEC-003 PostgreSQL encryption-migration and privacy verification', 'pnpm', ['security:encryption:integration-test']),
     ]),
     queue: Object.freeze([
       command('build-for-queue', 'Build queue workspace dependencies on the clean runner', 'pnpm', ['build']),
@@ -97,6 +101,8 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
     repository: Object.freeze([
       command('dependency-security-validate', 'Validate reviewed dependency security floors', 'pnpm', ['security:dependencies:validate']),
       command('dependency-security-self-test', 'Prove weakened dependency policies are rejected', 'pnpm', ['security:dependencies:self-test']),
+      command('encryption-validate', 'Validate SEC-003 cryptographic and authority boundaries', 'pnpm', ['security:encryption:validate']),
+      command('encryption-self-test', 'Prove SEC-003 boundary regressions are rejected', 'pnpm', ['security:encryption:self-test']),
       command('repository-secret-scan', 'Scan tracked repository content for high-confidence secrets', 'node', ['scripts/scan-repository-secrets.mjs']),
       command('repository-secret-self-test', 'Prove secret samples are rejected', 'node', ['scripts/scan-repository-secrets.mjs', '--self-test']),
       command('governance-redaction', 'Validate governed evidence and redaction controls', 'python', ['scripts/validate_governance_foundation.py', '--self-test']),
@@ -116,6 +122,9 @@ export const CI_SUITE_SEGMENTS = Object.freeze({
       command('iam003-validate', 'Validate IAM-003 proof, delivery, recovery, privacy, and authority boundaries on Windows', 'pnpm', ['iam003:validate']),
       command('iam003-self-test', 'Run IAM-003 proof-flow security negative tests on Windows', 'pnpm', ['iam003:self-test']),
       command('iam003-unit', 'Run IAM-003 deterministic and native application tests on Windows', 'pnpm', ['iam003:test']),
+      command('encryption-validate', 'Validate SEC-003 boundaries on Windows', 'pnpm', ['security:encryption:validate']),
+      command('encryption-self-test', 'Run SEC-003 negative policy fixtures on Windows', 'pnpm', ['security:encryption:self-test']),
+      command('encryption-unit', 'Run SEC-003 crypto, KMS adapter, and configuration unit tests on Windows', 'pnpm', ['security:encryption:test']),
       command('providers-validate', 'Validate provider boundaries', 'pnpm', ['providers:validate']),
       command('observability-validate', 'Validate observability boundaries and runtime wiring', 'pnpm', ['observability:validate']),
       command('observability-self-test', 'Run observability policy negative tests', 'pnpm', ['observability:self-test']),

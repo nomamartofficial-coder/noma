@@ -117,7 +117,7 @@ TIER-001,EP12,Implement Priority tier configuration and limited-capacity guard,P
 TIER-002,EP12,Implement Saver batch suggestion and controlled activation,P1,P1-PROGRESSIVE,NOT_STARTED,Delivery
 SEC-001,EP13,"Implement production HTTP, cookie, CSRF, CORS, and CSP baseline",P0,P0-AUTHORITY,NOT_STARTED,Security/Engineering
 SEC-002,EP13,Implement risk-sensitive rate limits and abuse signals,P0,P0-AUTHORITY,NOT_STARTED,Security
-SEC-003,EP13,"Implement envelope encryption, masking, and key-version migration",P0,P0-PRIVACY,NOT_STARTED,Security/Data
+SEC-003,EP13,"Implement envelope encryption, masking, and key-version migration",P0,P0-PRIVACY,IN_REVIEW,Security/Data
 CMP-001,EP13,"Create processing, lawful-basis, retention, transfer, DPIA, and provider registers",P0,P0-PRIVACY,NOT_STARTED,Privacy/Legal
 CMP-002,EP13,"Implement consent, policy acceptance, data-rights, retention, and deletion workflows",P0,P0-PRIVACY,NOT_STARTED,Privacy/Engineering
 OBS-001,EP13,"Configure Sentry, PostHog EU, Grafana/OTel, and redaction",P0,P0-RECOVERY,NOT_STARTED,DevOps/Security/Data

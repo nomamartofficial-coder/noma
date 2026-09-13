@@ -9,3 +9,5 @@ The Redis/BullMQ adapter lives here. Producers are fail-fast, Worker connections
 IAM-002 adds the fail-fast Redis authentication limiter. It stores only HMAC-correlated action/identity/network/pair keys, uses high shared-network ceilings, and is never session authority. No IAM-002 queue job or Worker processor is added. See [`AUTHENTICATION.md`](../../AUTHENTICATION.md).
 
 DEV-007's local provider simulators also live here, but are exported only from `@noma/integrations/testing`. Production application code must never import that entry point. The simulators implement `@noma/platform/providers`, perform no network or persistence operation, and expose inspection only to test composition in `@noma/testing/providers`. See [`SIMULATORS.md`](../../SIMULATORS.md).
+
+SEC-003 adds the production AWS KMS managed-key adapter and a separately exported deterministic test-only provider. The public factory accepts a Frankfurt key ARN, not credentials or a transport override. It requires managed web identity and never sends personal bindings in KMS context. See [`ENCRYPTION.md`](../../ENCRYPTION.md).

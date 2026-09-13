@@ -26,6 +26,7 @@
     "clean": "node ../../scripts/clean-package.mjs ."
   },
   "dependencies": {
+    "@aws-sdk/client-kms": "3.1131.0",
     "@noma/contracts": "workspace:*",
     "@noma/observability": "workspace:*",
     "@noma/platform": "workspace:*",

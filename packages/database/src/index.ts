@@ -37,6 +37,19 @@ export {
   type JobExecutionLease,
 } from './job-execution.js';
 export { createIdentityPersistence } from './identity.js';
+export {
+  EncryptionMigrationConflict,
+  blockEncryptionMigrationRun,
+  checkpointEncryptionMigrationRecord,
+  claimEncryptionMigrationRun,
+  createEncryptionMigrationRun,
+  reconcileEncryptionMigrationRun,
+  resumeBlockedEncryptionMigrationRun,
+  type CreateEncryptionMigrationRunInput,
+  type MigrationCheckpointInput,
+  type ReconciliationProbe,
+  type SafeMigrationFailureCode,
+} from './encryption-migration.js';
 
 export const databasePackage = { name: '@noma/database', boundary: 'server' } as const;
 export type DatabasePackage = typeof databasePackage;

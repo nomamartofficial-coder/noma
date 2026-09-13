@@ -55,7 +55,7 @@ console.log(`PASS: ${result.workflows} workflows, ${result.jobs} bounded jobs, $
 if (process.argv.includes('--self-test')) {
   await runSelfTest();
   selfTestGateEvaluator();
-  console.log('PASS: 33 injected workflow policy violations were rejected in isolated fixtures');
+  console.log('PASS: 36 injected workflow policy violations were rejected in isolated fixtures');
   console.log('PASS: stable gate accepted success and rejected failure, skip, and cancellation');
 }
 
@@ -77,7 +77,7 @@ async function validateRepository(root, { fixture = false } = {}) {
   } catch {
     errors.push(`${COMMAND_CATALOG}: required CI command catalog is missing`);
   }
-  for (const token of ['security:dependencies:validate', 'security:dependencies:self-test', 'identity:validate', 'identity:self-test', 'identity:integration-test', "'UI-005'", "'UI-006'", "'IAM-001'", 'scripts/test-protected-role-routes.mjs', 'ui:storybook:validate', 'ui:storybook:self-test', 'ui:storybook:test', 'ui:visual:test']) {
+  for (const token of ['security:dependencies:validate', 'security:dependencies:self-test', 'security:encryption:validate', 'security:encryption:self-test', 'security:encryption:integration-test', 'identity:validate', 'identity:self-test', 'identity:integration-test', "'UI-005'", "'UI-006'", "'IAM-001'", "'SEC-003'", 'scripts/test-protected-role-routes.mjs', 'ui:storybook:validate', 'ui:storybook:self-test', 'ui:storybook:test', 'ui:visual:test']) {
     if (!commandCatalog.includes(token)) errors.push(`${COMMAND_CATALOG}: missing required command token ${token}`);
   }
 
@@ -361,6 +361,9 @@ async function runSelfTest() {
     testCase('weakened dependency severity', '.github/workflows/ci-security.yml', (s) => s.replace('fail-on-severity: moderate', 'fail-on-severity: high'), 'security control missing fail-on-severity: moderate'),
     testCase('dependency advisory allowance', '.github/workflows/ci-security.yml', (s) => s.replace('          fail-on-severity: moderate', '          fail-on-severity: moderate\n          allow-ghsas: GHSA-5p2g-fcmc-qvqq'), 'dependency review advisory allowances are forbidden'),
     testCase('missing dependency floor command', COMMAND_CATALOG, (s) => s.replace('security:dependencies:validate', 'security:dependencies:removed'), 'missing required command token security:dependencies:validate'),
+    testCase('missing SEC-003 validation', COMMAND_CATALOG, (s) => s.replaceAll('security:encryption:validate', 'security:encryption:removed'), 'missing required command token security:encryption:validate'),
+    testCase('missing SEC-003 integration', COMMAND_CATALOG, (s) => s.replaceAll('security:encryption:integration-test', 'security:encryption:removed'), 'missing required command token security:encryption:integration-test'),
+    testCase('missing SEC-003 trace lookup', COMMAND_CATALOG, (s) => s.replaceAll("'SEC-003'", "'SEC-REMOVED'"), "missing required command token 'SEC-003'"),
     testCase('missing protected route smoke', COMMAND_CATALOG, (s) => s.replaceAll('scripts/test-protected-role-routes.mjs', 'scripts/protected-smoke-removed.mjs'), 'missing required command token scripts/test-protected-role-routes.mjs'),
     testCase('missing UI-005 trace lookup', COMMAND_CATALOG, (s) => s.replace("'UI-005'", "'UI-REMOVED'"), "missing required command token 'UI-005'"),
     testCase('missing UI-006 trace lookup', COMMAND_CATALOG, (s) => s.replace("'UI-006'", "'UI-REMOVED'"), "missing required command token 'UI-006'"),

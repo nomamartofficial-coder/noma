@@ -10,6 +10,8 @@ The pipeline converts Noma's existing deterministic local commands into four Git
 
 All workflows run on pull requests targeting `main`, pushes to `main`, merge-group checks, and manual dispatch. They deliberately omit path filters so required checks do not disappear for documentation, migration, workflow, or traceability changes. Pull-request workflows never use `pull_request_target`.
 
+SEC-003 validation and negative policy tests run in the existing Quality, Security, and Windows command graphs; isolated PostgreSQL migration/concurrency tests run in Integration. Windows also runs the deterministic crypto, mocked KMS, and configuration tests. No CI runner receives AWS KMS credentials, and the five stable gate names are unchanged. See [`ENCRYPTION.md`](ENCRYPTION.md).
+
 ## Codex authoring independence
 
 The post-`UI-006` model and reasoning-effort policy in [`CODEX_EXECUTION.md`](CODEX_EXECUTION.md) governs authoring only. It does not change this pipeline's job graph, required commands, stable gate names, evidence, or branch protection.

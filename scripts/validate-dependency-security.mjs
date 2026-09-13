@@ -6,6 +6,7 @@ const FILES = Object.freeze({
   root: 'package.json',
   web: 'apps/web/package.json',
   security: 'packages/security/package.json',
+  integrations: 'packages/integrations/package.json',
   workspace: 'pnpm-workspace.yaml',
   lock: 'pnpm-lock.yaml',
 });
@@ -21,6 +22,7 @@ const APPROVED = Object.freeze({
   deepmergeTs: '8.0.2',
   argon2: '0.45.1',
   passwordDictionary: '4.1.3',
+  awsKms: '3.1131.0',
   dictionaryCompression: '3.0.1',
   ui006: Object.freeze({
     '@playwright/test': '1.62.1',
@@ -56,15 +58,17 @@ async function readSources(root) {
   ));
 }
 
-function validateSources({ root, web, security, workspace, lock }) {
+function validateSources({ root, web, security, integrations, workspace, lock }) {
   const errors = [];
   let rootManifest;
   let webManifest;
   let securityManifest;
+  let integrationsManifest;
   try {
     rootManifest = JSON.parse(root);
     webManifest = JSON.parse(web);
     securityManifest = JSON.parse(security);
+    integrationsManifest = JSON.parse(integrations);
   } catch (error) {
     errors.push(`${FILES.web}: invalid JSON: ${error.message}`);
     return errors;
@@ -91,6 +95,9 @@ function validateSources({ root, web, security, workspace, lock }) {
   }
   if (securityManifest.dependencies?.['@zxcvbn-ts/language-common'] !== APPROVED.passwordDictionary) {
     errors.push(`${FILES.security}: @zxcvbn-ts/language-common must be pinned exactly to ${APPROVED.passwordDictionary}`);
+  }
+  if (integrationsManifest.dependencies?.['@aws-sdk/client-kms'] !== APPROVED.awsKms) {
+    errors.push(`${FILES.integrations}: @aws-sdk/client-kms must be pinned exactly to ${APPROVED.awsKms}`);
   }
   if (!workspace.includes('  argon2: true\n')) {
     errors.push(`${FILES.workspace}: argon2 must be the only approved IAM-002 native build addition`);
@@ -126,6 +133,9 @@ function validateSources({ root, web, security, workspace, lock }) {
   if (!workspace.includes(`minimumReleaseAgeExclude:\n  - deepmerge-ts@${APPROVED.deepmergeTs}\n`)) {
     errors.push(`${FILES.workspace}: missing reviewed deepmerge-ts release-age exception for ${APPROVED.deepmergeTs}`);
   }
+  if (!workspace.includes(`  - '@aws-sdk/client-kms@${APPROVED.awsKms}'\n`)) {
+    errors.push(`${FILES.workspace}: missing narrow AWS KMS SDK release-age exception`);
+  }
   if (!workspace.includes("peerDependencyRules:\n  allowedVersions:\n    'tsconfck@3.1.6>typescript': 6.0.3\n")) {
     errors.push(`${FILES.workspace}: missing narrow tsconfck TypeScript 6.0.3 peer allowance`);
   }
@@ -159,6 +169,11 @@ function validateSources({ root, web, security, workspace, lock }) {
       errors.push(`${FILES.lock}: packages/security must resolve exact ${name} ${version}`);
     }
   }
+  const integrationsImporter = yamlEntryBlocks(importers, 'packages/integrations@').at(0)
+    ?? yamlNamedEntry(importers, 'packages/integrations');
+  if (!integrationsImporter.includes(`      '@aws-sdk/client-kms':\n        specifier: ${APPROVED.awsKms}\n        version: ${APPROVED.awsKms}`)) {
+    errors.push(`${FILES.lock}: packages/integrations must resolve exact @aws-sdk/client-kms ${APPROVED.awsKms}`);
+  }
 
   const packages = yamlSection(lock, 'packages');
   assertVersions(errors, packages, 'next', [APPROVED.next]);
@@ -171,6 +186,9 @@ function validateSources({ root, web, security, workspace, lock }) {
   assertVersions(errors, packages, 'qs', [APPROVED.qs]);
   assertVersions(errors, packages, 'deepmerge-ts', [APPROVED.deepmergeTs]);
   assertVersions(errors, packages, 'argon2', [APPROVED.argon2]);
+  if (!packages.includes(`  '@aws-sdk/client-kms@${APPROVED.awsKms}':`)) {
+    errors.push(`${FILES.lock}: missing approved @aws-sdk/client-kms ${APPROVED.awsKms} package`);
+  }
   if (!packages.includes(`  '@zxcvbn-ts/language-common@${APPROVED.passwordDictionary}':`)) {
     errors.push(`${FILES.lock}: missing exact @zxcvbn-ts/language-common ${APPROVED.passwordDictionary} package`);
   }
@@ -300,6 +318,9 @@ function runSelfTest(original) {
     fixture('downgraded Storybook importer', 'lock', '      storybook:\n        specifier: 10.5.10', '      storybook:\n        specifier: 10.5.9', 'apps/web must resolve exact storybook 10.5.10'),
     fixture('ranged Argon2 manifest', 'security', '"argon2": "0.45.1"', '"argon2": "^0.45.1"', 'argon2 must be pinned exactly'),
     fixture('downgraded password dictionary manifest', 'security', '"@zxcvbn-ts/language-common": "4.1.3"', '"@zxcvbn-ts/language-common": "4.1.2"', '@zxcvbn-ts/language-common must be pinned exactly'),
+    fixture('ranged KMS SDK manifest', 'integrations', '"@aws-sdk/client-kms": "3.1131.0"', '"@aws-sdk/client-kms": "^3.1131.0"', '@aws-sdk/client-kms must be pinned exactly'),
+    fixture('removed KMS SDK release-age exception', 'workspace', "  - '@aws-sdk/client-kms@3.1131.0'\n", '', 'missing narrow AWS KMS SDK release-age exception'),
+    fixture('downgraded KMS SDK importer', 'lock', "      '@aws-sdk/client-kms':\n        specifier: 3.1131.0", "      '@aws-sdk/client-kms':\n        specifier: 3.1130.0", 'packages/integrations must resolve exact @aws-sdk/client-kms'),
     fixture('removed Argon2 build approval', 'workspace', '  argon2: true\n', '', 'argon2 must be the only approved IAM-002 native build addition'),
     fixture('downgraded Argon2 lock package', 'lock', 'argon2@0.45.1:', 'argon2@0.45.0:', 'argon2 package versions must be'),
     fixture('downgraded dictionary compression edge', 'lock', "      '@zxcvbn-ts/dictionary-compression': 3.0.1", "      '@zxcvbn-ts/dictionary-compression': 3.0.0", 'password dictionary must resolve'),

@@ -399,3 +399,4 @@ export function createLocalProviderSimulators(options: CreateProviderSimulatorOp
   });
   return Object.freeze({ ports, inspector });
 }
+export { TestOnlyManagedKeyProvider } from './test-managed-key-provider.js';

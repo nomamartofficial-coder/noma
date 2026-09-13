@@ -82,6 +82,8 @@ See [`docs/01-mvp-scope.md`](docs/01-mvp-scope.md) for the complete classificati
 
 The repository documentation is the source of truth.
 
+SEC-003's source-only managed-key design, strict envelope, and rotation boundary are documented in [`ENCRYPTION.md`](ENCRYPTION.md); no production encryption is active.
+
 | File | Purpose |
 |---|---|
 | [`docs/00-product-vision.md`](docs/00-product-vision.md) | Why Noma exists, target users, principles, pilot objective, non-goals, and long-term direction |
