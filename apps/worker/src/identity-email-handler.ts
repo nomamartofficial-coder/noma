@@ -156,6 +156,11 @@ export function createIdentityEmailQueueRegistrations(options: {
       }
       const contact = await persistence.readIdentityEmailContact(job.event.payload.userEmailId);
       if (!contact) {
+        if (job.event.payload.eventCode.startsWith('MFA_')) {
+          const failure = toSafeJobFailure('permanent', 'MFA_NOTICE_RECIPIENT_UNAVAILABLE', 'MFA security notice requires owned recipient review');
+          await deadLetterJobExecution(options.database, acquisition, failure, IDENTITY_SECURITY_NOTICE_CONTRACT.deadLetter);
+          throw new PermanentJobError(failure.code, failure.message);
+        }
         await completeJobExecution(options.database, acquisition, async () => undefined);
         return;
       }
@@ -164,7 +169,9 @@ export function createIdentityEmailQueueRegistrations(options: {
         identity: { operationId: job.event.payload.operationId, idempotencyKey: job.jobId, correlationId: job.correlationId, attempt: 1, deadlineAt: new Date(startedAt.getTime() + 15_000).toISOString() },
         environment: environment(options.applicationEnvironment),
         messageIdentity: job.event.payload.operationId,
-        templateKey: job.event.payload.eventCode === 'EMAIL_VERIFIED' ? 'noma-email-verified-v1' : 'noma-password-recovered-v1',
+        templateKey: job.event.payload.eventCode === 'EMAIL_VERIFIED' ? 'noma-email-verified-v1'
+          : job.event.payload.eventCode === 'PASSWORD_RECOVERED' ? 'noma-password-recovered-v1'
+            : 'noma-mfa-security-notice-v1',
         templateVersion: 'version-001',
         recipientReference: `email-${contact.email.id}`,
         recipientAddress: contact.email.displayEmail,

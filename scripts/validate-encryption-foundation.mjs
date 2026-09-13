@@ -34,7 +34,7 @@ function validate(sources, productionFiles) {
   if (sources.integrationIndex.includes('TestOnlyManagedKeyProvider') || sources.integrationIndex.includes('provider-simulators')) errors.push('production integrations entry must not export the test-only provider');
   for (const token of ["mode === 'test-only' && (remote", "['worker', 'web'].includes(runtime)", 'AWS_ACCESS_KEY_ID', 'AWS_ROLE_ARN', 'AWS_WEB_IDENTITY_TOKEN_FILE']) has('config', token, `encryption configuration missing ${token}`);
   for (const token of ['EncryptionMigrationRun', 'leaseExpiresAt', 'remainingCount']) has('schema', token, `technical migration schema missing ${token}`);
-  if (/model\s+(?:MfaFactor|EncryptedValue|BankAccount)/.test(sources.schema)) errors.push('SEC-003 must not add business encrypted-value or MFA models');
+  if (/model\s+(?:EncryptedValue|BankAccount)/.test(sources.schema)) errors.push('SEC-003 must not add generic business encrypted-value models');
   for (const token of ['CREATE TABLE "encryption_migration_runs"', 'encryption_migration_runs_active_consumer_key', 'CHECK (']) has('sql', token, `encryption migration SQL missing ${token}`);
   if (/CREATE TABLE\s+"?(?:encrypted_values|mfa_factors|bank_accounts)/i.test(sources.sql)) errors.push('SEC-003 migration must not create business or IAM-004 tables');
   for (const token of ['applyRecordCas(transaction)', 'updateMany({', 'expectedVersion', 'expectedCursor', 'countOutdated()', 'targetWritePolicyActive()']) has('repository', token, `migration CAS or reconciliation missing ${token}`);
@@ -73,7 +73,7 @@ function selfTest(sources, productionFiles) {
     ['missing OIDC requirement', { aws: sources.aws.replaceAll('AWS_WEB_IDENTITY_TOKEN_FILE', 'REMOVED_WEB_IDENTITY') }, 'AWS KMS adapter missing'],
     ['remote test provider', { config: sources.config.replace("mode === 'test-only' && (remote", "mode === 'test-only' && (false") }, 'encryption configuration missing'],
     ['production test export', { integrationIndex: `${sources.integrationIndex}\nexport { TestOnlyManagedKeyProvider } from './test-managed-key-provider.js';` }, 'production integrations entry'],
-    ['MFA model', { schema: `${sources.schema}\nmodel MfaFactor { id String @id }` }, 'must not add business encrypted-value'],
+    ['MFA in SEC-003 migration', { sql: `${sources.sql}\nCREATE TABLE mfa_factors (id UUID);` }, 'must not create business or IAM-004'],
     ['generic encrypted table', { sql: `${sources.sql}\nCREATE TABLE encrypted_values (id UUID);` }, 'must not create business or IAM-004'],
     ['missing CAS', { repository: sources.repository.replace('applyRecordCas(transaction)', 'applyRecordCas(null)') }, 'migration CAS or reconciliation missing'],
     ['missing CI integration', { ci: sources.ci.replace("['security:encryption:integration-test']", "['removed:integration-test']") }, 'existing CI catalog missing'],

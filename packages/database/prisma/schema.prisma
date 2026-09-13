@@ -47,6 +47,37 @@ enum AuthenticationAssurance {
   @@map("authentication_assurance")
 }
 
+enum MfaFactorStatus {
+  PENDING_ENROLLMENT
+  ACTIVE
+  REPLACED
+  REVOKED
+
+  @@map("mfa_factor_status")
+}
+
+enum MfaRecoveryBatchStatus {
+  ACTIVE
+  INVALIDATED
+
+  @@map("mfa_recovery_batch_status")
+}
+
+enum StepUpRequirement {
+  RECENT_AUTH
+  MFA
+  MFA_AND_RECENT
+
+  @@map("step_up_requirement")
+}
+
+enum MfaMethod {
+  TOTP
+  RECOVERY_CODE
+
+  @@map("mfa_method")
+}
+
 enum IdentityTokenPurpose {
   EMAIL_VERIFICATION
   PASSWORD_RECOVERY
@@ -151,6 +182,8 @@ model User {
   credentials      Credential[]
   sessions         Session[]
   recoveryAttempts RecoveryAttempt[]
+  mfaFactors       MfaFactor[]
+  mfaRecoveryCodeBatches MfaRecoveryCodeBatch[]
 
   @@index([status, createdAt], map: "users_status_created_idx")
   @@map("users")
@@ -197,6 +230,10 @@ model Session {
   status                SessionStatus           @default(ACTIVE)
   assurance             AuthenticationAssurance
   issuedSecurityVersion Int                     @map("issued_security_version")
+  passwordAuthenticatedAt DateTime?             @map("password_authenticated_at") @db.Timestamptz(6)
+  mfaVerifiedAt         DateTime?                @map("mfa_verified_at") @db.Timestamptz(6)
+  mfaMethod             MfaMethod?               @map("mfa_method")
+  mfaFactorId           String?                  @map("mfa_factor_id") @db.Uuid
   issuedAt              DateTime                @map("issued_at") @db.Timestamptz(6)
   lastUsedAt            DateTime                @map("last_used_at") @db.Timestamptz(6)
   idleExpiresAt         DateTime                @map("idle_expires_at") @db.Timestamptz(6)
@@ -212,9 +249,87 @@ model Session {
   createdAt             DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt             DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
   user                  User                    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  mfaFactor             MfaFactor?              @relation("SessionMfaFactor", fields: [mfaFactorId], references: [id], onDelete: Restrict)
+  stepUpChallenges      SessionStepUpChallenge[]
 
   @@index([userId, status, absoluteExpiresAt], map: "sessions_user_status_expiry_idx")
   @@map("sessions")
+}
+
+model MfaFactor {
+  id                       String          @id @db.Uuid
+  userId                   String          @map("user_id") @db.Uuid
+  status                   MfaFactorStatus
+  encryptedSeedEnvelope    Json            @map("encrypted_seed_envelope") @db.JsonB
+  algorithm                String          @db.VarChar(16)
+  digits                   Int
+  periodSeconds            Int             @map("period_seconds")
+  lastAcceptedTimeStep     BigInt?         @map("last_accepted_time_step")
+  enrollmentExpiresAt      DateTime        @map("enrollment_expires_at") @db.Timestamptz(6)
+  activatedAt              DateTime?       @map("activated_at") @db.Timestamptz(6)
+  replacedAt               DateTime?       @map("replaced_at") @db.Timestamptz(6)
+  revokedAt                DateTime?       @map("revoked_at") @db.Timestamptz(6)
+  version                  Int             @default(0)
+  createdAt                DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user                     User            @relation(fields: [userId], references: [id], onDelete: Restrict)
+  recoveryBatches          MfaRecoveryCodeBatch[]
+  proofSessions            Session[]              @relation("SessionMfaFactor")
+  proofChallenges          SessionStepUpChallenge[] @relation("ChallengeMfaFactor")
+
+  @@index([userId, status], map: "mfa_factors_user_status_idx")
+  @@map("mfa_factors")
+}
+
+model MfaRecoveryCodeBatch {
+  id             String                 @id @db.Uuid
+  userId         String                 @map("user_id") @db.Uuid
+  factorId       String                 @map("factor_id") @db.Uuid
+  status         MfaRecoveryBatchStatus
+  issuedAt       DateTime               @map("issued_at") @db.Timestamptz(6)
+  invalidatedAt  DateTime?              @map("invalidated_at") @db.Timestamptz(6)
+  version        Int                    @default(0)
+  user           User                   @relation(fields: [userId], references: [id], onDelete: Restrict)
+  factor         MfaFactor              @relation(fields: [factorId], references: [id], onDelete: Restrict)
+  codes          MfaRecoveryCode[]
+
+  @@index([factorId, status], map: "mfa_recovery_batches_factor_status_idx")
+  @@map("mfa_recovery_code_batches")
+}
+
+model MfaRecoveryCode {
+  id             String               @id @db.Uuid
+  batchId        String               @map("batch_id") @db.Uuid
+  codeDigest     String               @unique(map: "mfa_recovery_codes_digest_key") @map("code_digest") @db.VarChar(128)
+  consumedAt     DateTime?            @map("consumed_at") @db.Timestamptz(6)
+  invalidatedAt  DateTime?            @map("invalidated_at") @db.Timestamptz(6)
+  version        Int                  @default(0)
+  batch          MfaRecoveryCodeBatch @relation(fields: [batchId], references: [id], onDelete: Restrict)
+
+  @@index([batchId, consumedAt, invalidatedAt], map: "mfa_recovery_codes_usable_idx")
+  @@map("mfa_recovery_codes")
+}
+
+model SessionStepUpChallenge {
+  id                    String            @id @db.Uuid
+  sessionId             String            @map("session_id") @db.Uuid
+  requirement           StepUpRequirement
+  contextCode           String            @map("context_code") @db.VarChar(80)
+  issuedSecurityVersion Int               @map("issued_security_version")
+  passwordProvenAt      DateTime?         @map("password_proven_at") @db.Timestamptz(6)
+  mfaProvenAt           DateTime?         @map("mfa_proven_at") @db.Timestamptz(6)
+  mfaMethod             MfaMethod?        @map("mfa_method")
+  mfaFactorId           String?           @map("mfa_factor_id") @db.Uuid
+  issuedAt              DateTime          @map("issued_at") @db.Timestamptz(6)
+  expiresAt             DateTime          @map("expires_at") @db.Timestamptz(6)
+  completedAt           DateTime?         @map("completed_at") @db.Timestamptz(6)
+  invalidatedAt         DateTime?         @map("invalidated_at") @db.Timestamptz(6)
+  version               Int               @default(0)
+  session               Session           @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  mfaFactor             MfaFactor?        @relation("ChallengeMfaFactor", fields: [mfaFactorId], references: [id], onDelete: Restrict)
+
+  @@index([sessionId, expiresAt], map: "session_step_up_challenges_session_expiry_idx")
+  @@map("session_step_up_challenges")
 }
 
 model IdentityToken {

@@ -36,5 +36,8 @@
     "@testcontainers/postgresql": "12.0.4",
     "@testcontainers/redis": "12.0.4",
     "testcontainers": "12.0.4"
+  },
+  "devDependencies": {
+    "otpauth": "9.5.2"
   }
 }

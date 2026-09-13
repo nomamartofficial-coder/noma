@@ -12,4 +12,6 @@ IAM-002 adds bounded authentication operations without a schema migration. `regi
 
 SEC-003 adds only technical `encryption_migration_runs` persistence and bounded lease, CAS checkpoint, blocked-resume, and reconciliation operations. Future consumers must own their encrypted tables and field-level CAS. See [`ENCRYPTION.md`](../../ENCRYPTION.md).
 
+IAM-004 owns a separate forward-only migration for encrypted factor envelopes, append-only recovery-code evidence, step-up challenges, and nullable Session proof timestamps. Its bounded repository uses PostgreSQL locks and compare-and-swap for one-winner replay and session rotation; raw seeds/codes never belong in the database. See [`MFA.md`](../../MFA.md).
+
 Canonical guidance and commands are in [`DATABASE.md`](../../DATABASE.md) and [`QUEUE.md`](../../QUEUE.md).

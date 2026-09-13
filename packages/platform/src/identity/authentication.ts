@@ -1,5 +1,6 @@
 import type { AccountStatus, AuthenticatedSessionRecord, IdentityPersistence } from './contracts.js';
 import { normalizeIdentityEmail } from './normalization.js';
+import { evaluateAuthenticationAssurance } from './assurance.js';
 
 export const PASSWORD_AUTHENTICATION_ACCOUNT_STATUSES = ['PENDING_EMAIL', 'ACTIVE'] as const satisfies readonly AccountStatus[];
 export const PASSWORD_SIGN_IN_ACCOUNT_STATUSES = PASSWORD_AUTHENTICATION_ACCOUNT_STATUSES;
@@ -10,6 +11,13 @@ export const AUTH_RATE_LIMIT_ACTIONS = [
   'EMAIL_VERIFICATION_CONFIRM',
   'PASSWORD_RECOVERY_REQUEST',
   'PASSWORD_RECOVERY_COMPLETE',
+  'PASSWORD_REAUTH',
+  'TOTP_ENROLLMENT_CONFIRM',
+  'TOTP_STEP_UP',
+  'MFA_RECOVERY_CODE',
+  'MFA_FACTOR_REPLACE',
+  'MFA_FACTOR_REMOVE',
+  'MFA_RECOVERY_CODES_REGENERATE',
 ] as const;
 export type AuthRateLimitAction = (typeof AUTH_RATE_LIMIT_ACTIONS)[number];
 
@@ -106,6 +114,8 @@ export interface IdentityAuthenticationOptions {
   readonly idleMilliseconds: number;
   readonly absoluteMilliseconds: number;
   readonly touchAfterMilliseconds: number;
+  readonly mfaPasswordFreshMilliseconds?: number;
+  readonly mfaFreshMilliseconds?: number;
   readonly now?: () => Date;
   readonly nextUuid: () => string;
   readonly nextPublicReference: () => string;
@@ -304,7 +314,7 @@ export class IdentityAuthenticationService {
         record = Object.freeze({ ...record, session: touched });
       }
     }
-    return toAuthenticationPrincipal(record);
+    return toAuthenticationPrincipal(record, now, this.#options);
   }
 
   async signOut(rawToken: string | undefined): Promise<void> {
@@ -360,12 +370,16 @@ function requirePasswordAuthenticationSession(record: AuthenticatedSessionRecord
   return record;
 }
 
-export function toAuthenticationPrincipal(record: AuthenticatedSessionRecord): AuthenticationPrincipal {
+export function toAuthenticationPrincipal(record: AuthenticatedSessionRecord, now: Date, freshness?: Pick<IdentityAuthenticationOptions, 'mfaPasswordFreshMilliseconds' | 'mfaFreshMilliseconds'>): AuthenticationPrincipal {
   return Object.freeze({
     userId: record.user.id,
     sessionId: record.session.id,
     accountStatus: record.user.status,
-    assurance: record.session.assurance,
+    assurance: evaluateAuthenticationAssurance(record, now, {
+      requireContactVerified: false,
+      ...(freshness?.mfaPasswordFreshMilliseconds === undefined ? {} : { passwordMaxAgeMilliseconds: freshness.mfaPasswordFreshMilliseconds }),
+      ...(freshness?.mfaFreshMilliseconds === undefined ? {} : { mfaMaxAgeMilliseconds: freshness.mfaFreshMilliseconds }),
+    }).assurance,
     issuedAt: record.session.issuedAt,
     idleExpiresAt: record.session.idleExpiresAt,
     absoluteExpiresAt: record.session.absoluteExpiresAt,

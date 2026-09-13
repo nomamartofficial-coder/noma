@@ -1,0 +1,25 @@
+# IAM-004 privileged MFA and recent-authentication assurance
+
+> Issue: #62 · Draft PR: #63 · Status: source implemented for independent review · Risk: P0-AUTHORITY
+
+IAM-004 adds a TOTP pilot factor, one-use recovery codes, and server-chosen step-up. It does **not** grant a role, authorize a protected surface, or activate production MFA. IAM-005/006, IAM-008/009/010, WebAuthn, SMS/email MFA, trusted devices, and production AWS provisioning remain separate work.
+
+## Authority and secrets
+
+The API constructs `PrivilegedMfaService` only when SEC-003 is configured with an AWS KMS capability for `noma:mfa-seed`; missing encryption capability returns `MFA_UNAVAILABLE`. The seed is 20 random bytes, encrypted with SEC-003 `SensitiveFieldProtector` using application AAD bound to User ID, factor ID, and `TOTP`. Neither KMS context nor outbox payload contains the seed or personal identifiers. The provisioning URI is returned only to the enrolling browser, with `Cache-Control: no-store` and `Referrer-Policy: no-referrer`; it is never persisted. Its bytes are cleared on the best-effort JavaScript boundary. No production test key or plaintext fallback is available.
+
+`otpauth@9.5.2` implements SHA-1, six digits, 30-second steps, and ±1-step validation. PostgreSQL `lastAcceptedTimeStep` is monotonically advanced under a User/Session row lock and factor compare-and-swap; a repeated or older step loses. Ten independently random 128-bit base64url recovery codes are shown once. PostgreSQL stores domain-separated SHA-256 digests only; consumed and invalidated history remains append-only evidence. Recovery codes are not a way to remove MFA or recover a lost factor without a valid session and current password proof. Lost factor plus unavailable codes returns `MFA_RECOVERY_REVIEW_REQUIRED`; IAM-009 owns the future review workflow.
+
+Initial enrollment requires `ACTIVE` account, verified primary email, a current session, and password proof within ten minutes. The pending factor has a ten-minute deadline and cannot authenticate. Confirmation atomically activates it, replaces an old factor only after successor proof, issues the new recovery batch, advances `securityVersion`, revokes other sessions, rotates the current session token, and records a safe security-notice outbox event. Regeneration and removal require current password and MFA evidence; both advance `securityVersion` and invalidate stale sessions. Password recovery from IAM-003 revokes sessions but does not remove an active factor or unused recovery codes.
+
+## Session evidence and step-up
+
+Existing sessions have NULL password/MFA proof timestamps. New sign-in is not silently treated as a recent-password or MFA proof. Session assurance is derived on every request from persisted timestamps, current User status/security version, verified contact, active factor identity, session expiry, and policy bounds; the persisted assurance enum is never sufficient authority. Default ceilings are ten minutes for recent password, twelve hours for MFA, and five minutes for a step-up challenge. The API chooses `MFA_AND_RECENT` for account-security changes; the browser cannot lower it. A completed challenge rotates the opaque cookie secret in one transaction without extending absolute expiry. Stale challenge, revoked session, changed security version, replaced factor, and replayed proof fail closed.
+
+MFA proof, replacement, removal, and recovery-code regeneration use bounded account-scoped HMAC-correlated Redis limits (not one budget per session). Redis failure denies the attempted operation. Invalid attempts do not create attacker-amplifiable durable jobs. Material factor changes enqueue minimal safe notices using the existing IAM-003 Worker delivery path; delivery does not establish factor truth. A retired/missing MFA notice recipient enters the owned dead-letter path rather than being silently completed. The `noma-mfa-security-notice-v1` provider template and credentials require separate operational approval. Logs and ordinary diagnostics contain no seed, OTP, URI, recovery code, or raw session token.
+
+## Local verification and activation
+
+`pnpm iam004:verify` runs negative policy fixtures, unit tests, and isolated PostgreSQL/Redis integration tests. The migration is forward-only and adds factors, recovery-code batches/codes, challenges, and nullable Session proof fields. Tests use SEC-003's test-only key provider; application runtime cannot import it. The existing protected Seller, Rider, Operations, and Admin routes continue to deny access.
+
+Production activation remains blocked until Render Pro+ OIDC, an organization AWS account, separately owned staging/production KMS keys and roles/trust, Security/Data ownership, privacy/vendor review, CloudTrail monitoring, key-disable/recovery runbook, and break-glass/key-admin ownership are evidenced. No resource is provisioned in IAM-004. Rollback before activation is a reviewed source revert; after migration, use forward-only schema recovery and preserve authentication/recovery evidence. Never delete append-only rows or disable encryption to recover a failing rollout.

@@ -5,3 +5,4 @@ export * from './identity-token.js';
 export * from './encryption.js';
 export * from './masking.js';
 export * from './encryption-migration.js';
+export * from './mfa.js';

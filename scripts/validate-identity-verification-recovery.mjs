@@ -43,8 +43,8 @@ function validate(source) {
   require(source.web.includes('window.history.replaceState') && source.web.includes("method: 'POST'") && source.web.includes('publicEnvironment.apiBaseUrl') && !source.web.includes('process.env.') && !source.web.includes('console.') && source.publicEnvironment.includes('loadPublicEnvironment'), 'TOKEN_PAGE_BOUNDARY');
   require(source.service.includes('preflightPasswordRecovery') && source.service.indexOf('preflightPasswordRecovery') < source.service.indexOf('passwordHasher.hash'), 'ARGON_PREFLIGHT');
   require(source.taskIndex.includes('IAM-002,EP03,"Implement password registration, sign-in, sign-out, and session rotation",P0,P0-AUTHORITY,COMPLETE'), 'IAM002_LIFECYCLE');
-  require(source.taskIndex.includes('IAM-003,EP03,Implement email verification and password recovery,P0,P0-AUTHORITY,IN_REVIEW'), 'IAM003_LIFECYCLE');
-  require(source.taskIndex.includes('IAM-004,EP03,Implement privileged MFA and recent-authentication assurance,P0,P0-AUTHORITY,NOT_STARTED'), 'IAM004_LIFECYCLE');
+  require(source.taskIndex.includes('IAM-003,EP03,Implement email verification and password recovery,P0,P0-AUTHORITY,COMPLETE'), 'IAM003_LIFECYCLE');
+  require(source.taskIndex.includes('IAM-004,EP03,Implement privileged MFA and recent-authentication assurance,P0,P0-AUTHORITY,IN_REVIEW'), 'IAM004_LIFECYCLE');
   return failures;
 }
 
@@ -59,7 +59,7 @@ if (process.argv.includes('--self-test')) {
     ['alternate provider endpoint', { ...current, postmark: current.postmark.replace('https://api.postmarkapp.com/email/withTemplate', 'https://api.postmarkapp.com/email/withTemplate.attacker.invalid') }],
     ['unvalidated public environment', { ...current, web: current.web.replace('publicEnvironment.apiBaseUrl', 'process.env.NEXT_PUBLIC_API_BASE_URL') }],
     ['missing preflight', { ...current, service: current.service.replace('preflightPasswordRecovery', 'removedPreflight') }],
-    ['premature IAM-004', { ...current, taskIndex: current.taskIndex.replace('IAM-004,EP03,Implement privileged MFA and recent-authentication assurance,P0,P0-AUTHORITY,NOT_STARTED', 'IAM-004,EP03,Implement privileged MFA and recent-authentication assurance,P0,P0-AUTHORITY,IN_REVIEW') }],
+    ['regressed IAM-004', { ...current, taskIndex: current.taskIndex.replace('IAM-004,EP03,Implement privileged MFA and recent-authentication assurance,P0,P0-AUTHORITY,IN_REVIEW', 'IAM-004,EP03,Implement privileged MFA and recent-authentication assurance,P0,P0-AUTHORITY,NOT_STARTED') }],
   ];
   for (const [name, fixture] of fixtures) {
     if (validate(fixture).length === 0) throw new Error(`IAM-003 negative fixture was accepted: ${name}`);

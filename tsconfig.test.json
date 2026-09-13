@@ -16,6 +16,7 @@
     "vitest.config.ts",
     "scripts/vitest-component-setup.ts",
     "packages/testing/tests/**/*.ts",
+    "apps/api/tests/**/*.integration.test.ts",
     "tests/component/**/*.ts",
     "tests/component/**/*.tsx"
   ]
