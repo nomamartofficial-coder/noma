@@ -119,6 +119,10 @@ export interface SessionRecord {
   readonly status: SessionStatus;
   readonly assurance: AuthenticationAssurance;
   readonly issuedSecurityVersion: number;
+  readonly passwordAuthenticatedAt?: Date | null;
+  readonly mfaVerifiedAt?: Date | null;
+  readonly mfaMethod?: 'TOTP' | 'RECOVERY_CODE' | null;
+  readonly mfaFactorId?: string | null;
   readonly issuedAt: Date;
   readonly lastUsedAt: Date;
   readonly idleExpiresAt: Date;
@@ -172,6 +176,8 @@ export interface TouchSessionInput {
 export interface AuthenticatedSessionRecord {
   readonly session: SessionRecord;
   readonly user: UserIdentityRecord;
+  readonly contactVerified?: boolean;
+  readonly activeMfaFactorId?: string | null;
 }
 
 export interface IdentityTokenRecord {

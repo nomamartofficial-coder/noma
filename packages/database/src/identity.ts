@@ -156,6 +156,10 @@ function mapSession(session: Session): SessionRecord {
     status: session.status,
     assurance: session.assurance,
     issuedSecurityVersion: session.issuedSecurityVersion,
+    passwordAuthenticatedAt: session.passwordAuthenticatedAt,
+    mfaVerifiedAt: session.mfaVerifiedAt,
+    mfaMethod: session.mfaMethod,
+    mfaFactorId: session.mfaFactorId,
     issuedAt: session.issuedAt,
     lastUsedAt: session.lastUsedAt,
     idleExpiresAt: session.idleExpiresAt,
@@ -282,7 +286,7 @@ async function enqueueSecurityNotice(
     readonly eventId: string;
     readonly userEmailId: string;
     readonly userVersion: number;
-    readonly eventCode: 'EMAIL_VERIFIED' | 'PASSWORD_RECOVERED';
+    readonly eventCode: import('@noma/platform/identity').IdentitySecurityNoticePayload['eventCode'];
     readonly correlationId: string;
     readonly occurredAt: Date;
   },
@@ -501,6 +505,10 @@ export function createIdentityPersistence(client: DatabaseClient): IdentityPersi
           s."status",
           s."assurance",
           s."issued_security_version" AS "issuedSecurityVersion",
+          s."password_authenticated_at" AS "passwordAuthenticatedAt",
+          s."mfa_verified_at" AS "mfaVerifiedAt",
+          s."mfa_method" AS "mfaMethod",
+          s."mfa_factor_id" AS "mfaFactorId",
           s."issued_at" AS "issuedAt",
           s."last_used_at" AS "lastUsedAt",
           s."idle_expires_at" AS "idleExpiresAt",
@@ -537,7 +545,16 @@ export function createIdentityPersistence(client: DatabaseClient): IdentityPersi
         include: { user: true },
       });
       if (!candidate || candidate.issuedSecurityVersion !== candidate.user.securityVersion) return null;
-      return Object.freeze({ session: mapSession(candidate), user: mapUser(candidate.user) });
+      const [verifiedContact, activeFactor] = await Promise.all([
+        client.userEmail.findFirst({ where: { userId: candidate.userId, verifiedAt: { not: null }, retiredAt: null }, select: { id: true } }),
+        candidate.mfaFactorId
+          ? client.mfaFactor.findFirst({ where: { id: candidate.mfaFactorId, userId: candidate.userId, status: 'ACTIVE' }, select: { id: true } })
+          : Promise.resolve(null),
+      ]);
+      return Object.freeze({
+        session: mapSession(candidate), user: mapUser(candidate.user),
+        contactVerified: Boolean(verifiedContact), activeMfaFactorId: activeFactor?.id ?? null,
+      });
     },
 
     async rotatePasswordSession(input: RotatePasswordSessionInput) {
@@ -608,6 +625,8 @@ export function createIdentityPersistence(client: DatabaseClient): IdentityPersi
         RETURNING
           "id", "user_id" AS "userId", "token_digest" AS "tokenDigest", "status", "assurance",
           "issued_security_version" AS "issuedSecurityVersion", "issued_at" AS "issuedAt",
+          "password_authenticated_at" AS "passwordAuthenticatedAt", "mfa_verified_at" AS "mfaVerifiedAt",
+          "mfa_method" AS "mfaMethod", "mfa_factor_id" AS "mfaFactorId",
           "last_used_at" AS "lastUsedAt", "idle_expires_at" AS "idleExpiresAt",
           "absolute_expires_at" AS "absoluteExpiresAt", "revoked_at" AS "revokedAt",
           "revocation_code" AS "revocationCode", "device_label" AS "deviceLabel",

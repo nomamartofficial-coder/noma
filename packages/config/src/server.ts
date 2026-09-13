@@ -35,6 +35,10 @@ export interface ServerAuthenticationConfig {
   readonly idleMilliseconds: number;
   readonly absoluteMilliseconds: number;
   readonly touchAfterMilliseconds: number;
+  readonly mfaPasswordFreshMilliseconds?: number;
+  readonly mfaFreshMilliseconds?: number;
+  readonly mfaChallengeMilliseconds?: number;
+  readonly mfaEnrollmentMilliseconds?: number;
   readonly proofRateLimits: Readonly<Record<
     'EMAIL_VERIFICATION_REQUEST' | 'EMAIL_VERIFICATION_CONFIRM' | 'PASSWORD_RECOVERY_REQUEST' | 'PASSWORD_RECOVERY_COMPLETE',
     Readonly<{ windowMilliseconds: number; identity: number; pair: number; network: number }>
@@ -321,6 +325,10 @@ export function loadServerEnvironment(
     idleMilliseconds: readBoundedInteger(source, 'NOMA_AUTH_IDLE_MS', 7 * 24 * 60 * 60_000, 60_000, 30 * 24 * 60 * 60_000, issues),
     absoluteMilliseconds: readBoundedInteger(source, 'NOMA_AUTH_ABSOLUTE_MS', 30 * 24 * 60 * 60_000, 60_000, 90 * 24 * 60 * 60_000, issues),
     touchAfterMilliseconds: readBoundedInteger(source, 'NOMA_AUTH_TOUCH_AFTER_MS', 15 * 60_000, 60_000, 24 * 60 * 60_000, issues),
+    mfaPasswordFreshMilliseconds: readBoundedInteger(source, 'NOMA_MFA_PASSWORD_FRESH_MS', 10 * 60_000, 60_000, 10 * 60_000, issues),
+    mfaFreshMilliseconds: readBoundedInteger(source, 'NOMA_MFA_FRESH_MS', 12 * 60 * 60_000, 60_000, 12 * 60 * 60_000, issues),
+    mfaChallengeMilliseconds: readBoundedInteger(source, 'NOMA_MFA_CHALLENGE_MS', 5 * 60_000, 60_000, 5 * 60_000, issues),
+    mfaEnrollmentMilliseconds: readBoundedInteger(source, 'NOMA_MFA_ENROLLMENT_MS', 10 * 60_000, 60_000, 10 * 60_000, issues),
     proofRateLimits: Object.freeze({
       EMAIL_VERIFICATION_REQUEST: readAuthRateLimitPolicy(source, 'NOMA_EMAIL_VERIFICATION_REQUEST', { windowMilliseconds: 60 * 60_000, identity: 5, pair: 8, network: 100 }, issues),
       EMAIL_VERIFICATION_CONFIRM: readAuthRateLimitPolicy(source, 'NOMA_EMAIL_VERIFICATION_CONFIRM', { windowMilliseconds: 15 * 60_000, identity: 10, pair: 20, network: 200 }, issues),

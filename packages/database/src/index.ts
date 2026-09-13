@@ -37,6 +37,7 @@ export {
   type JobExecutionLease,
 } from './job-execution.js';
 export { createIdentityPersistence } from './identity.js';
+export { createMfaAuthorityPersistence } from './mfa.js';
 export {
   EncryptionMigrationConflict,
   blockEncryptionMigrationRun,

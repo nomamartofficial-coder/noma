@@ -29,6 +29,13 @@ const DEFAULTS = Object.freeze({
   EMAIL_VERIFICATION_CONFIRM: Object.freeze({ windowMilliseconds: 15 * 60_000, identity: 10, pair: 20, network: 200 }),
   PASSWORD_RECOVERY_REQUEST: Object.freeze({ windowMilliseconds: 60 * 60_000, identity: 5, pair: 8, network: 100 }),
   PASSWORD_RECOVERY_COMPLETE: Object.freeze({ windowMilliseconds: 15 * 60_000, identity: 8, pair: 12, network: 100 }),
+  PASSWORD_REAUTH: Object.freeze({ windowMilliseconds: 15 * 60_000, identity: 8, pair: 12, network: 100 }),
+  TOTP_ENROLLMENT_CONFIRM: Object.freeze({ windowMilliseconds: 10 * 60_000, identity: 8, pair: 12, network: 100 }),
+  TOTP_STEP_UP: Object.freeze({ windowMilliseconds: 15 * 60_000, identity: 8, pair: 12, network: 100 }),
+  MFA_RECOVERY_CODE: Object.freeze({ windowMilliseconds: 15 * 60_000, identity: 6, pair: 10, network: 100 }),
+  MFA_FACTOR_REPLACE: Object.freeze({ windowMilliseconds: 60 * 60_000, identity: 4, pair: 8, network: 100 }),
+  MFA_FACTOR_REMOVE: Object.freeze({ windowMilliseconds: 60 * 60_000, identity: 3, pair: 6, network: 100 }),
+  MFA_RECOVERY_CODES_REGENERATE: Object.freeze({ windowMilliseconds: 60 * 60_000, identity: 4, pair: 8, network: 100 }),
 });
 
 export type IdentityAuthRateLimitPolicy = Readonly<{
