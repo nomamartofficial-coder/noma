@@ -1,6 +1,6 @@
 # SEC-003 envelope encryption and key migration
 
-SEC-003 supplies source-only primitives. No business field is encrypted by this change, no AWS resource is provisioned, and no production encryption is activated. The first proposed consumer is IAM-004 after its separate review and merge.
+SEC-003 supplies source-only primitives. Its merged foundation has no provisioned AWS resource or production encryption activation. IAM-004 is the first proposed consumer, using a separately reviewed factor-owned migration and `noma:mfa-seed` purpose; no production key is provisioned by either task.
 
 ## Threat boundary and envelope
 

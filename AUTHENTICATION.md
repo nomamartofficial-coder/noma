@@ -55,6 +55,10 @@ pnpm auth:verify
 
 Real integration tests use isolated PostgreSQL and authenticated Redis containers. They prove atomic rollback/contention, rotation, touch-versus-revoke, HMAC-only Redis keys, fail-closed limiter behavior, the real Nest API contract, origin enforcement, response minimisation, and raw-secret absence.
 
+## IAM-004 MFA and deferred scope
+
+IAM-004 now provides a source-only TOTP, recovery-code, and recent-authentication foundation. See [`MFA.md`](MFA.md) and [ADR-0021](docs/adr/0021-privileged-mfa-recent-authentication.md). IAM-003 password recovery preserves active MFA and unused codes while revoking sessions. Protected role surfaces remain unavailable; MFA is not authorization.
+
 ## Deferred and rollback
 
-IAM-004 through IAM-006, SEC-001, SEC-002, MFA, authorization, and protected-surface activation remain deferred. Before merge, rollback is a reviewed source revert. IAM-003 adds no schema migration, data backfill, deployment, provider activation, or infrastructure provisioning.
+IAM-005/006, SEC-001/002, authorization, and protected-surface activation remain deferred. Before merge, rollback is a reviewed source revert. IAM-003 adds no schema migration, data backfill, deployment, provider activation, or infrastructure provisioning; IAM-004 adds a separate forward-only migration but no remote activation.

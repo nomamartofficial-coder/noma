@@ -25,8 +25,8 @@ UI-005,EP02,"Implement Seller, Rider, Operations, and Admin shells",P0,P1-OPERAT
 UI-006,EP02,Create Storybook/component documentation and visual regression,P0,P2-PRESENTATION,COMPLETE,Design/Web/QA
 IAM-001,EP03,"Implement User, credential, session, and recovery persistence",P0,P0-AUTHORITY,COMPLETE,Identity Engineering
 IAM-002,EP03,"Implement password registration, sign-in, sign-out, and session rotation",P0,P0-AUTHORITY,COMPLETE,Identity/Security
-IAM-003,EP03,Implement email verification and password recovery,P0,P0-AUTHORITY,IN_REVIEW,Identity
-IAM-004,EP03,Implement privileged MFA and recent-authentication assurance,P0,P0-AUTHORITY,NOT_STARTED,Identity/Security
+IAM-003,EP03,Implement email verification and password recovery,P0,P0-AUTHORITY,COMPLETE,Identity
+IAM-004,EP03,Implement privileged MFA and recent-authentication assurance,P0,P0-AUTHORITY,IN_REVIEW,Identity/Security
 IAM-005,EP03,"Implement membership, role grant, capability, and scope model",P0,P0-AUTHORITY,NOT_STARTED,Access Engineering
 IAM-006,EP03,Implement central authorization policy engine,P0,P0-AUTHORITY,NOT_STARTED,Access/Security
 IAM-007,EP03,Implement field-level projections and sensitive-data redaction,P0,P0-PRIVACY,NOT_STARTED,Access/Privacy

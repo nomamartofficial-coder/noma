@@ -44,6 +44,7 @@ python scripts/validate_traceability.py --lookup SEC-007
 python scripts/validate_traceability.py --lookup IAM-001
 python scripts/validate_traceability.py --lookup IAM-002
 python scripts/validate_traceability.py --lookup IAM-003
+python scripts/validate_traceability.py --lookup IAM-004
 python scripts/validate_traceability.py --lookup SEC-003
 ```
 
