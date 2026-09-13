@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 import {
   AsyncBarrier,
@@ -8,6 +8,7 @@ import {
   ScriptedOutcomeController,
   SeededRandomSource,
   TestResourceScope,
+  assertSyntheticFixture,
   createFixtureContext,
   createOutboxEventFixture,
   createQueueJobFixture,
@@ -59,6 +60,51 @@ describe('deterministic clocks, randomness, and fixtures', () => {
     expect(Object.isFrozen(factory(createFixtureContext(), { name: 'Named override' }))).toBe(true);
     expect(() => defineFixtureFactory(() => ({ password: 'production-like-value' }))(createFixtureContext()))
       .toThrow(/credential-bearing/);
+  });
+
+  test('fixture values and keys stop at the governed size bound before secret matching', () => {
+    expect(() => assertSyntheticFixture('a'.repeat(4_096))).not.toThrow();
+    const oversizedValue = `sk_live_${'x'.repeat(4_089)}`;
+    expect(oversizedValue.length).toBe(4_097);
+    expect(() => assertSyntheticFixture(oversizedValue)).toThrow(/string size limit/);
+
+    const oversizedKey = `password_${'x'.repeat(4_088)}`;
+    expect(oversizedKey.length).toBe(4_097);
+    expect(() => assertSyntheticFixture({ [oversizedKey]: 'not-a-secret' })).toThrow(/key size limit/);
+
+    const regexTest = vi.spyOn(RegExp.prototype, 'test').mockImplementation(() => {
+      throw new Error('regex evaluation preceded the size bound');
+    });
+    let valueError: unknown;
+    let keyError: unknown;
+    try {
+      try { assertSyntheticFixture(oversizedValue); } catch (error) { valueError = error; }
+      try { assertSyntheticFixture({ [oversizedKey]: 'synthetic' }); } catch (error) { keyError = error; }
+    } finally {
+      regexTest.mockRestore();
+    }
+    expect(String(valueError)).toContain('string size limit');
+    expect(String(keyError)).toContain('key size limit');
+
+    for (const rejected of [oversizedValue, oversizedKey]) {
+      try {
+        assertSyntheticFixture(rejected === oversizedValue ? rejected : { [rejected]: 'synthetic' });
+        throw new Error('expected fixture rejection');
+      } catch (error) {
+        expect(String(error)).not.toContain(rejected);
+      }
+    }
+  });
+
+  test('credential-like fixture URLs are rejected without unbounded suffix rescanning', () => {
+    expect(() => assertSyntheticFixture('postgresql://synthetic:credential@localhost/noma')).toThrow(/prohibited/);
+    expect(() => assertSyntheticFixture('redis://synthetic:credential@localhost')).toThrow(/prohibited/);
+    expect(() => assertSyntheticFixture('postgres://synthetic:credential@')).toThrow(/prohibited/);
+    expect(() => assertSyntheticFixture('postgres://user:secret_postgres://x@host')).toThrow(/prohibited/);
+    expect(() => assertSyntheticFixture('postgres://foo@bar:pass@host')).toThrow(/prohibited/);
+    expect(() => assertSyntheticFixture('İpostgres://u:p@host')).toThrow(/prohibited/);
+    expect(() => assertSyntheticFixture('postgres://synthetic'.repeat(170))).not.toThrow();
+    expect(() => assertSyntheticFixture('sk_live_synthetic')).toThrow(/prohibited/);
   });
 
   test('technical queue fixtures preserve deterministic outbox identity', () => {

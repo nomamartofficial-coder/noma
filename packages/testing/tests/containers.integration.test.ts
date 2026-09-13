@@ -1,9 +1,10 @@
 import { execFile } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { promisify } from 'node:util';
 
 import { createDatabaseClient, disconnectDatabaseClient } from '@noma/database';
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import {
   startNomaInfrastructureHarness,
@@ -13,6 +14,9 @@ import {
 
 const execFileAsync = promisify(execFile);
 const ROOT = resolve(import.meta.dirname, '../../..');
+const DATABASE_DIR = resolve(ROOT, 'packages/database');
+const requireFromDatabase = createRequire(resolve(DATABASE_DIR, 'package.json'));
+const prismaCli = requireFromDatabase.resolve('prisma/build/index.js');
 const SAFE_ENVIRONMENT = Object.freeze({
   NOMA_ENV: 'test',
   NOMA_CREDENTIAL_ENVIRONMENT: 'test',
@@ -20,15 +24,8 @@ const SAFE_ENVIRONMENT = Object.freeze({
 const harnesses: NomaInfrastructureHarness[] = [];
 
 async function deployMigrations(connection: PostgreSqlTestConnection): Promise<void> {
-  const pnpmCli = process.env.npm_execpath;
-  const command = pnpmCli ? process.execPath : process.platform === 'win32' ? 'cmd.exe' : 'pnpm';
-  const arguments_ = pnpmCli
-    ? [pnpmCli, '--filter', '@noma/database', 'db:migrate:deploy']
-    : process.platform === 'win32'
-      ? ['/d', '/s', '/c', 'pnpm.cmd --filter @noma/database db:migrate:deploy']
-      : ['--filter', '@noma/database', 'db:migrate:deploy'];
-  await execFileAsync(command, arguments_, {
-    cwd: ROOT,
+  await execFileAsync(process.execPath, [prismaCli, 'migrate', 'deploy'], {
+    cwd: DATABASE_DIR,
     env: {
       ...process.env,
       NOMA_ENV: 'test',
@@ -37,6 +34,7 @@ async function deployMigrations(connection: PostgreSqlTestConnection): Promise<v
     },
     timeout: 120_000,
     windowsHide: true,
+    shell: false,
   });
 }
 
@@ -49,6 +47,7 @@ afterEach(async () => {
 
 describe('real PostgreSQL and Redis Testcontainers harness', () => {
   test('applies migrations, enforces Redis policy, and isolates concurrent harnesses', async () => {
+    vi.stubEnv('npm_execpath', resolve(import.meta.dirname, 'untrusted/pnpm.cjs'));
     const [first, second] = await Promise.all([
       startNomaInfrastructureHarness({
         seed: 'dev006-first',

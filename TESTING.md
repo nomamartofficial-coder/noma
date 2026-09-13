@@ -44,6 +44,8 @@ UI-004 adds Docker-free application-shell tests. Route tests prove invisible rou
 
 All fixtures are synthetic. Reserved `noma.test` addresses and `test_` tokens are not usable credentials. Production databases, provider payload dumps, personal data, bank information, identity evidence, or real secrets are prohibited.
 
+Synthetic fixture inspection rejects string values and property keys longer than 4096 UTF-16 code units before secret-pattern checks; it never truncates them or includes an oversized value in the error. The two Testcontainers migration callbacks resolve the installed Prisma CLI from `packages/database` and launch it with the active Node executable, not a package-manager path from the environment.
+
 ## Testcontainers harness
 
 The Node-only `@noma/testing/containers` export starts PostgreSQL `18.4-alpine3.23` and Redis `8.8.1-alpine3.23` by the reviewed multi-platform digests already used by local Compose.

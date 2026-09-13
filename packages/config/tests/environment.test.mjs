@@ -334,6 +334,42 @@ test('redaction covers secret keys, credential URLs, bearer tokens, and live key
   assert.equal(text.includes('user:pass'), false);
 });
 
+test('redaction removes complete and repeated PEM private-key blocks', () => {
+  const first = '-----BEGIN PRIVATE KEY-----\nFIRST_SECRET_BODY\n-----END PRIVATE KEY-----';
+  const second = '-----BEGIN ENCRYPTED PRIVATE KEY-----\nSECOND_SECRET_BODY\n-----END ENCRYPTED PRIVATE KEY-----';
+  assert.equal(redactText(`before ${first} between ${second} after`), 'before [REDACTED] between [REDACTED] after');
+  for (const label of ['RSA PRIVATE KEY', 'EC PRIVATE KEY', 'OPENSSH PRIVATE KEY']) {
+    assert.equal(redactText(`-----BEGIN ${label}-----\nSECRET_BODY\n-----END ${label}-----`), '[REDACTED]');
+  }
+});
+
+test('redaction fails closed for malformed or incomplete PEM material', () => {
+  const cases = [
+    '-----BEGIN PRIVATE KEY-----\nSECRET_BODY\n-----END RSA PRIVATE KEY-----',
+    '-----BEGIN RSA PRIVATE KEY-----\nSECRET_BODY',
+    '-----BEGIN PRIVATE KEY-----\nSECRET_BODY\n-----BEGIN PRIVATE KEY-----\nMORE_SECRET_BODY',
+    '-----BEGIN PRIVATE KEY BROKEN\nSECRET_BODY',
+    `-----BEGIN ${'A'.repeat(65)} PRIVATE KEY-----\nSECRET_BODY`,
+  ];
+  for (const value of cases) {
+    assert.equal(redactText(`safe ${value}`), 'safe [REDACTED]');
+  }
+  assert.equal(redactText(`safe ${'-----BEGIN PRIVATE KEY-----\n'.repeat(512)}SECRET_BODY`), 'safe [REDACTED]');
+});
+
+test('PEM scanning preserves other credential redaction', () => {
+  const text = redactText('redis://user:pass@localhost rediss://user:pass@localhost pk_live_123 Bearer abc.def');
+  assert.equal(text.includes('user:pass'), false);
+  assert.equal(text.includes('pk_live_123'), false);
+  assert.equal(text.includes('abc.def'), false);
+});
+
+test('non-private PEM material remains intact while malformed private markers fail closed', () => {
+  const certificate = '-----BEGIN CERTIFICATE-----\nPUBLIC_BODY\n-----END CERTIFICATE-----';
+  assert.equal(redactText(`before ${certificate} after`), `before ${certificate} after`);
+  assert.equal(redactText('before -----begin private key-----\nSECRET_BODY'), 'before [REDACTED]');
+});
+
 test('test overrides are isolated and do not mutate their base input', () => {
   const base = Object.freeze({ NOMA_ENV: 'test', API_PORT: '3001', REMOVE_ME: 'yes' });
   const result = withEnvironmentOverrides(base, { API_PORT: '4101', REMOVE_ME: undefined });
