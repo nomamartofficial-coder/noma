@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process';
-import { basename, resolve } from 'node:path';
+import { createRequire } from 'node:module';
+import { resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { defineQueueJobContract } from '@noma/contracts';
 import {
@@ -10,7 +11,7 @@ import {
   runInDatabaseTransaction,
 } from '@noma/database';
 import { BullMqPublisher, QueueContractRegistry, createBullMqWorkers } from '@noma/integrations';
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { RuntimeDependenciesService } from '../../../apps/api/src/runtime-dependencies.service.js';
 import { HealthService } from '../../../apps/api/src/health/health.service.js';
 import { createDatabaseBackedQueueHandler } from '../../../apps/worker/src/database-job-handler.js';
@@ -26,26 +27,19 @@ import {
 
 const execFileAsync = promisify(execFile);
 const ROOT = resolve(import.meta.dirname, '../../..');
+const DATABASE_DIR = resolve(ROOT, 'packages/database');
+const requireFromDatabase = createRequire(resolve(DATABASE_DIR, 'package.json'));
+const prismaCli = requireFromDatabase.resolve('prisma/build/index.js');
 const harnesses: NomaInfrastructureHarness[] = [];
 const telemetryRuntimes: ServerObservability[] = [];
 
 async function deployMigrations(connection: PostgreSqlTestConnection): Promise<void> {
-  const pnpmCliFromEnv = process.env.npm_execpath;
-  const pnpmCliBaseName = pnpmCliFromEnv ? basename(pnpmCliFromEnv).toLowerCase() : '';
-  const isTrustedPnpmCli =
-    pnpmCliBaseName === 'pnpm' || pnpmCliBaseName === 'pnpm.cjs' || pnpmCliBaseName === 'pnpm.js';
-  const pnpmCli = isTrustedPnpmCli ? pnpmCliFromEnv : undefined;
-  const command = pnpmCli ? process.execPath : process.platform === 'win32' ? 'cmd.exe' : 'pnpm';
-  const arguments_ = pnpmCli
-    ? [pnpmCli, '--filter', '@noma/database', 'db:migrate:deploy']
-    : process.platform === 'win32'
-      ? ['/d', '/s', '/c', 'pnpm.cmd --filter @noma/database db:migrate:deploy']
-      : ['--filter', '@noma/database', 'db:migrate:deploy'];
-  await execFileAsync(command, arguments_, {
-    cwd: ROOT,
+  await execFileAsync(process.execPath, [prismaCli, 'migrate', 'deploy'], {
+    cwd: DATABASE_DIR,
     env: { ...process.env, NOMA_ENV: 'test', NOMA_CREDENTIAL_ENVIRONMENT: 'test', DATABASE_URL: connection.databaseUrl },
     timeout: 120_000,
     windowsHide: true,
+    shell: false,
   });
 }
 
@@ -56,6 +50,7 @@ afterEach(async () => {
 
 describe('DEV-010 real infrastructure observability', () => {
   test('connects API, outbox, BullMQ, Worker, idempotency evidence, and honest readiness', async () => {
+    vi.stubEnv('npm_execpath', resolve(import.meta.dirname, 'untrusted/pnpm.cjs'));
     const harness = await startNomaInfrastructureHarness({
       seed: 'dev010-observability',
       environmentSource: { NOMA_ENV: 'test', NOMA_CREDENTIAL_ENVIRONMENT: 'test' },

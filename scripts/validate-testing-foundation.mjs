@@ -73,6 +73,23 @@ function validateContainerSource(source) {
   }
 }
 
+function validateMigrationExecutionSource(source, path) {
+  for (const prohibited of ['process.env.npm_execpath', 'cmd.exe', 'pnpm.cmd', 'shell: true']) {
+    if (source.includes(prohibited)) fail(`${path}: migration execution cannot use ${prohibited}`);
+  }
+  for (const required of [
+    "createRequire(resolve(DATABASE_DIR, 'package.json'))",
+    "requireFromDatabase.resolve('prisma/build/index.js')",
+    "execFileAsync(process.execPath, [prismaCli, 'migrate', 'deploy']",
+    'cwd: DATABASE_DIR',
+    'shell: false',
+    'timeout: 120_000',
+    'windowsHide: true',
+  ]) {
+    if (!source.includes(required)) fail(`${path}: trusted Prisma migration execution missing ${required}`);
+  }
+}
+
 async function filesBelow(path) {
   const directory = resolve(ROOT, path);
   const entries = await readdir(directory, { withFileTypes: true });
@@ -149,6 +166,12 @@ async function validate() {
   }
 
   validateContainerSource(await read('packages/testing/src/containers.ts'));
+  for (const path of [
+    'packages/testing/tests/containers.integration.test.ts',
+    'packages/testing/tests/observability.integration.test.ts',
+  ]) {
+    validateMigrationExecutionSource(await read(path), path);
+  }
   await validateProductionBoundary();
   await validateFocusedTests();
   return { files: REQUIRED_FILES.length, rootPins: Object.keys(EXPECTED_ROOT_DEPENDENCIES).length };
@@ -168,6 +191,35 @@ function selfTest() {
   } catch (error) {
     if (!/missing|prohibited/.test(error.message)) throw error;
   }
+
+  const trustedMigrationSource = [
+    "createRequire(resolve(DATABASE_DIR, 'package.json'))",
+    "requireFromDatabase.resolve('prisma/build/index.js')",
+    "execFileAsync(process.execPath, [prismaCli, 'migrate', 'deploy']",
+    'cwd: DATABASE_DIR',
+    'shell: false',
+    'timeout: 120_000',
+    'windowsHide: true',
+  ].join('\n');
+  for (const unsafe of [
+    'process.env.npm_execpath',
+    'cmd.exe',
+    'pnpm.cmd',
+    'shell: true',
+  ]) {
+    try {
+      validateMigrationExecutionSource(`${trustedMigrationSource}\n${unsafe}`, 'negative migration');
+      fail('untrusted migration execution negative test did not fail');
+    } catch (error) {
+      if (!/migration execution cannot use/.test(error.message)) throw error;
+    }
+  }
+  try {
+    validateMigrationExecutionSource(trustedMigrationSource.replace('shell: false', ''), 'negative migration');
+    fail('missing non-shell execution negative test did not fail');
+  } catch (error) {
+    if (!/trusted Prisma migration execution missing/.test(error.message)) throw error;
+  }
 }
 
 try {
@@ -175,7 +227,7 @@ try {
   console.log(`PASS: ${result.files} deterministic testing files and ${result.rootPins} pinned root tools`);
   if (process.argv.includes('--self-test')) {
     selfTest();
-    console.log('PASS: floating tools and destructive cleanup were rejected');
+    console.log('PASS: floating tools, destructive cleanup, and untrusted migration launch were rejected');
   }
 } catch (error) {
   console.error(`FAIL: ${error.message}`);

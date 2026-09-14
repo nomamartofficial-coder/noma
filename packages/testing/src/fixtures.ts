@@ -30,11 +30,52 @@ export interface CreateFixtureContextOptions {
 }
 
 const SECRET_KEY_PATTERN = /(?:password|secret|authorization|credential|private.?key|access.?token|refresh.?token)/i;
+const MAX_SYNTHETIC_FIXTURE_STRING_LENGTH = 4_096;
 const UNSAFE_VALUE_PATTERNS = [
   /\bsk_live_[a-z0-9_-]+/i,
   /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
-  /(?:postgres|postgresql|redis|rediss):\/\/[^\s:/]+:[^\s@]+@/i,
 ];
+const CREDENTIAL_URL_SCHEMES = ['postgresql://', 'postgres://', 'rediss://', 'redis://'] as const;
+
+function containsCredentialUrl(value: string): boolean {
+  let state: 'none' | 'username' | 'password' = 'none';
+  let usernameLength = 0;
+  let passwordLength = 0;
+
+  for (let index = 0; index < value.length; index += 1) {
+    const scheme = state === 'none'
+      ? CREDENTIAL_URL_SCHEMES.find((candidate) => value.slice(index, index + candidate.length).toLowerCase() === candidate)
+      : undefined;
+    if (scheme !== undefined) {
+      state = 'username';
+      usernameLength = 0;
+      passwordLength = 0;
+      index += scheme.length - 1;
+      continue;
+    }
+
+    const character = value.charAt(index);
+    if (state === 'username') {
+      if (character === ':' && usernameLength > 0) {
+        state = 'password';
+      } else if (character === '/' || character === ':' || character.trim() === '') {
+        state = 'none';
+      } else {
+        usernameLength += 1;
+      }
+    } else if (state === 'password') {
+      if (character === '@') {
+        if (passwordLength > 0) return true;
+        state = 'none';
+      } else if (character.trim() === '') {
+        state = 'none';
+      } else {
+        passwordLength += 1;
+      }
+    }
+  }
+  return false;
+}
 
 function deepFreeze<T>(value: T): T {
   if (typeof value !== 'object' || value === null || Object.isFrozen(value)) return value;
@@ -45,9 +86,13 @@ function deepFreeze<T>(value: T): T {
 export function assertSyntheticFixture(value: unknown, path = 'fixture', depth = 0): void {
   if (depth > 12) throw new Error(`${path} exceeds the synthetic fixture nesting limit`);
   if (typeof value === 'string') {
+    if (value.length > MAX_SYNTHETIC_FIXTURE_STRING_LENGTH) {
+      throw new Error('synthetic fixture string size limit exceeded');
+    }
     for (const pattern of UNSAFE_VALUE_PATTERNS) {
       if (pattern.test(value)) throw new Error(`${path} contains prohibited production-like data`);
     }
+    if (containsCredentialUrl(value)) throw new Error(`${path} contains prohibited production-like data`);
     return;
   }
   if (value === null || typeof value === 'number' || typeof value === 'boolean' || value === undefined) return;
@@ -57,6 +102,9 @@ export function assertSyntheticFixture(value: unknown, path = 'fixture', depth =
   }
   if (typeof value !== 'object') throw new Error(`${path} must contain serializable fixture values`);
   for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    if (key.length > MAX_SYNTHETIC_FIXTURE_STRING_LENGTH) {
+      throw new Error('synthetic fixture key size limit exceeded');
+    }
     if (SECRET_KEY_PATTERN.test(key) && !(typeof child === 'string' && child.startsWith('test_'))) {
       throw new Error(`${path}.${key} is a prohibited credential-bearing fixture field`);
     }

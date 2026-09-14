@@ -86,6 +86,8 @@ Invalid mandatory configuration fails startup before the runtime accepts traffic
 
 Structured logs and evidence must use the safe summary and redaction helpers. Never log `process.env`, a full configuration object from an unreviewed source, provider payloads, authorization headers, or credential URLs.
 
+The text redactor removes complete PEM private-key blocks and fails closed on a malformed or incomplete `-----BEGIN` block by redacting through end-of-input. It also retains database/Redis URL, live provider-key, and Bearer credential redaction. This helper is a diagnostic backstop, not permission to log raw secret-bearing objects.
+
 ## Database command environment
 
 DEV-004 adds a server-only Prisma command boundary. Local schema validation and client generation use the documented loopback-only Compose default when `DATABASE_URL` is absent. Preview, staging, and production database commands require an explicit provider-managed `DATABASE_URL`; production also requires encrypted PostgreSQL transport.
