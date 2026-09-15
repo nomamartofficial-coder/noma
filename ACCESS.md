@@ -1,7 +1,7 @@
 # Noma Access authority foundation
 
-> **Task:** IAM-005  
-> **Risk:** P0-AUTHORITY  
+> **Task:** IAM-005
+> **Risk:** P0-AUTHORITY
 > **Status:** implemented for independent review; no protected surface is active
 
 ## Authority boundary

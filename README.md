@@ -105,6 +105,7 @@ SEC-003's source-only managed-key design, strict envelope, and rotation boundary
 | [`README.md`](README.md) | Repository orientation, setup contract, commands, and contribution entry point |
 | [`IDENTITY_PERSISTENCE.md`](IDENTITY_PERSISTENCE.md) | IAM-001 identity/session storage authority and bounded repository seam |
 | [`AUTHENTICATION.md`](AUTHENTICATION.md) | IAM-002/003 password, session, email-verification, and recovery authority contract |
+| [`ACCESS.md`](ACCESS.md) | IAM-005 exact-scope Access authority facts, persistence, and IAM-006 boundary |
 
 For a conflict, follow the authority hierarchy in [`AGENTS.md`](AGENTS.md). Do not silently reconcile competing rules in code.
 
