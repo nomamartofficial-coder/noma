@@ -10,6 +10,7 @@ import {
   type ConfirmEmailVerificationInput,
   type CreateSessionInput,
   type CreateUserIdentityInput,
+  type AuthenticatedSessionRecord,
   type IdentityPersistence,
   type IdentityTokenPurpose,
   type IdentityTokenRecord,
@@ -221,6 +222,58 @@ function mapSession(session: Session): SessionRecord {
     lastTransitionAt: session.lastTransitionAt,
     lastTransitionId: session.lastTransitionId,
   });
+}
+
+async function resolveAuthenticatedSessionInTransaction(
+  transaction: DatabaseTransactionClient,
+  tokenDigest: string,
+  at: Date,
+  lock: boolean,
+): Promise<AuthenticatedSessionRecord | null> {
+  const digest = requireDigest('tokenDigest', tokenDigest);
+  const observedAt = requireDate('at', at);
+  const candidate = await transaction.session.findUnique({ where: { tokenDigest: digest }, select: { id: true, userId: true } });
+  if (!candidate) return null;
+  if (lock) {
+    await transaction.$queryRaw`SELECT "id" FROM "users" WHERE "id" = CAST(${candidate.userId} AS uuid) FOR UPDATE`;
+    await transaction.$queryRaw`SELECT "id" FROM "sessions" WHERE "id" = CAST(${candidate.id} AS uuid) FOR UPDATE`;
+  }
+  const session = await transaction.session.findUnique({ where: { id: candidate.id }, include: { user: true } });
+  if (!session
+    || !PASSWORD_AUTHENTICATION_ACCOUNT_STATUSES.includes(session.user.status as 'PENDING_EMAIL' | 'ACTIVE')
+    || !['ACTIVE', 'STEP_UP_REQUIRED'].includes(session.status)
+    || session.revokedAt !== null
+    || session.idleExpiresAt <= observedAt
+    || session.absoluteExpiresAt <= observedAt
+    || session.issuedSecurityVersion !== session.user.securityVersion) return null;
+  const [verifiedContact, activeFactor] = await Promise.all([
+    transaction.userEmail.findFirst({ where: { userId: session.userId, verifiedAt: { not: null }, retiredAt: null }, select: { id: true } }),
+    session.mfaFactorId
+      ? transaction.mfaFactor.findFirst({ where: { id: session.mfaFactorId, userId: session.userId, status: 'ACTIVE' }, select: { id: true } })
+      : Promise.resolve(null),
+  ]);
+  return Object.freeze({
+    session: mapSession(session),
+    user: mapUser(session.user),
+    contactVerified: verifiedContact !== null,
+    activeMfaFactorId: activeFactor?.id ?? null,
+  });
+}
+
+/** Uses the caller's snapshot for a protected read without taking authority locks. */
+export function resolveAuthenticatedSessionForAuthorization(
+  transaction: DatabaseTransactionClient,
+  input: Readonly<{ tokenDigest: string; at: Date }>,
+): Promise<AuthenticatedSessionRecord | null> {
+  return resolveAuthenticatedSessionInTransaction(transaction, input.tokenDigest, input.at, false);
+}
+
+/** Locks User then Session so a protected mutation and security containment serialize. */
+export function lockAuthenticatedSessionForAuthorization(
+  transaction: DatabaseTransactionClient,
+  input: Readonly<{ tokenDigest: string; at: Date }>,
+): Promise<AuthenticatedSessionRecord | null> {
+  return resolveAuthenticatedSessionInTransaction(transaction, input.tokenDigest, input.at, true);
 }
 
 function mapToken(token: IdentityToken): IdentityTokenRecord {

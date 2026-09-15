@@ -2,6 +2,8 @@ import {
   ACCESS_ENVIRONMENTS,
   requireAccessCapabilityCode,
   type AccessApprovalDecisionValue,
+  type AuthorizationApprovalExpectation,
+  type AuthorizationApprovalFact,
   type AccessApprovalOperation,
   type AccessEnvironment,
   type AccessPrivilegeClass,
@@ -550,7 +552,92 @@ export async function lockActiveAuthorityFactForUse(
       AND ra."valid_from" <= ${at}
       AND (ra."valid_until" IS NULL OR ${at} < ra."valid_until")
       AND ra."revoked_at" IS NULL
-    FOR UPDATE OF ra`;
+    FOR UPDATE OF ra, c`;
   const row = rows[0];
   return row ? Object.freeze({ ...row, capabilityCode }) : null;
+}
+
+/**
+ * Revalidates and locks one complete assignment-atomic authority fact for a
+ * protected mutation. The caller must use the same transaction for the
+ * protected state change.
+ */
+export async function loadActiveAuthorityFactForUse(
+  transaction: DatabaseTransactionClient,
+  input: Readonly<{ assignmentId: string; subject: AccessSubject; capabilityCode: string; environment: AccessEnvironment; at: Date }>,
+): Promise<ActiveAuthorityFact | null> {
+  const locked = await lockActiveAuthorityFactForUse(transaction, input);
+  if (!locked) return null;
+  const assignment = await transaction.roleAssignment.findUnique({
+    where: { id: locked.assignmentId },
+    include: {
+      scope: true,
+      roleTemplate: { include: { capabilities: { include: { capability: true } } } },
+    },
+  });
+  if (!assignment) return null;
+  return Object.freeze({
+    assignment: assignmentRecord(assignment),
+    template: templateRecord(assignment.roleTemplate),
+    scope: scopeRecord(assignment.scope),
+    capabilities: Object.freeze(assignment.roleTemplate.capabilities
+      .filter(({ capability }) => capability.retiredAt === null)
+      .map(({ capability }) => capability.code)
+      .sort()),
+  });
+}
+
+export interface ResolveAccessApprovalForAuthorizationInput extends AuthorizationApprovalExpectation {
+  readonly approvalRequestId: string;
+  readonly at: Date;
+}
+
+/** Reads current exact Access maker-checker evidence inside the caller's transaction. */
+export async function resolveAccessApprovalForAuthorization(
+  transaction: DatabaseTransactionClient,
+  input: ResolveAccessApprovalForAuthorizationInput,
+): Promise<AuthorizationApprovalFact | null> {
+  const at = instant('at', input.at);
+  const request = await transaction.approvalRequest.findUnique({
+    where: { id: uuid('approvalRequestId', input.approvalRequestId) },
+    include: { decisions: { orderBy: { decidedAt: 'desc' }, take: 1, include: { approverUser: true } } },
+  });
+  if (!request) return null;
+  const decision = request.decisions[0] ?? null;
+  const currentFactor = decision?.mfaFactorId
+    ? await transaction.mfaFactor.findFirst({
+        where: { id: decision.mfaFactorId, userId: decision.approverUserId, status: 'ACTIVE' },
+        select: { id: true },
+      })
+    : null;
+  return Object.freeze({
+    id: request.id,
+    operation: request.operation,
+    subjectType: request.subjectType,
+    targetUserId: request.targetUserId,
+    targetServicePrincipalId: request.targetServicePrincipalId,
+    roleTemplateId: request.roleTemplateId,
+    scopeId: request.scopeId,
+    scopeType: request.scopeType,
+    requestedValidFrom: request.requestedValidFrom,
+    requestedValidUntil: request.requestedValidUntil,
+    requestedByUserId: request.requestedByUserId,
+    state: request.state,
+    expiresAt: request.expiresAt,
+    independentApprovalRequired: request.independentApprovalRequired,
+    decision: decision ? Object.freeze({
+      approverUserId: decision.approverUserId,
+      value: decision.decision,
+      securityVersion: decision.securityVersion,
+      currentSecurityVersion: decision.approverUser.securityVersion,
+      accountActive: decision.approverUser.status === 'ACTIVE',
+      passwordAuthenticatedAt: decision.passwordAuthenticatedAt,
+      mfaVerifiedAt: decision.mfaVerifiedAt,
+      mfaMethod: decision.mfaMethod,
+      mfaFactorId: decision.mfaFactorId,
+      currentMfaFactorId: currentFactor?.id ?? null,
+      evaluatedAt: decision.assuranceEvaluatedAt,
+    }) : null,
+    provenance: Object.freeze({ source: 'ACCESS_DATABASE' as const, observedAt: at }),
+  });
 }
