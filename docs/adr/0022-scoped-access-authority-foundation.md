@@ -4,7 +4,7 @@
 - Date: 2026-09-15
 - Task: IAM-005
 - Issue: #66
-- Draft PR: assigned after publication
+- Draft PR: #67
 - Requirement: REQ-IAM-005
 
 ## Decision
