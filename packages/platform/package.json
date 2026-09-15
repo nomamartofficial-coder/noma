@@ -20,6 +20,10 @@
     "./identity": {
       "types": "./dist/identity/index.d.ts",
       "default": "./dist/identity/index.js"
+    },
+    "./access": {
+      "types": "./dist/access/index.d.ts",
+      "default": "./dist/access/index.js"
     }
   },
   "scripts": {
