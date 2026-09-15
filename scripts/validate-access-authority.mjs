@@ -95,8 +95,8 @@ function validate(source) {
     && source.ci.includes('iam005:integration-test')
     && source.ci.includes('iam005:self-test'), 'CI_GRAPH');
   require(source.taskIndex.includes('IAM-004,EP03,Implement privileged MFA and recent-authentication assurance,P0,P0-AUTHORITY,COMPLETE'), 'IAM004_COMPLETE');
-  require(source.taskIndex.includes('IAM-005,EP03,"Implement membership, role grant, capability, and scope model",P0,P0-AUTHORITY,IN_REVIEW'), 'IAM005_IN_REVIEW');
-  require(source.taskIndex.includes('IAM-006,EP03,Implement central authorization policy engine,P0,P0-AUTHORITY,NOT_STARTED'), 'IAM006_DEFERRED');
+  require(source.taskIndex.includes('IAM-005,EP03,"Implement membership, role grant, capability, and scope model",P0,P0-AUTHORITY,COMPLETE'), 'IAM005_COMPLETE');
+  require(source.taskIndex.includes('IAM-006,EP03,Implement central authorization policy engine,P0,P0-AUTHORITY,IN_REVIEW'), 'IAM006_IN_REVIEW');
   return failures;
 }
 
@@ -120,7 +120,8 @@ if (process.argv.includes('--self-test')) {
     ['role inheritance', { contracts: `${current.contracts}\nconst roleHierarchy = new Map();` }],
     ['protected surface opened', { protectedAccess: current.protectedAccess.replace('notFound()', 'return undefined') }],
     ['missing security CI', { ci: current.ci.replaceAll('iam005:self-test', 'removed-iam005-self-test') }],
-    ['premature IAM-006', { taskIndex: current.taskIndex.replace('IAM-006,EP03,Implement central authorization policy engine,P0,P0-AUTHORITY,NOT_STARTED', 'IAM-006,EP03,Implement central authorization policy engine,P0,P0-AUTHORITY,IN_REVIEW') }],
+    ['regressed IAM-005 completion', { taskIndex: current.taskIndex.replace('IAM-005,EP03,"Implement membership, role grant, capability, and scope model",P0,P0-AUTHORITY,COMPLETE', 'IAM-005,EP03,"Implement membership, role grant, capability, and scope model",P0,P0-AUTHORITY,IN_REVIEW') }],
+    ['missing IAM-006 handoff', { taskIndex: current.taskIndex.replace('IAM-006,EP03,Implement central authorization policy engine,P0,P0-AUTHORITY,IN_REVIEW', 'IAM-006,EP03,Implement central authorization policy engine,P0,P0-AUTHORITY,NOT_STARTED') }],
   ];
   for (const [name, changes] of fixtures) {
     if (validate({ ...current, ...changes }).length === 0) throw new Error(`IAM-005 negative fixture accepted: ${name}`);
