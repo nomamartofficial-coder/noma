@@ -13,6 +13,7 @@ const QUEUE_MIGRATION_NAME = '20260801000200_queue_outbox_foundation';
 const IDENTITY_MIGRATION_NAME = '20260829000100_iam_001_identity_persistence';
 const ENCRYPTION_MIGRATION_NAME = '20260912000100_sec_003_encryption_migration_runs';
 const MFA_MIGRATION_NAME = '20260913000100_iam_004_privileged_mfa';
+const ACCESS_MIGRATION_NAME = '20260915000100_iam_005_access_authority';
 const EXPECTED_MIGRATION_CHECKSUMS = new Map([
   [BASELINE_MIGRATION_NAME, '9d9e22e2c4bb2d93831c62911ff5d0bdaecc039472d368ed1b1aad59408ee013'],
   [FOUNDATION_MIGRATION_NAME, 'a70a95dfa7c200d25b62a7ccb97e6a6cee970389431795b8b928d17c5dd9ddc9'],
@@ -20,6 +21,7 @@ const EXPECTED_MIGRATION_CHECKSUMS = new Map([
   [IDENTITY_MIGRATION_NAME, '82f7bf4c84958b1b031c6d65bcd02b88a37e74653efa52cd3abd18054ffa5960'],
   [ENCRYPTION_MIGRATION_NAME, 'b83284efa316aaa8d68608f0eeeb33a96c275a988ce43e4cac7bec12c94d6216'],
   [MFA_MIGRATION_NAME, 'f7bdb43b1f332e1258b86f343d205a0d0812daf655e96a6d2d73fb9a83e04ce6'],
+  [ACCESS_MIGRATION_NAME, '8b85ba9b26d13c1cbf927c7dda63036732123b80e1dd27f9e9137e259b1e5d82'],
 ]);
 const projectName = `noma-dev004-${process.pid}`;
 const databasePassword = randomBytes(24).toString('hex');
@@ -184,10 +186,10 @@ async function resolvePrePrismaBaseline(port, database, environment) {
 async function assertMigratedDatabase(database, environment, expectedProbe) {
   const extensions = await psql(
     database,
-    "SELECT extname FROM pg_extension WHERE extname IN ('citext', 'pg_trgm') ORDER BY extname;",
+    "SELECT extname FROM pg_extension WHERE extname IN ('btree_gist', 'citext', 'pg_trgm') ORDER BY extname;",
     environment,
   );
-  assert.deepEqual(extensions.stdout.trim().split(/\r?\n/), ['citext', 'pg_trgm']);
+  assert.deepEqual(extensions.stdout.trim().split(/\r?\n/), ['btree_gist', 'citext', 'pg_trgm']);
 
   const migrations = await psql(
     database,
@@ -201,10 +203,14 @@ async function assertMigratedDatabase(database, environment, expectedProbe) {
 
   const technicalTables = await psql(
     database,
-    "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename IN ('outbox_events', 'job_executions', 'job_execution_attempts', 'users', 'user_emails', 'credentials', 'sessions', 'identity_tokens', 'recovery_attempts', 'encryption_migration_runs', 'mfa_factors', 'mfa_recovery_code_batches', 'mfa_recovery_codes', 'session_step_up_challenges') ORDER BY tablename;",
+    "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename IN ('outbox_events', 'job_executions', 'job_execution_attempts', 'users', 'user_emails', 'credentials', 'sessions', 'identity_tokens', 'recovery_attempts', 'encryption_migration_runs', 'mfa_factors', 'mfa_recovery_code_batches', 'mfa_recovery_codes', 'session_step_up_challenges', 'access_scopes', 'capabilities', 'role_templates', 'role_template_allowed_scopes', 'role_template_allowed_subjects', 'role_template_capabilities', 'role_assignments', 'approval_requests', 'approval_decisions', 'temporary_access_grants', 'service_principals') ORDER BY tablename;",
     environment,
   );
   assert.deepEqual(technicalTables.stdout.trim().split(/\r?\n/), [
+    'access_scopes',
+    'approval_decisions',
+    'approval_requests',
+    'capabilities',
     'credentials',
     'encryption_migration_runs',
     'identity_tokens',
@@ -215,8 +221,15 @@ async function assertMigratedDatabase(database, environment, expectedProbe) {
     'mfa_recovery_codes',
     'outbox_events',
     'recovery_attempts',
+    'role_assignments',
+    'role_template_allowed_scopes',
+    'role_template_allowed_subjects',
+    'role_template_capabilities',
+    'role_templates',
+    'service_principals',
     'session_step_up_challenges',
     'sessions',
+    'temporary_access_grants',
     'user_emails',
     'users',
   ]);

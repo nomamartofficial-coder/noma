@@ -14,4 +14,6 @@ SEC-003 adds only technical `encryption_migration_runs` persistence and bounded 
 
 IAM-004 owns a separate forward-only migration for encrypted factor envelopes, append-only recovery-code evidence, step-up challenges, and nullable Session proof timestamps. Its bounded repository uses PostgreSQL locks and compare-and-swap for one-winner replay and session rotation; raw seeds/codes never belong in the database. See [`MFA.md`](../../MFA.md).
 
+IAM-005 adds exact Access scopes, the bounded `access.*` capability catalogue, immutable role-template versions, scoped role assignments, approval proof, temporary grants, and environment-bound service principals. PostgreSQL exclusion constraints own overlapping-grant races, and privileged human changes coordinate with Identity session containment in one transaction. See [`ACCESS.md`](../../ACCESS.md).
+
 Canonical guidance and commands are in [`DATABASE.md`](../../DATABASE.md) and [`QUEUE.md`](../../QUEUE.md).

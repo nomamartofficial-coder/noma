@@ -137,6 +137,69 @@ enum EncryptionMigrationStatus {
   @@map("encryption_migration_status")
 }
 
+enum AccessScopeType {
+  SELF
+  SELLER
+  INSTITUTION
+  ORDER
+  CASE
+  ASSIGNMENT
+  FULFILMENT_LOCATION
+  QUEUE
+  CARRIER
+  PLATFORM
+
+  @@map("access_scope_type")
+}
+
+enum AccessSubjectType {
+  HUMAN
+  SERVICE_PRINCIPAL
+
+  @@map("access_subject_type")
+}
+
+enum AccessPrivilegeClass {
+  ORDINARY
+  PRIVILEGED
+
+  @@map("access_privilege_class")
+}
+
+enum RoleTemplateStatus {
+  DRAFT
+  ACTIVE
+  RETIRED
+
+  @@map("role_template_status")
+}
+
+enum AccessApprovalOperation {
+  ASSIGNMENT_GRANT
+  ASSIGNMENT_REVOKE
+  TEMPORARY_ACCESS_GRANT
+  TEMPORARY_ACCESS_REVOKE
+
+  @@map("access_approval_operation")
+}
+
+enum AccessApprovalState {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+  CANCELLED
+
+  @@map("access_approval_state")
+}
+
+enum AccessApprovalDecisionValue {
+  APPROVE
+  REJECT
+
+  @@map("access_approval_decision_value")
+}
+
 model EncryptionMigrationRun {
   id                   String                    @id @db.Uuid
   consumerId           String                    @map("consumer_id") @db.VarChar(120)
@@ -184,6 +247,16 @@ model User {
   recoveryAttempts RecoveryAttempt[]
   mfaFactors       MfaFactor[]
   mfaRecoveryCodeBatches MfaRecoveryCodeBatch[]
+  selfAccessScopes AccessScope[] @relation("SelfAccessScopeUser")
+  roleAssignments RoleAssignment[] @relation("RoleAssignmentUser")
+  grantedRoleAssignments RoleAssignment[] @relation("RoleAssignmentGrantor")
+  revokedRoleAssignments RoleAssignment[] @relation("RoleAssignmentRevoker")
+  ownedServicePrincipals ServicePrincipal[] @relation("ServicePrincipalOwner")
+  revokedServicePrincipals ServicePrincipal[] @relation("ServicePrincipalRevoker")
+  requestedAccessApprovals ApprovalRequest[] @relation("ApprovalRequestRequestor")
+  targetedAccessApprovals ApprovalRequest[] @relation("ApprovalRequestTargetUser")
+  accessApprovalDecisions ApprovalDecision[] @relation("ApprovalDecisionApprover")
+  ownedTemporaryAccessGrants TemporaryAccessGrant[] @relation("TemporaryAccessOwner")
 
   @@index([status, createdAt], map: "users_status_created_idx")
   @@map("users")
@@ -369,6 +442,216 @@ model RecoveryAttempt {
   @@index([subjectDigest, occurredAt], map: "recovery_attempts_subject_time_idx")
   @@index([userId, occurredAt], map: "recovery_attempts_user_time_idx")
   @@map("recovery_attempts")
+}
+
+model AccessScope {
+  id                       String          @id @db.Uuid
+  type                     AccessScopeType
+  userId                   String?         @map("user_id") @db.Uuid
+  resourceId               String?         @map("resource_id") @db.Uuid
+  parentInstitutionScopeId String?         @map("parent_institution_scope_id") @db.Uuid
+  retiredAt                DateTime?       @map("retired_at") @db.Timestamptz(6)
+  createdAt                DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  user                     User?           @relation("SelfAccessScopeUser", fields: [userId], references: [id], onDelete: Restrict)
+  parentInstitutionScope   AccessScope?    @relation("InstitutionScopeChildren", fields: [parentInstitutionScopeId], references: [id], onDelete: Restrict)
+  childScopes              AccessScope[]   @relation("InstitutionScopeChildren")
+  assignments              RoleAssignment[]
+  approvalRequests         ApprovalRequest[]
+
+  @@unique([type, resourceId], map: "access_scopes_type_resource_key")
+  @@index([parentInstitutionScopeId, type], map: "access_scopes_parent_type_idx")
+  @@map("access_scopes")
+}
+
+model Capability {
+  id                   String                   @id @db.Uuid
+  code                 String                   @unique(map: "capabilities_code_key") @db.VarChar(120)
+  description          String                   @db.VarChar(240)
+  retiredAt            DateTime?                @map("retired_at") @db.Timestamptz(6)
+  createdAt            DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  roleTemplateMappings RoleTemplateCapability[]
+
+  @@map("capabilities")
+}
+
+model RoleTemplate {
+  id                         String                       @id @db.Uuid
+  code                       String                       @db.VarChar(80)
+  version                    Int
+  displayName                String                       @map("display_name") @db.VarChar(120)
+  status                     RoleTemplateStatus           @default(DRAFT)
+  privilegeClass             AccessPrivilegeClass         @map("privilege_class")
+  requireContactVerified     Boolean                      @default(false) @map("require_contact_verified")
+  passwordMaxAgeMilliseconds Int?                         @map("password_max_age_milliseconds")
+  mfaMaxAgeMilliseconds      Int?                         @map("mfa_max_age_milliseconds")
+  activatedAt                DateTime?                    @map("activated_at") @db.Timestamptz(6)
+  retiredAt                  DateTime?                    @map("retired_at") @db.Timestamptz(6)
+  createdAt                  DateTime                     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                  DateTime                     @updatedAt @map("updated_at") @db.Timestamptz(6)
+  allowedScopes              RoleTemplateAllowedScope[]
+  allowedSubjects            RoleTemplateAllowedSubject[]
+  capabilities               RoleTemplateCapability[]
+  assignments                RoleAssignment[]
+  approvalRequests           ApprovalRequest[]
+
+  @@unique([code, version], map: "role_templates_code_version_key")
+  @@index([status, code], map: "role_templates_status_code_idx")
+  @@map("role_templates")
+}
+
+model RoleTemplateAllowedScope {
+  roleTemplateId String          @map("role_template_id") @db.Uuid
+  scopeType      AccessScopeType @map("scope_type")
+  roleTemplate  RoleTemplate    @relation(fields: [roleTemplateId], references: [id], onDelete: Restrict)
+
+  @@id([roleTemplateId, scopeType])
+  @@map("role_template_allowed_scopes")
+}
+
+model RoleTemplateAllowedSubject {
+  roleTemplateId String            @map("role_template_id") @db.Uuid
+  subjectType     AccessSubjectType @map("subject_type")
+  roleTemplate   RoleTemplate      @relation(fields: [roleTemplateId], references: [id], onDelete: Restrict)
+
+  @@id([roleTemplateId, subjectType])
+  @@map("role_template_allowed_subjects")
+}
+
+model RoleTemplateCapability {
+  roleTemplateId String       @map("role_template_id") @db.Uuid
+  capabilityId   String       @map("capability_id") @db.Uuid
+  roleTemplate   RoleTemplate @relation(fields: [roleTemplateId], references: [id], onDelete: Restrict)
+  capability     Capability   @relation(fields: [capabilityId], references: [id], onDelete: Restrict)
+
+  @@id([roleTemplateId, capabilityId])
+  @@map("role_template_capabilities")
+}
+
+model RoleAssignment {
+  id                     String            @id @db.Uuid
+  subjectType            AccessSubjectType @map("subject_type")
+  userId                 String?           @map("user_id") @db.Uuid
+  servicePrincipalId     String?           @map("service_principal_id") @db.Uuid
+  roleTemplateId         String            @map("role_template_id") @db.Uuid
+  scopeId                String            @map("scope_id") @db.Uuid
+  scopeType              AccessScopeType   @map("scope_type")
+  validFrom              DateTime          @map("valid_from") @db.Timestamptz(6)
+  validUntil             DateTime?         @map("valid_until") @db.Timestamptz(6)
+  grantedByUserId        String            @map("granted_by_user_id") @db.Uuid
+  grantReason            String            @map("grant_reason") @db.VarChar(500)
+  grantedAt              DateTime          @map("granted_at") @db.Timestamptz(6)
+  revokedByUserId        String?           @map("revoked_by_user_id") @db.Uuid
+  revocationReason       String?           @map("revocation_reason") @db.VarChar(500)
+  revokedAt              DateTime?         @map("revoked_at") @db.Timestamptz(6)
+  version                Int               @default(0)
+  createdAt              DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user                   User?             @relation("RoleAssignmentUser", fields: [userId], references: [id], onDelete: Restrict)
+  servicePrincipal       ServicePrincipal? @relation(fields: [servicePrincipalId], references: [id], onDelete: Restrict)
+  roleTemplate           RoleTemplate      @relation(fields: [roleTemplateId], references: [id], onDelete: Restrict)
+  scope                  AccessScope       @relation(fields: [scopeId], references: [id], onDelete: Restrict)
+  grantedByUser          User              @relation("RoleAssignmentGrantor", fields: [grantedByUserId], references: [id], onDelete: Restrict)
+  revokedByUser          User?             @relation("RoleAssignmentRevoker", fields: [revokedByUserId], references: [id], onDelete: Restrict)
+  temporaryAccessGrant   TemporaryAccessGrant?
+
+  @@index([userId, validFrom, validUntil], map: "role_assignments_user_validity_idx")
+  @@index([servicePrincipalId, validFrom, validUntil], map: "role_assignments_service_validity_idx")
+  @@index([scopeId, validFrom, validUntil], map: "role_assignments_scope_validity_idx")
+  @@map("role_assignments")
+}
+
+model ApprovalRequest {
+  id                          String                  @id @db.Uuid
+  operation                   AccessApprovalOperation
+  subjectType                 AccessSubjectType       @map("subject_type")
+  targetUserId                String?                 @map("target_user_id") @db.Uuid
+  targetServicePrincipalId    String?                 @map("target_service_principal_id") @db.Uuid
+  roleTemplateId              String                  @map("role_template_id") @db.Uuid
+  scopeId                     String                  @map("scope_id") @db.Uuid
+  scopeType                   AccessScopeType         @map("scope_type")
+  requestedValidFrom          DateTime                @map("requested_valid_from") @db.Timestamptz(6)
+  requestedValidUntil         DateTime?               @map("requested_valid_until") @db.Timestamptz(6)
+  requestedByUserId           String                  @map("requested_by_user_id") @db.Uuid
+  reason                      String                  @db.VarChar(500)
+  expiresAt                   DateTime                @map("expires_at") @db.Timestamptz(6)
+  idempotencyKey              String                  @map("idempotency_key") @db.VarChar(160)
+  independentApprovalRequired Boolean                 @map("independent_approval_required")
+  state                       AccessApprovalState     @default(PENDING)
+  version                     Int                     @default(0)
+  createdAt                   DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                   DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+  targetUser                  User?                   @relation("ApprovalRequestTargetUser", fields: [targetUserId], references: [id], onDelete: Restrict)
+  targetServicePrincipal      ServicePrincipal?       @relation(fields: [targetServicePrincipalId], references: [id], onDelete: Restrict)
+  roleTemplate                RoleTemplate            @relation(fields: [roleTemplateId], references: [id], onDelete: Restrict)
+  scope                       AccessScope             @relation(fields: [scopeId], references: [id], onDelete: Restrict)
+  requestedByUser             User                    @relation("ApprovalRequestRequestor", fields: [requestedByUserId], references: [id], onDelete: Restrict)
+  decisions                   ApprovalDecision[]
+  temporaryAccessGrants       TemporaryAccessGrant[]
+
+  @@unique([requestedByUserId, idempotencyKey], map: "approval_requests_requestor_idempotency_key")
+  @@index([state, expiresAt], map: "approval_requests_state_expiry_idx")
+  @@map("approval_requests")
+}
+
+model ApprovalDecision {
+  id                      String                      @id @db.Uuid
+  approvalRequestId       String                      @map("approval_request_id") @db.Uuid
+  approverUserId          String                      @map("approver_user_id") @db.Uuid
+  decision                AccessApprovalDecisionValue
+  reason                  String                      @db.VarChar(500)
+  decidedAt               DateTime                    @map("decided_at") @db.Timestamptz(6)
+  sessionId               String                      @map("session_id") @db.Uuid
+  securityVersion         Int                         @map("security_version")
+  passwordAuthenticatedAt DateTime?                   @map("password_authenticated_at") @db.Timestamptz(6)
+  mfaVerifiedAt           DateTime?                   @map("mfa_verified_at") @db.Timestamptz(6)
+  mfaMethod               MfaMethod?                  @map("mfa_method")
+  mfaFactorId             String?                     @map("mfa_factor_id") @db.Uuid
+  assuranceEvaluatedAt    DateTime                    @map("assurance_evaluated_at") @db.Timestamptz(6)
+  createdAt               DateTime                    @default(now()) @map("created_at") @db.Timestamptz(6)
+  approvalRequest         ApprovalRequest             @relation(fields: [approvalRequestId], references: [id], onDelete: Restrict)
+  approverUser            User                        @relation("ApprovalDecisionApprover", fields: [approverUserId], references: [id], onDelete: Restrict)
+
+  @@unique([approvalRequestId, approverUserId], map: "approval_decisions_request_approver_key")
+  @@index([approverUserId, decidedAt], map: "approval_decisions_approver_time_idx")
+  @@map("approval_decisions")
+}
+
+model TemporaryAccessGrant {
+  id                String          @id @db.Uuid
+  roleAssignmentId  String          @unique(map: "temporary_access_grants_assignment_key") @map("role_assignment_id") @db.Uuid
+  ownerUserId       String          @map("owner_user_id") @db.Uuid
+  reason            String          @db.VarChar(500)
+  approvalRequestId String?         @map("approval_request_id") @db.Uuid
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  roleAssignment    RoleAssignment  @relation(fields: [roleAssignmentId], references: [id], onDelete: Restrict)
+  ownerUser         User            @relation("TemporaryAccessOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+  approvalRequest   ApprovalRequest? @relation(fields: [approvalRequestId], references: [id], onDelete: Restrict)
+
+  @@map("temporary_access_grants")
+}
+
+model ServicePrincipal {
+  id                      String            @id @db.Uuid
+  environment             String            @db.VarChar(20)
+  code                    String            @db.VarChar(100)
+  purpose                 String            @db.VarChar(240)
+  ownerUserId             String            @map("owner_user_id") @db.Uuid
+  credentialPolicyVersion Int               @map("credential_policy_version")
+  lastRotatedAt           DateTime?         @map("last_rotated_at") @db.Timestamptz(6)
+  revokedAt               DateTime?         @map("revoked_at") @db.Timestamptz(6)
+  revokedByUserId         String?           @map("revoked_by_user_id") @db.Uuid
+  revocationReason        String?           @map("revocation_reason") @db.VarChar(500)
+  version                 Int               @default(0)
+  createdAt               DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  ownerUser               User              @relation("ServicePrincipalOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+  revokedByUser           User?             @relation("ServicePrincipalRevoker", fields: [revokedByUserId], references: [id], onDelete: Restrict)
+  roleAssignments         RoleAssignment[]
+  approvalRequests        ApprovalRequest[]
+
+  @@unique([environment, code], map: "service_principals_environment_code_key")
+  @@index([ownerUserId, revokedAt], map: "service_principals_owner_revoked_idx")
+  @@map("service_principals")
 }
 
 model OutboxEvent {

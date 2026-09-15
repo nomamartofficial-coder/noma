@@ -54,8 +54,8 @@ function validate(source) {
   require(source.config.includes('NOMA_MFA_PASSWORD_FRESH_MS') && source.config.includes('NOMA_MFA_FRESH_MS') && source.config.includes('NOMA_MFA_CHALLENGE_MS'), 'BOUNDED_FRESHNESS_CONFIG');
   require(source.rootManifest.includes('iam004:verify') && source.ci.includes('iam004:integration-test') && source.ci.includes('iam004:self-test'), 'EXISTING_CI_GATES');
   require(source.taskIndex.includes('IAM-003,EP03,Implement email verification and password recovery,P0,P0-AUTHORITY,COMPLETE'), 'IAM003_COMPLETE');
-  require(source.taskIndex.includes('IAM-004,EP03,Implement privileged MFA and recent-authentication assurance,P0,P0-AUTHORITY,IN_REVIEW'), 'IAM004_IN_REVIEW');
-  require(source.taskIndex.includes('IAM-005,EP03,"Implement membership, role grant, capability, and scope model",P0,P0-AUTHORITY,NOT_STARTED'), 'IAM005_DEFERRED');
+  require(source.taskIndex.includes('IAM-004,EP03,Implement privileged MFA and recent-authentication assurance,P0,P0-AUTHORITY,COMPLETE'), 'IAM004_COMPLETE');
+  require(source.taskIndex.includes('IAM-005,EP03,"Implement membership, role grant, capability, and scope model",P0,P0-AUTHORITY,IN_REVIEW'), 'IAM005_IN_REVIEW');
   return errors;
 }
 
@@ -81,7 +81,7 @@ if (process.argv.includes('--self-test')) {
     ['MFA notice silently dropped', { worker: current.worker.replace("eventCode.startsWith('MFA_')", "eventCode.startsWith('NEVER_')") }],
     ['unbounded challenge', { config: current.config.replace('NOMA_MFA_CHALLENGE_MS', 'REMOVED_CHALLENGE_BOUND') }],
     ['missing security CI', { ci: current.ci.replaceAll('iam004:self-test', 'removed-iam004-self-test') }],
-    ['premature IAM-005', { taskIndex: current.taskIndex.replace('IAM-005,EP03,"Implement membership, role grant, capability, and scope model",P0,P0-AUTHORITY,NOT_STARTED', 'IAM-005,EP03,"Implement membership, role grant, capability, and scope model",P0,P0-AUTHORITY,IN_REVIEW') }],
+    ['regressed IAM-004', { taskIndex: current.taskIndex.replace('IAM-004,EP03,Implement privileged MFA and recent-authentication assurance,P0,P0-AUTHORITY,COMPLETE', 'IAM-004,EP03,Implement privileged MFA and recent-authentication assurance,P0,P0-AUTHORITY,IN_REVIEW') }],
   ];
   for (const [name, changes] of fixtures) {
     if (validate({ ...current, ...changes }).length === 0) throw new Error(`IAM-004 negative fixture accepted: ${name}`);

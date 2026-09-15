@@ -9,3 +9,5 @@ Only public exports may be imported. Deep imports are prohibited.
 `@noma/platform/identity` defines the IAM-001 Prisma-free identity persistence records, bounded repository port, authoritative account/session/token vocabularies, and conservative email normalization. It grants no authentication or authorization authority. See [`IDENTITY_PERSISTENCE.md`](../../IDENTITY_PERSISTENCE.md).
 
 IAM-002 extends that same entry point with bounded password-authentication ports and orchestration. Registration, candidate lookup, rehash, rotation, session resolution, conditional touch, digest revocation, and Redis limiter contracts remain Prisma/provider-free and grant no role or capability. See [`AUTHENTICATION.md`](../../AUTHENTICATION.md).
+
+`@noma/platform/access` defines IAM-005's provider- and Prisma-free exact scope, capability, immutable template-version, assignment-fact, approval-proof, service-principal, validity, and assurance-reuse contracts. It resolves facts only; IAM-006 remains responsible for final contextual authorization. See [`ACCESS.md`](../../ACCESS.md).

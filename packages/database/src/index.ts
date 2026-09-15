@@ -36,7 +36,11 @@ export {
   type BeginJobExecutionResult,
   type JobExecutionLease,
 } from './job-execution.js';
-export { createIdentityPersistence } from './identity.js';
+export {
+  containIdentitySessionsForAuthorityChange,
+  createIdentityPersistence,
+  type ContainIdentitySessionsForAuthorityChangeInput,
+} from './identity.js';
 export { createMfaAuthorityPersistence } from './mfa.js';
 export {
   EncryptionMigrationConflict,
@@ -51,6 +55,19 @@ export {
   type ReconciliationProbe,
   type SafeMigrationFailureCode,
 } from './encryption-migration.js';
+export {
+  createAccessAuthorityPersistence,
+  createAccessScope,
+  lockActiveAuthorityFactForUse,
+  type AccessAuthorityPersistence,
+  type AccessSubject,
+  type CreateAccessScopeInput,
+  type CreateDraftRoleTemplateInput,
+  type CreateServicePrincipalInput,
+  type GrantRoleAssignmentInput,
+  type RecordAccessApprovalDecisionInput,
+  type RequestAccessApprovalInput,
+} from './access.js';
 
 export const databasePackage = { name: '@noma/database', boundary: 'server' } as const;
 export type DatabasePackage = typeof databasePackage;
