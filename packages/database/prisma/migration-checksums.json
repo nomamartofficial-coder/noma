@@ -6,6 +6,7 @@
     "20260801000200_queue_outbox_foundation/migration.sql": "b87e89e1398212db5e950a2343bef0695b04417d8bd7a89e9e5973201b5b56df",
     "20260829000100_iam_001_identity_persistence/migration.sql": "82f7bf4c84958b1b031c6d65bcd02b88a37e74653efa52cd3abd18054ffa5960",
     "20260912000100_sec_003_encryption_migration_runs/migration.sql": "b83284efa316aaa8d68608f0eeeb33a96c275a988ce43e4cac7bec12c94d6216",
-    "20260913000100_iam_004_privileged_mfa/migration.sql": "f7bdb43b1f332e1258b86f343d205a0d0812daf655e96a6d2d73fb9a83e04ce6"
+    "20260913000100_iam_004_privileged_mfa/migration.sql": "f7bdb43b1f332e1258b86f343d205a0d0812daf655e96a6d2d73fb9a83e04ce6",
+    "20260915000100_iam_005_access_authority/migration.sql": "8b85ba9b26d13c1cbf927c7dda63036732123b80e1dd27f9e9137e259b1e5d82"
   }
 }

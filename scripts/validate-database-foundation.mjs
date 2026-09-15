@@ -14,6 +14,7 @@ const EXPECTED_POSTGRES_IMAGE =
   'postgres:18.4-alpine3.23@sha256:996d0920e4ff9df1fc19dacb904492f3c1ec0ec1cc338f0ad7123be7731c5f5e';
 const REQUIRED_FILES = [
   'DATABASE.md',
+  'ACCESS.md',
   'compose.yaml',
   'docs/adr/0004-prisma-postgresql-foundation.md',
   'packages/database/prisma.config.ts',
@@ -27,6 +28,8 @@ const REQUIRED_FILES = [
   'packages/database/prisma/migrations/20260829000100_iam_001_identity_persistence/migration.sql',
   'packages/database/prisma/migrations/20260912000100_sec_003_encryption_migration_runs/migration.sql',
   'packages/database/prisma/migrations/20260913000100_iam_004_privileged_mfa/migration.sql',
+  'packages/database/prisma/migrations/20260915000100_iam_005_access_authority/migration.sql',
+  'packages/database/src/access.ts',
   'packages/database/src/client.ts',
   'packages/database/src/transaction.ts',
   'packages/database/tests/client.test.mjs',
@@ -36,7 +39,7 @@ const REQUIRED_FILES = [
   'scripts/run-prisma-generate.mjs',
   'scripts/test-database-migrations.mjs',
 ];
-const ALLOWED_EXTENSIONS = new Set(['citext', 'pg_trgm']);
+const ALLOWED_EXTENSIONS = new Set(['btree_gist', 'citext', 'pg_trgm']);
 const DESTRUCTIVE_SQL = [
   /\bdrop\s+(?:table|column|schema|database|extension)\b/i,
   /\btruncate\b/i,
@@ -155,6 +158,10 @@ async function validate() {
     .map((match) => match[1])
     .sort();
   const expectedModels = [
+    'AccessScope',
+    'ApprovalDecision',
+    'ApprovalRequest',
+    'Capability',
     'Credential',
     'EncryptionMigrationRun',
     'IdentityToken',
@@ -165,13 +172,20 @@ async function validate() {
     'MfaRecoveryCodeBatch',
     'OutboxEvent',
     'RecoveryAttempt',
+    'RoleAssignment',
+    'RoleTemplate',
+    'RoleTemplateAllowedScope',
+    'RoleTemplateAllowedSubject',
+    'RoleTemplateCapability',
+    'ServicePrincipal',
     'Session',
     'SessionStepUpChallenge',
+    'TemporaryAccessGrant',
     'User',
     'UserEmail',
   ];
   if (JSON.stringify(models) !== JSON.stringify(expectedModels)) {
-    fail('Prisma models must exactly match the reviewed DEV-005, IAM-001, SEC-003, and IAM-004 persistence set');
+    fail('Prisma models must exactly match the reviewed DEV-005, IAM-001, SEC-003, IAM-004, and IAM-005 persistence set');
   }
 
   const prismaConfig = await read('packages/database/prisma.config.ts');

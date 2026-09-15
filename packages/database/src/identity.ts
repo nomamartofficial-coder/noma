@@ -42,7 +42,7 @@ import type {
 } from './generated/prisma/client.js';
 import { Prisma } from './generated/prisma/client.js';
 import { createOutboxEvent, createOutboxEventEnvelope } from './outbox.js';
-import { runInDatabaseTransaction } from './transaction.js';
+import { runInDatabaseTransaction, type DatabaseTransactionClient } from './transaction.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SAFE_CODE_PATTERN = /^[A-Z][A-Z0-9_]{1,79}$/;
@@ -132,6 +132,55 @@ function mapEmail(email: UserEmail): UserEmailRecord {
     primaryAt: email.primaryAt,
     retiredAt: email.retiredAt,
   });
+}
+
+export interface ContainIdentitySessionsForAuthorityChangeInput {
+  readonly userId: string;
+  readonly occurredAt: Date;
+  readonly transitionId: string;
+  readonly reasonCode: 'PRIVILEGED_ACCESS_GRANTED' | 'PRIVILEGED_ACCESS_REVOKED';
+}
+
+/** Identity-owned transaction seam used by Access for material privileged authority changes. */
+export async function containIdentitySessionsForAuthorityChange(
+  transaction: DatabaseTransactionClient,
+  input: ContainIdentitySessionsForAuthorityChangeInput,
+): Promise<Readonly<{ securityVersion: number }>> {
+  const occurredAt = requireDate('occurredAt', input.occurredAt);
+  const rows = await transaction.$queryRaw<readonly { id: string; securityVersion: number }[]>`
+    SELECT "id", "security_version" AS "securityVersion"
+    FROM "users"
+    WHERE "id" = CAST(${requireUuid('userId', input.userId)} AS uuid)
+    FOR UPDATE`;
+  const current = rows[0];
+  if (!current) throw new Error('Identity authority subject does not exist');
+
+  const transitionId = requireUuid('transitionId', input.transitionId);
+  await transaction.session.updateMany({
+    where: { userId: input.userId, status: { in: ['ACTIVE', 'STEP_UP_REQUIRED'] }, revokedAt: null },
+    data: {
+      status: 'REVOKED',
+      revokedAt: occurredAt,
+      revocationCode: input.reasonCode,
+      statusReasonCode: input.reasonCode,
+      lastTransitionAt: occurredAt,
+      lastTransitionId: transitionId,
+      version: { increment: 1 },
+      updatedAt: occurredAt,
+    },
+  });
+  const user = await transaction.user.update({
+    where: { id: input.userId },
+    data: {
+      securityVersion: { increment: 1 },
+      version: { increment: 1 },
+      lastTransitionAt: occurredAt,
+      lastTransitionId: transitionId,
+      updatedAt: occurredAt,
+    },
+    select: { securityVersion: true },
+  });
+  return Object.freeze(user);
 }
 
 function mapCredential(credential: Credential): PasswordCredentialRecord {

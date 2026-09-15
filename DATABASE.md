@@ -19,6 +19,8 @@ IAM-001 extends this foundation with one additive identity migration, checksum, 
 
 SEC-003 adds one forward-only technical migration for `encryption_migration_runs`. It preserves business/identity rows, supplies lease and checkpoint evidence, and delegates actual encrypted fields and CAS to later consumers. See [`ENCRYPTION.md`](ENCRYPTION.md).
 
+IAM-005 adds one forward-only Access migration. It enables `btree_gist`, creates typed scope/template/assignment/approval/temporary/service-principal tables, and seeds only the reviewed `access.*` capability catalogue. GIST exclusion constraints enforce half-open overlapping-grant ownership in PostgreSQL; triggers and relational keys preserve scope shape, immutable published templates, maker-checker evidence, and service-principal separation. No business membership or resource entity is added. See [`ACCESS.md`](ACCESS.md).
+
 ## Local start
 
 ```bash
