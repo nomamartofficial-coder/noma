@@ -3,7 +3,7 @@
 This directory records synthetic, non-production evidence for the central authorization policy foundation.
 
 - Tracking issue: [#68](https://github.com/nomamartofficial-coder/noma/issues/68)
-- Draft PR: assigned after publication
+- Draft PR: [#69](https://github.com/nomamartofficial-coder/noma/pull/69)
 - Exact implementation head: assigned after final push
 - Required gate run IDs: assigned after the five stable gates complete
 
