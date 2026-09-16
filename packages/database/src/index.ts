@@ -39,6 +39,8 @@ export {
 export {
   containIdentitySessionsForAuthorityChange,
   createIdentityPersistence,
+  lockAuthenticatedSessionForAuthorization,
+  resolveAuthenticatedSessionForAuthorization,
   type ContainIdentitySessionsForAuthorityChangeInput,
 } from './identity.js';
 export { createMfaAuthorityPersistence } from './mfa.js';
@@ -58,7 +60,9 @@ export {
 export {
   createAccessAuthorityPersistence,
   createAccessScope,
+  loadActiveAuthorityFactForUse,
   lockActiveAuthorityFactForUse,
+  resolveAccessApprovalForAuthorization,
   type AccessAuthorityPersistence,
   type AccessSubject,
   type CreateAccessScopeInput,
@@ -66,6 +70,7 @@ export {
   type CreateServicePrincipalInput,
   type GrantRoleAssignmentInput,
   type RecordAccessApprovalDecisionInput,
+  type ResolveAccessApprovalForAuthorizationInput,
   type RequestAccessApprovalInput,
 } from './access.js';
 

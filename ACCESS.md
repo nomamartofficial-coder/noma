@@ -2,7 +2,7 @@
 
 > **Task:** IAM-005
 > **Risk:** P0-AUTHORITY
-> **Status:** implemented for independent review; no protected surface is active
+> **Status:** IAM-005 merged; IAM-006 central policy is implemented for independent review; no protected surface is active
 
 ## Authority boundary
 
@@ -30,7 +30,7 @@ Templates are composed while `DRAFT`, then become immutable when activated. Assi
 
 PostgreSQL `btree_gist` half-open exclusion constraints serialize overlapping grants for the same subject, template version, and scope. Separate constraints preserve real human and service-principal foreign keys. `validUntil = NULL` means unbounded future time; it does not mean global scope.
 
-Privileged human grants and revocations coordinate the Access write with Identity-owned `securityVersion` advancement and session revocation in one transaction. Ordinary changes and natural expiry do not rewrite sessions. A transaction-bound `lockActiveAuthorityFactForUse` gives IAM-006 a future revoke/use linearization point without implementing an allow decision now.
+Privileged human grants and revocations coordinate the Access write with Identity-owned `securityVersion` advancement and session revocation in one transaction. Ordinary changes and natural expiry do not rewrite sessions. A transaction-bound `loadActiveAuthorityFactForUse` locks and revalidates one complete assignment-atomic fact for IAM-006. Protected mutations use that fact and the Identity-owned User/Session lock inside the same transaction as the local effect; see `AUTHORIZATION.md`.
 
 ## Maker-checker and temporary access
 
@@ -56,6 +56,6 @@ The integration suite uses isolated PostgreSQL 18 and real transaction barriers.
 
 ## Deferred and rollback
 
-IAM-006 owns deny-by-default contextual policy and middleware. IAM-009 owns human review workflow and Access administration. Business memberships, provider authentication, break-glass activation, protected surfaces, deployment, and production data remain out of scope.
+IAM-006 now owns deny-by-default contextual policy and the application enforcement seam. IAM-009 owns human review workflow and Access administration. Business memberships, provider authentication, break-glass activation, protected surfaces, deployment, and production data remain out of scope.
 
 Rollback is a reviewed source revert plus a forward database correction. The migration is additive and is not rolled back destructively.

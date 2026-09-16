@@ -55,7 +55,7 @@ console.log(`PASS: ${result.workflows} workflows, ${result.jobs} bounded jobs, $
 if (process.argv.includes('--self-test')) {
   await runSelfTest();
   selfTestGateEvaluator();
-  console.log('PASS: 36 injected workflow policy violations were rejected in isolated fixtures');
+  console.log('PASS: 41 injected workflow policy violations were rejected in isolated fixtures');
   console.log('PASS: stable gate accepted success and rejected failure, skip, and cancellation');
 }
 
@@ -77,7 +77,7 @@ async function validateRepository(root, { fixture = false } = {}) {
   } catch {
     errors.push(`${COMMAND_CATALOG}: required CI command catalog is missing`);
   }
-  for (const token of ['security:dependencies:validate', 'security:dependencies:self-test', 'security:encryption:validate', 'security:encryption:self-test', 'security:encryption:integration-test', 'iam004:validate', 'iam004:self-test', 'iam004:test', 'iam004:integration-test', 'iam005:validate', 'iam005:self-test', 'iam005:test', 'iam005:integration-test', 'identity:validate', 'identity:self-test', 'identity:integration-test', "'UI-005'", "'UI-006'", "'IAM-001'", "'IAM-004'", "'IAM-005'", "'SEC-003'", 'scripts/test-protected-role-routes.mjs', 'ui:storybook:validate', 'ui:storybook:self-test', 'ui:storybook:test', 'ui:visual:test']) {
+  for (const token of ['security:dependencies:validate', 'security:dependencies:self-test', 'security:encryption:validate', 'security:encryption:self-test', 'security:encryption:integration-test', 'iam004:validate', 'iam004:self-test', 'iam004:test', 'iam004:integration-test', 'iam005:validate', 'iam005:self-test', 'iam005:test', 'iam005:integration-test', 'iam006:validate', 'iam006:self-test', 'iam006:test', 'iam006:integration-test', 'identity:validate', 'identity:self-test', 'identity:integration-test', "'UI-005'", "'UI-006'", "'IAM-001'", "'IAM-004'", "'IAM-005'", "'IAM-006'", "'SEC-003'", 'scripts/test-protected-role-routes.mjs', 'ui:storybook:validate', 'ui:storybook:self-test', 'ui:storybook:test', 'ui:visual:test']) {
     if (!commandCatalog.includes(token)) errors.push(`${COMMAND_CATALOG}: missing required command token ${token}`);
   }
 
@@ -367,6 +367,11 @@ async function runSelfTest() {
     testCase('missing IAM-005 authority self-test', COMMAND_CATALOG, (s) => s.replaceAll('iam005:self-test', 'iam005:removed'), 'missing required command token iam005:self-test'),
     testCase('missing IAM-005 authority unit tests', COMMAND_CATALOG, (s) => s.replaceAll('iam005:test', 'iam005:removed'), 'missing required command token iam005:test'),
     testCase('missing IAM-005 authority integration', COMMAND_CATALOG, (s) => s.replaceAll('iam005:integration-test', 'iam005:removed'), 'missing required command token iam005:integration-test'),
+    testCase('missing IAM-006 authorization validation', COMMAND_CATALOG, (s) => s.replaceAll('iam006:validate', 'iam006:removed'), 'missing required command token iam006:validate'),
+    testCase('missing IAM-006 authorization self-test', COMMAND_CATALOG, (s) => s.replaceAll('iam006:self-test', 'iam006:removed'), 'missing required command token iam006:self-test'),
+    testCase('missing IAM-006 authorization unit tests', COMMAND_CATALOG, (s) => s.replaceAll('iam006:test', 'iam006:removed'), 'missing required command token iam006:test'),
+    testCase('missing IAM-006 authorization integration', COMMAND_CATALOG, (s) => s.replaceAll('iam006:integration-test', 'iam006:removed'), 'missing required command token iam006:integration-test'),
+    testCase('missing IAM-006 trace lookup', COMMAND_CATALOG, (s) => s.replaceAll("'IAM-006'", "'IAM-REMOVED'"), "missing required command token 'IAM-006'"),
     testCase('missing IAM-004 trace lookup', COMMAND_CATALOG, (s) => s.replaceAll("'IAM-004'", "'IAM-REMOVED'"), "missing required command token 'IAM-004'"),
     testCase('missing SEC-003 integration', COMMAND_CATALOG, (s) => s.replaceAll('security:encryption:integration-test', 'security:encryption:removed'), 'missing required command token security:encryption:integration-test'),
     testCase('missing SEC-003 trace lookup', COMMAND_CATALOG, (s) => s.replaceAll("'SEC-003'", "'SEC-REMOVED'"), "missing required command token 'SEC-003'"),

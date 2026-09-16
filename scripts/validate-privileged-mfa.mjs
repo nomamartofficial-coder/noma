@@ -55,7 +55,7 @@ function validate(source) {
   require(source.rootManifest.includes('iam004:verify') && source.ci.includes('iam004:integration-test') && source.ci.includes('iam004:self-test'), 'EXISTING_CI_GATES');
   require(source.taskIndex.includes('IAM-003,EP03,Implement email verification and password recovery,P0,P0-AUTHORITY,COMPLETE'), 'IAM003_COMPLETE');
   require(source.taskIndex.includes('IAM-004,EP03,Implement privileged MFA and recent-authentication assurance,P0,P0-AUTHORITY,COMPLETE'), 'IAM004_COMPLETE');
-  require(source.taskIndex.includes('IAM-005,EP03,"Implement membership, role grant, capability, and scope model",P0,P0-AUTHORITY,IN_REVIEW'), 'IAM005_IN_REVIEW');
+  require(source.taskIndex.includes('IAM-005,EP03,"Implement membership, role grant, capability, and scope model",P0,P0-AUTHORITY,COMPLETE'), 'IAM005_COMPLETE');
   return errors;
 }
 
