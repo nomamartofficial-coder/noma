@@ -19,6 +19,7 @@ const source = Object.fromEntries(await Promise.all(Object.entries(paths).map(as
 function validate(s) {
   const failures = [];
   const require = (condition, code) => { if (!condition) failures.push(code); };
+  const privacyWithLf = s.privacy.replaceAll('\r\n', '\n');
   require(s.privacy.includes("'OMIT', 'DERIVED', 'MASKED', 'FULL'")
     && s.privacy.includes("'PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED', 'SECRET'")
     && s.privacy.includes("field.classification === 'SECRET' && field.mode !== 'OMIT'")
@@ -40,7 +41,7 @@ function validate(s) {
   require(s.privacy.includes('result[key] = value')
     && s.privacy.includes("typeof value !== 'string'")
     && s.privacy.includes('Object.keys(mapped).length !== expected.length')
-    && s.privacy.includes("} catch {\n    // Never let a mapper or exotic source value place raw data in a public error.\n    throw new Error('Disclosure unavailable');")
+    && privacyWithLf.includes("} catch {\n    // Never let a mapper or exotic source value place raw data in a public error.\n    throw new Error('Disclosure unavailable');")
     && !/return\s+\{\s*\.\.\.(?:source|record|databaseRecord)|return\s+(?:source|record|databaseRecord)\s*;/.test(s.privacy + s.binding), 'EXACT_DTO');
   require(s.pep.includes("decision.decision === 'DENY'")
     && s.pep.includes('operation.execute(transaction, decision)')
@@ -69,6 +70,7 @@ if (process.argv.includes('--self-test')) {
     ['client fields', { binding: `${source.binding}\nconst selected = request.query.fields;` }],
     ['client mode', { binding: `${source.binding}\nconst selected = request.body.mode;` }],
     ['full record', { binding: `${source.binding}\nreturn { ...databaseRecord };` }],
+    ['raw mapper error', { privacy: source.privacy.replace(/(} catch \{\r?\n\s*\/\/[^\r\n]*\r?\n\s*)throw new Error\('Disclosure unavailable'\);/, '$1throw new Error("raw source");') }],
     ['broad select', { database: source.database.replace('select: ACCESS_ASSIGNMENT_SUMMARY_SELECT', 'select: undefined') }],
     ['forbidden source column', { database: `${source.database}\nconst unsafe = { grantReason: true };` }],
     ['missing PEP', { binding: source.binding.replace('authorization.executeProtectedRead(database', 'executeWithoutAuthorization(database') }],
@@ -81,6 +83,11 @@ if (process.argv.includes('--self-test')) {
   ];
   for (const [name, patch] of fixtures) {
     if (validate({ ...source, ...patch }).length === 0) throw new Error(`IAM-007 negative fixture accepted: ${name}`);
+  }
+  const privacyWithLf = source.privacy.replaceAll('\r\n', '\n');
+  if (validate({ ...source, privacy: privacyWithLf }).length
+    || validate({ ...source, privacy: privacyWithLf.replaceAll('\n', '\r\n') }).length) {
+    throw new Error('IAM-007 disclosure validator differs between LF and CRLF');
   }
   console.log(`PASS: ${fixtures.length} IAM-007 privacy regressions rejected`);
 } else {
