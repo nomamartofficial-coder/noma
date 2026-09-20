@@ -146,6 +146,8 @@ Repository-local dependency-floor validation, high-confidence secret scanning, a
 
 ## Manual deliberate-failure proof
 
+IAM-007 is registered only in the five existing stable gates: policy validation and negative fixtures in Quality and Security, focused unit tests in Quality and Windows, and disposable PostgreSQL read-model integration in Integration. It introduces no new gate, migration, dependency, protected route, or production activation. The exact IAM-007 task verification is `pnpm iam007:verify`.
+
 Only `ci-quality.yml` exposes deliberate-failure controls. The manual-dispatch Boolean `force_ci_failure` defaults to `false`. Before this new workflow exists on the default branch, the equivalent pre-merge proof is an explicit `ci-force-failure` label event; synchronization, reopen, and ordinary label states cannot activate it. Either authorized control makes the tests segment exit with the reserved deliberate-failure code after normal tests, evidence collection/upload still runs, and `Noma / Quality Gate` must fail. Removing the label triggers a normal recovery run.
 
 Before merge, apply the dedicated label to the draft PR, inspect the failing run, then remove it to trigger the normal recovery run:

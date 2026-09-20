@@ -60,6 +60,7 @@
     "python scripts/validate_traceability.py --lookup IAM-004",
     "python scripts/validate_traceability.py --lookup IAM-005",
     "python scripts/validate_traceability.py --lookup IAM-006",
+    "python scripts/validate_traceability.py --lookup IAM-007",
     "python scripts/validate_traceability.py --lookup SEC-003",
     "python scripts/validate_traceability.py --lookup SEC-006",
     "python scripts/validate_traceability.py --lookup SEC-007"

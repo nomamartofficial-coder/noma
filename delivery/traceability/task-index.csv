@@ -28,8 +28,8 @@ IAM-002,EP03,"Implement password registration, sign-in, sign-out, and session ro
 IAM-003,EP03,Implement email verification and password recovery,P0,P0-AUTHORITY,COMPLETE,Identity
 IAM-004,EP03,Implement privileged MFA and recent-authentication assurance,P0,P0-AUTHORITY,COMPLETE,Identity/Security
 IAM-005,EP03,"Implement membership, role grant, capability, and scope model",P0,P0-AUTHORITY,COMPLETE,Access Engineering
-IAM-006,EP03,Implement central authorization policy engine,P0,P0-AUTHORITY,IN_REVIEW,Access/Security
-IAM-007,EP03,Implement field-level projections and sensitive-data redaction,P0,P0-PRIVACY,NOT_STARTED,Access/Privacy
+IAM-006,EP03,Implement central authorization policy engine,P0,P0-AUTHORITY,COMPLETE,Access/Security
+IAM-007,EP03,Implement field-level projections and sensitive-data redaction,P0,P0-PRIVACY,IN_REVIEW,Access/Privacy
 IAM-008,EP03,Implement append-only audit service and privileged-action timeline,P0,P0-AUTHORITY,NOT_STARTED,Audit/Security
 IAM-009,EP03,Implement Access Admin workflows and access-review export,P0,P0-AUTHORITY,NOT_STARTED,Access Admin/QA
 IAM-010,EP03,Implement account security pages and session management,P0,P0-AUTHORITY,NOT_STARTED,Web/Identity

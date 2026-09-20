@@ -21,6 +21,14 @@ export class AuthorizationDeniedError extends Error {
   }
 }
 
+/** Missing protected resource and denied authority share one public response. */
+export class ProtectedDisclosureUnavailableError extends Error {
+  constructor() {
+    super('protected operation is unavailable');
+    this.name = 'ProtectedDisclosureUnavailableError';
+  }
+}
+
 export interface ProtectedDatabaseOperation<TResult> {
   readonly policyId: string;
   readonly resolveContext: (transaction: DatabaseTransactionClient) => Promise<TrustedAuthorizationContext>;
@@ -60,6 +68,11 @@ export class AuthorizationService {
 }
 
 export function publicAuthorizationFailure(error: unknown): Readonly<{ statusCode: 404; body: Readonly<{ status: 'UNAVAILABLE' }> }> {
-  if (!(error instanceof AuthorizationDeniedError)) throw error;
+  if (!(error instanceof AuthorizationDeniedError) && !(error instanceof ProtectedDisclosureUnavailableError)) throw error;
   return Object.freeze({ statusCode: 404 as const, body: Object.freeze({ status: 'UNAVAILABLE' as const }) });
+}
+
+/** Apply when a protected disclosure is bound to HTTP; no public route is active yet. */
+export function protectedDisclosureHeaders(): Readonly<{ 'Cache-Control': 'no-store' }> {
+  return Object.freeze({ 'Cache-Control': 'no-store' as const });
 }

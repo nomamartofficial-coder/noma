@@ -82,6 +82,8 @@ The optional native build scripts from `cpu-features`, `protobufjs`, and `ssh2` 
 
 ## Codex execution-profile independence
 
+IAM-007's `pnpm iam007:verify` runs the closed disclosure validator and negative fixtures, focused unit/query-shape/privacy tests, a synthetic PostgreSQL read-model integration, IAM-006 regression, SEC-003 boundary checks, and protected-route fail-closed smoke. The use-case binding must prove authorization before a minimum column select and explicit final DTO mapping; JSON-only redaction tests are insufficient. No real personal data or unapproved baseline acceptance is permitted.
+
 For tasks after `UI-006`, model and reasoning-effort selection follows [`CODEX_EXECUTION.md`](CODEX_EXECUTION.md). The required test layers still come only from task risk, acceptance criteria, and `docs/11-testing-strategy.md`. A lower-cost execution profile does not permit narrower coverage, skipped suites, weakened assertions, retries, less deterministic data, or deferred browser, accessibility, security, migration, concurrency, integration, or UAT evidence.
 
 The `UI-006` Storybook, real-browser accessibility, and reviewed visual-baseline contracts remain unchanged. No execution profile may accept a visual baseline automatically or replace the required local/CI comparison and human review.
