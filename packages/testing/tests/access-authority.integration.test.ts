@@ -407,7 +407,13 @@ describe.sequential('IAM-005 PostgreSQL Access authority', () => {
       scopeId: sellerOneId, scopeType: 'SELLER', validFrom: now, grantedByUserId: grantorId,
       grantReason: 'Historical capability retirement proof', grantedAt: now, containmentTransitionId: ids.nextUuid(),
     });
-    const retiredAt = new Date(now.getTime() + 86_400_000);
+    const capability = await database.capability.findUniqueOrThrow({
+      where: { code: 'access.service-principal.revoke' }, select: { createdAt: true },
+    });
+    const retiredAt = new Date(Math.max(now.getTime(), capability.createdAt.getTime()) + 86_400_000);
+    expect((await access.resolveActiveAuthorityFacts(
+      { subjectType: 'HUMAN', userId: subjectId }, new Date(retiredAt.getTime() - 1),
+    )).find((fact) => fact.assignment.id === assignment.id)?.capabilities).toContain('access.service-principal.revoke');
     await access.retireCapability('access.service-principal.revoke', retiredAt);
     await expect(database.capability.update({ where: { code: 'access.service-principal.revoke' }, data: { retiredAt: null } })).rejects.toThrow();
     const facts = await access.resolveActiveAuthorityFacts({ subjectType: 'HUMAN', userId: subjectId }, new Date(retiredAt.getTime() + 1_000));
