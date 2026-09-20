@@ -45,6 +45,11 @@ export {
 } from './identity.js';
 export { createMfaAuthorityPersistence } from './mfa.js';
 export {
+  ACCESS_ASSIGNMENT_SUMMARY_SELECT,
+  readAccessAssignmentSummarySource,
+  type AccessAssignmentSummarySource,
+} from './access-disclosure.js';
+export {
   EncryptionMigrationConflict,
   blockEncryptionMigrationRun,
   checkpointEncryptionMigrationRecord,
