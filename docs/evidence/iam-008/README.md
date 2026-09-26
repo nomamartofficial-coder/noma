@@ -25,7 +25,7 @@ pnpm iam008:integration-test
 pnpm iam008:verify
 ```
 
-The focused proof covers the closed registry and sentinel rejection; additive migration and checksum; database-enforced event/link immutability; restrictive relationships; operation idempotency and concurrency; mutation/audit/outbox atomicity; Redis-independent durability; IAM-006 exact-scope authority; IAM-007 exact select and fixed projection; single-event non-recursive audit reads; accessible viewer states; and the unchanged protected-route boundary. CI registers IAM-008 only inside the five stable Noma gates. Exact final command results and the pushed SHA are recorded in the draft PR evidence after the clean verification run.
+The focused proof covers the closed registry and sentinel rejection; additive migration and checksum; PostgreSQL rejection of caller-supplied `recorded_sequence` while normal append receives a generated sequence; database-enforced event/link UPDATE, DELETE, and TRUNCATE rejection with row preservation after failed single-table and combined erase attempts; restrictive relationships; operation idempotency and concurrency; mutation/audit/outbox atomicity; Redis-independent durability; IAM-006 exact-scope authority; IAM-007 exact select and fixed projection; single-event non-recursive audit reads; accessible viewer states; and the unchanged protected-route boundary. CI registers IAM-008 only inside the five stable Noma gates. Exact final command results and the pushed SHA are recorded in the draft PR evidence after the clean verification run.
 
 ## Residual risk and deliberately deferred scope
 

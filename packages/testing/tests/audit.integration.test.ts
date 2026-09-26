@@ -71,14 +71,25 @@ describe.sequential('IAM-008 PostgreSQL append-only audit authority', () => {
       SELECT table_name FROM information_schema.tables
       WHERE table_schema = 'public' AND table_name IN ('audit_events', 'audit_event_links') ORDER BY table_name`;
     expect(tables.map(({ table_name }) => table_name)).toEqual(['audit_event_links', 'audit_events']);
+    const identity = await database.$queryRaw<readonly { identity_generation: string | null }[]>`
+      SELECT identity_generation FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'audit_events' AND column_name = 'recorded_sequence'`;
+    expect(identity).toEqual([{ identity_generation: 'ALWAYS' }]);
     const triggers = await database.$queryRaw<readonly { trigger_name: string; definition: string }[]>`
       SELECT tgname AS trigger_name, pg_get_triggerdef(oid) AS definition
-      FROM pg_trigger WHERE NOT tgisinternal AND tgname IN ('audit_events_append_only', 'audit_event_links_append_only') ORDER BY tgname`;
-    expect(triggers).toHaveLength(2);
-    for (const trigger of triggers) {
+      FROM pg_trigger WHERE NOT tgisinternal AND tgname IN (
+        'audit_events_append_only', 'audit_event_links_append_only',
+        'audit_events_reject_truncate', 'audit_event_links_reject_truncate'
+      ) ORDER BY tgname`;
+    expect(triggers).toHaveLength(4);
+    for (const trigger of triggers.filter(({ trigger_name }) => trigger_name.endsWith('append_only'))) {
       expect(trigger.definition).toContain('BEFORE');
       expect(trigger.definition).toContain('UPDATE');
       expect(trigger.definition).toContain('DELETE');
+    }
+    for (const trigger of triggers.filter(({ trigger_name }) => trigger_name.endsWith('reject_truncate'))) {
+      expect(trigger.definition).toContain('BEFORE TRUNCATE');
+      expect(trigger.definition).toContain('FOR EACH STATEMENT');
     }
     const indexes = await database.$queryRaw<readonly { indexname: string }[]>`
       SELECT indexname FROM pg_indexes WHERE schemaname = 'public' AND tablename IN ('audit_events', 'audit_event_links')`;
@@ -108,6 +119,60 @@ describe.sequential('IAM-008 PostgreSQL append-only audit authority', () => {
     await expectAppendOnly(database.$executeRaw`DELETE FROM "audit_event_links" WHERE "audit_event_id" = CAST(${created.eventId} AS uuid)`);
     expect(await database.auditEvent.count({ where: { id: created.eventId } })).toBe(1);
     expect(await database.auditEventLink.count({ where: { auditEventId: created.eventId } })).toBe(1);
+  });
+
+  test('PostgreSQL owns the canonical sequence and rejects an ordinary explicit value', async () => {
+    const first = event();
+    const firstRow = await appendAuditEvent(database, first);
+    const forgedId = ids.nextUuid();
+    const forgedOperationId = ids.nextUuid();
+    const callerChosenSequence = firstRow.recordedSequence + 1_000_000n;
+
+    let failure: unknown;
+    try {
+      await database.$executeRaw`
+        INSERT INTO "audit_events" (
+          "id", "recorded_sequence", "action_code", "contract_version", "source_module",
+          "occurred_at", "actor_kind", "system_actor_code", "resource_type", "resource_id",
+          "outcome", "correlation_id", "operation_id"
+        )
+        SELECT CAST(${forgedId} AS uuid), ${callerChosenSequence}, "action_code", "contract_version",
+          "source_module", "occurred_at", "actor_kind", "system_actor_code", "resource_type",
+          "resource_id", "outcome", "correlation_id", ${forgedOperationId}
+        FROM "audit_events" WHERE "id" = CAST(${first.eventId} AS uuid)`;
+    } catch (error) { failure = error; }
+    expect(failure).toBeTruthy();
+    expect(JSON.stringify(failure)).toContain('428C9');
+    expect(await database.auditEvent.count({ where: { id: forgedId } })).toBe(0);
+    expect(await database.auditEvent.count({ where: { id: first.eventId } })).toBe(1);
+    expect(await database.auditEventLink.count({ where: { auditEventId: first.eventId } })).toBe(1);
+
+    const second = event();
+    const secondRow = await appendAuditEvent(database, second);
+    expect(secondRow.recordedSequence).toBeGreaterThan(firstRow.recordedSequence);
+    expect(secondRow.recordedSequence).not.toBe(callerChosenSequence);
+  });
+
+  test('PostgreSQL rejects single-table and combined TRUNCATE without erasing history', async () => {
+    const created = event();
+    await appendAuditEvent(database, created);
+    const assertPreserved = async () => {
+      expect(await database.auditEvent.count({ where: { id: created.eventId } })).toBe(1);
+      expect(await database.auditEventLink.count({ where: { auditEventId: created.eventId } })).toBe(1);
+    };
+    const expectRejected = async (operation: Promise<unknown>, expectedSqlState?: string) => {
+      let failure: unknown;
+      try { await operation; } catch (error) { failure = error; }
+      expect(failure).toBeTruthy();
+      if (expectedSqlState) expect(JSON.stringify(failure)).toContain(expectedSqlState);
+      await assertPreserved();
+    };
+
+    // The FK can reject an events-only TRUNCATE before its trigger runs.
+    await expectRejected(database.$executeRaw`TRUNCATE TABLE "audit_events"`);
+    await expectRejected(database.$executeRaw`TRUNCATE TABLE "audit_event_links"`, '55000');
+    await expectRejected(database.$executeRaw`TRUNCATE TABLE "audit_events", "audit_event_links"`, '55000');
+    await expectRejected(database.$executeRaw`TRUNCATE TABLE "audit_events" CASCADE`, '55000');
   });
 
   test('stable operation identity prevents retry and concurrent duplicates but allows legitimate repetitions', async () => {

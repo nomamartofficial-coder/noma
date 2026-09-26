@@ -44,7 +44,7 @@ const REQUIRED_FILES = [
 const ALLOWED_EXTENSIONS = new Set(['btree_gist', 'citext', 'pg_trgm']);
 const DESTRUCTIVE_SQL = [
   /\bdrop\s+(?:table|column|schema|database|extension)\b/i,
-  /\btruncate\b/i,
+  /\btruncate\b(?!\s+on\b)/i,
   /\bdelete\s+from\b/i,
   /\balter\s+table[\s\S]*\bdrop\b/i,
 ];
@@ -250,6 +250,16 @@ function selfTest() {
     fail('destructive migration negative test did not fail');
   } catch (error) {
     if (!/destructive SQL/.test(error.message)) throw error;
+  }
+
+  validateMigrationSql('protective.sql', 'CREATE TRIGGER "audit_events_reject_truncate" BEFORE TRUNCATE ON "audit_events" FOR EACH STATEMENT EXECUTE FUNCTION "reject_audit_history_mutation"();');
+  for (const table of ['audit_events', 'audit_event_links']) {
+    try {
+      validateMigrationSql('injected.sql', `TRUNCATE TABLE "${table}";`);
+      fail(`${table} truncate negative test did not fail`);
+    } catch (error) {
+      if (!/destructive SQL/.test(error.message)) throw error;
+    }
   }
 
   if (sha256('changed migration') === sha256('original migration')) {
