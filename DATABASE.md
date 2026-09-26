@@ -21,6 +21,8 @@ SEC-003 adds one forward-only technical migration for `encryption_migration_runs
 
 IAM-005 adds one forward-only Access migration. It enables `btree_gist`, creates typed scope/template/assignment/approval/temporary/service-principal tables, and seeds only the reviewed `access.*` capability catalogue. GIST exclusion constraints enforce half-open overlapping-grant ownership in PostgreSQL; triggers and relational keys preserve scope shape, immutable published templates, maker-checker evidence, and service-principal separation. No business membership or resource entity is added. See [`ACCESS.md`](ACCESS.md).
 
+IAM-008 adds the forward-only `audit_events` and `audit_event_links` history plus the unassigned `audit.event.read` capability. PostgreSQL `BEFORE UPDATE OR DELETE` triggers reject mutation with SQLSTATE `55000`; restrictive foreign keys prevent cascading erasure. Stable operation uniqueness, bounded JSON-object checks, and query-specific indexes support typed append and scoped keyset reads. There is no backfill, severity enum, retention deletion, or production reader assignment. See [ADR-0025](docs/adr/0025-append-only-audit-service-and-privileged-action-timeline.md).
+
 ## Local start
 
 ```bash

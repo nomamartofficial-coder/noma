@@ -45,8 +45,8 @@ function validate(source) {
   require(source.manifest.includes('iam006:verify') && source.ci.includes('iam006:integration-test') && source.ci.includes('iam006:self-test'), 'CI_GRAPH');
   require(source.taskIndex.includes('IAM-005,EP03,"Implement membership, role grant, capability, and scope model",P0,P0-AUTHORITY,COMPLETE'), 'IAM005_COMPLETE');
   require(source.taskIndex.includes('IAM-006,EP03,Implement central authorization policy engine,P0,P0-AUTHORITY,COMPLETE'), 'IAM006_COMPLETE');
-  require(source.taskIndex.includes('IAM-007,EP03,Implement field-level projections and sensitive-data redaction,P0,P0-PRIVACY,IN_REVIEW'), 'IAM007_IN_REVIEW');
-  require(source.taskIndex.includes('IAM-008,EP03,Implement append-only audit service and privileged-action timeline,P0,P0-AUTHORITY,NOT_STARTED'), 'IAM008_DEFERRED');
+  require(source.taskIndex.includes('IAM-007,EP03,Implement field-level projections and sensitive-data redaction,P0,P0-PRIVACY,COMPLETE'), 'IAM007_COMPLETE');
+  require(source.taskIndex.includes('IAM-008,EP03,Implement append-only audit service and privileged-action timeline,P0,P0-AUTHORITY,IN_REVIEW'), 'IAM008_IN_REVIEW');
   require(source.taskIndex.includes('IAM-009,EP03,Implement Access Admin workflows and access-review export,P0,P0-AUTHORITY,NOT_STARTED'), 'IAM009_DEFERRED');
   return failures;
 }
@@ -72,8 +72,8 @@ if (process.argv.includes('--self-test')) {
     ['activated protected API', { apiRegistry: `${current.apiRegistry}\nconst unsafe = { policyId: 'access.assignment.grant.v1' };` }],
     ['protected Web opened', { webBoundary: current.webBoundary.replace('notFound()', 'return undefined') }],
     ['missing IAM-006 integration', { ci: current.ci.replaceAll('iam006:integration-test', 'iam006:removed') }],
-    ['premature IAM-007 completion', { taskIndex: current.taskIndex.replace('IAM-007,EP03,Implement field-level projections and sensitive-data redaction,P0,P0-PRIVACY,IN_REVIEW', 'IAM-007,EP03,Implement field-level projections and sensitive-data redaction,P0,P0-PRIVACY,COMPLETE') }],
-    ['premature IAM-008', { taskIndex: current.taskIndex.replace('IAM-008,EP03,Implement append-only audit service and privileged-action timeline,P0,P0-AUTHORITY,NOT_STARTED', 'IAM-008,EP03,Implement append-only audit service and privileged-action timeline,P0,P0-AUTHORITY,IN_REVIEW') }],
+    ['regressed IAM-007', { taskIndex: current.taskIndex.replace('IAM-007,EP03,Implement field-level projections and sensitive-data redaction,P0,P0-PRIVACY,COMPLETE', 'IAM-007,EP03,Implement field-level projections and sensitive-data redaction,P0,P0-PRIVACY,IN_REVIEW') }],
+    ['missing IAM-008 review state', { taskIndex: current.taskIndex.replace('IAM-008,EP03,Implement append-only audit service and privileged-action timeline,P0,P0-AUTHORITY,IN_REVIEW', 'IAM-008,EP03,Implement append-only audit service and privileged-action timeline,P0,P0-AUTHORITY,NOT_STARTED') }],
     ['premature IAM-009', { taskIndex: current.taskIndex.replace('IAM-009,EP03,Implement Access Admin workflows and access-review export,P0,P0-AUTHORITY,NOT_STARTED', 'IAM-009,EP03,Implement Access Admin workflows and access-review export,P0,P0-AUTHORITY,IN_REVIEW') }],
   ];
   for (const [name, changes] of fixtures) {

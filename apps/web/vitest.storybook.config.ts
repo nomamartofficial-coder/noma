@@ -25,6 +25,7 @@ export default defineConfig({
         test: {
           allowOnly: false,
           browser: {
+            api: { host: '127.0.0.1', port: 50060 },
             enabled: true,
             headless: true,
             provider: playwright({

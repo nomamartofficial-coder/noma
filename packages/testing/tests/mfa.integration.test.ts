@@ -279,4 +279,22 @@ describe.sequential('IAM-004 PostgreSQL replay and encrypted MFA authority', () 
     expect((await database.mfaRecoveryCode.findUniqueOrThrow({ where: { codeDigest } })).invalidatedAt).toBeNull();
   });
 
+  test('commits one typed audit representation for every current Identity/MFA material action without secret values', async () => {
+    const expected = [
+      'identity.password.recovery.complete', 'identity.mfa.factor.activate', 'identity.mfa.factor.replace',
+      'identity.mfa.factor.remove', 'identity.mfa.recovery-codes.regenerate', 'identity.assurance.step-up.complete',
+    ];
+    const rows = await database.auditEvent.findMany({
+      where: { actionCode: { in: expected } },
+      orderBy: { recordedSequence: 'asc' },
+      select: { actionCode: true, reasonText: true, beforeSummary: true, afterSummary: true, operationId: true },
+    });
+    expect(new Set(rows.map(({ actionCode }) => actionCode))).toEqual(new Set(expected));
+    expect(rows.every(({ reasonText }) => reasonText === null)).toBe(true);
+    expect(new Set(rows.map(({ operationId }) => operationId)).size).toBe(rows.length);
+    const serialized = JSON.stringify(rows);
+    for (const sentinel of [password, rawSessionToken, ...recoveryCodes]) expect(serialized).not.toContain(sentinel);
+    expect(await database.outboxEvent.count({ where: { eventType: { contains: 'audit' } } })).toBe(0);
+  });
+
 });
