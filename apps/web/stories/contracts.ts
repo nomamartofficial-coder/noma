@@ -75,6 +75,7 @@ export const storyInventory = Object.freeze([
   composition('rider', 'Rider shell and connectivity', 'apps/web/src/shells/protected/rider/rider-shell.tsx', ['protected-rider--server-confirmed', 'protected-rider--cached', 'protected-rider--local-draft', 'protected-rider--pending-sync', 'protected-rider--sync-failed', 'protected-rider--conflict', 'protected-rider--connection-required', 'protected-rider--action-mode']),
   composition('operations', 'Operations shell and queue', 'apps/web/src/shells/protected/operations/operations-shell.tsx', ['protected-operations--queue']),
   composition('admin', 'Admin shell and review frame', 'apps/web/src/shells/protected/admin/admin-shell.tsx', ['protected-admin--review', 'protected-admin--shell']),
+  composition('audit', 'Internal governed audit viewer behind the fail-closed Admin boundary', 'apps/web/src/audit/audit-viewer.tsx', ['protected-audit--loaded', 'protected-audit--loading', 'protected-audit--empty', 'protected-audit--filtered-empty', 'protected-audit--error', 'protected-audit--denied', 'protected-audit--malformed-query', 'protected-audit--pagination-loading']),
 ] as const satisfies readonly StoryInventoryEntry[]);
 
 const direct = (...storyIds: string[]): StateApplicability => Object.freeze({ kind: 'DIRECT', storyIds });
@@ -83,13 +84,13 @@ const composed = (ownerStoryId: string, rationale: string, ...storyIds: string[]
 const notApplicable = (rationale: string): StateApplicability => Object.freeze({ kind: 'NOT_APPLICABLE', rationale });
 
 export const stateApplicability = Object.freeze({
-  LOADING: composed('buyer', 'The route-owned Buyer account boundary preserves shell geometry while loading.', 'consumer-shells--buyer-loading'),
-  EMPTY: notApplicable('Current shells are truthful capability placeholders and do not claim authoritative empty business collections.'),
-  NO_RESULTS: notApplicable('No production search-results component exists before the marketplace feature tasks.'),
-  ERROR: composed('buyer', 'The Buyer account error boundary owns retry and safe-return presentation.', 'consumer-shells--buyer-error'),
+  LOADING: direct('consumer-shells--buyer-loading', 'protected-audit--loading', 'protected-audit--pagination-loading'),
+  EMPTY: direct('protected-audit--empty'),
+  NO_RESULTS: direct('protected-audit--filtered-empty'),
+  ERROR: direct('consumer-shells--buyer-error', 'protected-audit--error', 'protected-audit--malformed-query'),
   PENDING: direct('primitives-noma--button-matrix', 'commerce-noma--status-phases', 'protected-rider--pending-sync'),
   DISABLED: direct('primitives-noma--button-matrix', 'primitives-noma--choice-controls'),
-  PERMISSION_RESTRICTED: composed('protected-unavailable', 'Protected denial deliberately discloses no authorization cause.', 'protected-access--unavailable'),
+  PERMISSION_RESTRICTED: composed('protected-unavailable', 'Protected denial deliberately discloses no authorization cause.', 'protected-access--unavailable', 'protected-audit--denied'),
   UNAUTHENTICATED: composed('protected-unavailable', 'Protected denial deliberately uses the same neutral unavailable presentation.', 'protected-access--unavailable'),
   EXPIRED: direct('commerce-noma--responsibility-deadline'),
   RATE_LIMITED: notApplicable('No rate-limit presentation contract exists before owning API and journey work.'),

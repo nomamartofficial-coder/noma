@@ -29,7 +29,9 @@ const REQUIRED_FILES = [
   'packages/database/prisma/migrations/20260912000100_sec_003_encryption_migration_runs/migration.sql',
   'packages/database/prisma/migrations/20260913000100_iam_004_privileged_mfa/migration.sql',
   'packages/database/prisma/migrations/20260915000100_iam_005_access_authority/migration.sql',
+  'packages/database/prisma/migrations/20260925000100_iam_008_append_only_audit/migration.sql',
   'packages/database/src/access.ts',
+  'packages/database/src/audit.ts',
   'packages/database/src/client.ts',
   'packages/database/src/transaction.ts',
   'packages/database/tests/client.test.mjs',
@@ -161,6 +163,8 @@ async function validate() {
     'AccessScope',
     'ApprovalDecision',
     'ApprovalRequest',
+    'AuditEvent',
+    'AuditEventLink',
     'Capability',
     'Credential',
     'EncryptionMigrationRun',
@@ -185,7 +189,7 @@ async function validate() {
     'UserEmail',
   ];
   if (JSON.stringify(models) !== JSON.stringify(expectedModels)) {
-    fail('Prisma models must exactly match the reviewed DEV-005, IAM-001, SEC-003, IAM-004, and IAM-005 persistence set');
+    fail('Prisma models must exactly match the reviewed DEV-005, IAM-001, SEC-003, IAM-004, IAM-005, and IAM-008 persistence set');
   }
 
   const prismaConfig = await read('packages/database/prisma.config.ts');
