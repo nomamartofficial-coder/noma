@@ -3,6 +3,8 @@
 > **Task:** `DEV-005`
 > **Authority:** PostgreSQL records the obligation and processing result; Redis only delivers work.
 
+IAM-008 audit history is separate from the outbox. Current Identity/MFA commands append their typed audit event before the already-required security-notice obligation inside one PostgreSQL transaction, so either all authoritative records commit or none do. Audit append does not create a generic outbox event, Redis loss does not affect committed history, and Worker retry/replay never inserts authoritative audit events.
+
 ## Local service
 
 The local Redis service uses the reviewed official `redis:8.8.1-alpine3.23` multi-platform digest. It binds only to `127.0.0.1:56379`, requires a synthetic password, persists AOF data every second, uses a named volume, reports authenticated health, and sets `maxmemory-policy=noeviction` as required for reliable BullMQ operation.

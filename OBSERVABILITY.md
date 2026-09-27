@@ -9,6 +9,8 @@ API and Worker start `@noma/observability/server` only after typed environment v
 
 The public `@noma/observability/client` boundary remains a minimal browser-safe contract. DEV-010 does not install a browser telemetry SDK, expose a collector URL, or add a public telemetry route.
 
+IAM-008 audit history is not an observability log or trace. Logs remain diagnostic and redacted; the audit store receives only closed, typed, transaction-bound evidence for approved actions. IAM-008 does not copy raw requests, private evidence, arbitrary metadata, or stack traces into either channel and does not make audit durability depend on telemetry export.
+
 ## Correlation and trace propagation
 
 API and Worker health HTTP requests accept bounded `X-Request-Id`, `X-Correlation-Id`, `traceparent`, and `tracestate` values. Invalid opaque IDs are replaced with UUIDs; invalid W3C trace context is ignored safely. Responses expose only `X-Request-Id` and `X-Correlation-Id`.

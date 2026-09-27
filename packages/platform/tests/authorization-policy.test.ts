@@ -175,7 +175,7 @@ describe('IAM-006 central policy decision point', () => {
   });
 
   test('has an immutable closed registry with no wildcard or duplicate defaults', () => {
-    expect(ACCESS_AUTHORIZATION_POLICIES.map(({ id }) => id)).toEqual(['access.assignment.read.v1', 'access.assignment.grant.v1', 'access.service-principal.read.v1']);
+    expect(ACCESS_AUTHORIZATION_POLICIES.map(({ id }) => id)).toEqual(['audit.event.read.v1', 'access.assignment.read.v1', 'access.assignment.grant.v1', 'access.service-principal.read.v1']);
     expect(() => createAuthorizationPolicyRegistry([policy(), policy()])).toThrow(/Duplicate/);
     expect(() => policy({ id: 'synthetic.*' })).toThrow(/without wildcards/);
     expect(Object.isFrozen(authorizationPolicyRegistry.policies)).toBe(true);

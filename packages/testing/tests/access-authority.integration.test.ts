@@ -14,6 +14,7 @@ import {
   type AccessAuthorityPersistence,
   type DatabaseClient,
 } from '@noma/database';
+import { ACCESS_CAPABILITY_CODES } from '@noma/platform/access';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 import {
@@ -148,8 +149,12 @@ describe.sequential('IAM-005 PostgreSQL Access authority', () => {
     const extension = await database.$queryRaw<readonly { extname: string }[]>`SELECT extname FROM pg_extension WHERE extname = 'btree_gist'`;
     expect(extension).toEqual([{ extname: 'btree_gist' }]);
     const capabilities = await database.capability.findMany({ orderBy: { code: 'asc' } });
-    expect(capabilities).toHaveLength(13);
-    expect(capabilities.every(({ code }) => code.startsWith('access.') && !code.includes('*'))).toBe(true);
+    expect(capabilities.map(({ code }) => code)).toEqual([...ACCESS_CAPABILITY_CODES].sort());
+    expect(capabilities.filter(({ code }) => code.startsWith('access.'))).toHaveLength(13);
+    expect(capabilities.every(({ code }) => !code.includes('*'))).toBe(true);
+    const auditReadCapability = capabilities.find(({ code }) => code === 'audit.event.read');
+    if (!auditReadCapability) throw new Error('IAM-008 audit read capability is missing');
+    expect(await database.roleTemplateCapability.count({ where: { capabilityId: auditReadCapability.id } })).toBe(0);
     await expect(runInDatabaseTransaction(database, (transaction) => createAccessScope(transaction, {
       id: ids.nextUuid(), type: 'SELLER', resourceId: ids.nextUuid(), parentInstitutionScopeId: sellerOneId, createdAt: now,
     }))).rejects.toThrow();

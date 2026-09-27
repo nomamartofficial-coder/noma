@@ -51,12 +51,13 @@ function validate(s) {
   require(s.security.includes('export function maskSensitiveValue')
     && !/function maskSensitiveValue|function maskValue|function redactValue/.test(s.privacy + s.binding)
     && !/SensitiveFieldProtector|ManagedKeyProvider|decrypt\(/.test(s.binding), 'SEC003_REUSE_NO_BROAD_DECRYPT');
-  require(!/model\s+(DisclosureProjection|AuditEvent)|projection_registry|projection_version/.test(s.schema)
+  require(!/model\s+DisclosureProjection|projection_registry|projection_version/.test(s.schema)
     && !/IAM006_PROTECTED[^\n]*policyId: ['"]/.test(s.apiRegistry)
     && s.web.includes('notFound()'), 'NO_PREMATURE_ACTIVATION');
   require(s.taskIndex.includes('IAM-006,EP03,Implement central authorization policy engine,P0,P0-AUTHORITY,COMPLETE')
-    && s.taskIndex.includes('IAM-007,EP03,Implement field-level projections and sensitive-data redaction,P0,P0-PRIVACY,IN_REVIEW')
-    && s.taskIndex.includes('IAM-008,EP03,Implement append-only audit service and privileged-action timeline,P0,P0-AUTHORITY,NOT_STARTED'), 'ONE_TASK_LAG');
+    && s.taskIndex.includes('IAM-007,EP03,Implement field-level projections and sensitive-data redaction,P0,P0-PRIVACY,COMPLETE')
+    && s.taskIndex.includes('IAM-008,EP03,Implement append-only audit service and privileged-action timeline,P0,P0-AUTHORITY,IN_REVIEW')
+    && s.taskIndex.includes('IAM-009,EP03,Implement Access Admin workflows and access-review export,P0,P0-AUTHORITY,NOT_STARTED'), 'ONE_TASK_LAG');
   require(s.manifest.includes('iam007:verify') && s.ci.includes('iam007-validate')
     && s.ci.includes('iam007-self-test') && s.ci.includes('iam007-unit'), 'FIVE_GATE_REGISTRATION');
   return failures;
@@ -77,9 +78,9 @@ if (process.argv.includes('--self-test')) {
     ['missing no-store', { pep: source.pep.replaceAll("'Cache-Control': 'no-store'", "'Cache-Control': 'public'") }],
     ['duplicate mask', { binding: `${source.binding}\nfunction maskSensitiveValue() { return ''; }` }],
     ['broad decrypt', { binding: `${source.binding}\nconst raw = decrypt(value);` }],
-    ['premature audit', { schema: `${source.schema}\nmodel AuditEvent { id String @id }` }],
+    ['dynamic disclosure storage', { schema: `${source.schema}\nmodel DisclosureProjection { id String @id }` }],
     ['activated Web', { web: source.web.replace('notFound()', 'return undefined') }],
-    ['advanced IAM008', { taskIndex: source.taskIndex.replace('timeline,P0,P0-AUTHORITY,NOT_STARTED', 'timeline,P0,P0-AUTHORITY,IN_REVIEW') }],
+    ['advanced IAM009', { taskIndex: source.taskIndex.replace('export,P0,P0-AUTHORITY,NOT_STARTED', 'export,P0,P0-AUTHORITY,IN_REVIEW') }],
   ];
   for (const [name, patch] of fixtures) {
     if (validate({ ...source, ...patch }).length === 0) throw new Error(`IAM-007 negative fixture accepted: ${name}`);

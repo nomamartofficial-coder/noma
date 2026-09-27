@@ -79,6 +79,15 @@ const PRIVILEGED_ACCESS_ASSURANCE = Object.freeze({
 
 export const ACCESS_AUTHORIZATION_POLICIES = Object.freeze([
   defineAuthorizationPolicy({
+    id: 'audit.event.read.v1', actionId: 'audit.event.read', effect: 'READ',
+    permittedActorTypes: ['HUMAN'], requiredCapability: 'audit.event.read',
+    permittedScopeTypes: ['SELLER', 'INSTITUTION', 'ORDER', 'CASE', 'ASSIGNMENT', 'FULFILMENT_LOCATION', 'QUEUE', 'CARRIER'],
+    relationship: 'EXACT_SCOPE', humanAccount: 'ACTIVE',
+    actionAssurance: PRIVILEGED_ACCESS_ASSURANCE, businessFacts: NOT_APPLICABLE,
+    featureFacts: NOT_APPLICABLE, restrictionFacts: NOT_APPLICABLE, emergencyFacts: NOT_APPLICABLE,
+    approval: NOT_APPLICABLE,
+  }),
+  defineAuthorizationPolicy({
     id: 'access.assignment.read.v1', actionId: 'access.assignment.read', effect: 'READ',
     permittedActorTypes: ['HUMAN'], requiredCapability: 'access.assignment.read',
     permittedScopeTypes: EVERY_EXACT_SCOPE, relationship: 'EXACT_SCOPE', humanAccount: 'ACTIVE',

@@ -31,7 +31,9 @@ import {
   type UserEmailRecord,
   type UserIdentityRecord,
 } from '@noma/platform/identity';
+import { prepareAuditEvent } from '@noma/platform/audit';
 
+import { appendAuditEvent } from './audit.js';
 import type { DatabaseClient } from './client.js';
 import type {
   Credential,
@@ -1071,6 +1073,23 @@ export function createIdentityPersistence(client: DatabaseClient): IdentityPersi
             methodCode: 'EMAIL_LINK', outcomeCode: 'RECOVERY_COMPLETED', assuranceEvidenceCode: 'ONE_TIME_EMAIL_PROOF', containmentCode: 'ALL_SESSIONS_REVOKED', occurredAt: completedAt,
           },
         });
+        await appendAuditEvent(transaction, prepareAuditEvent({
+          eventId: input.transitionId,
+          actionCode: 'identity.password.recovery.complete',
+          occurredAt: completedAt,
+          actor: { kind: 'HUMAN', userId: input.userId },
+          resource: { type: 'USER', id: input.userId },
+          outcome: 'SUCCEEDED',
+          correlationId: input.correlationId,
+          operationId: input.transitionId,
+          sourceVersion: input.securityVersion + 1,
+          beforeSummary: { securityVersion: input.securityVersion },
+          afterSummary: { securityVersion: input.securityVersion + 1, sessionsRevoked: true },
+          links: [
+            { targetType: 'USER_EMAIL', targetId: input.emailId, relationshipType: 'RECOVERY_CHANNEL' },
+            { targetType: 'RECOVERY_ATTEMPT', targetId: input.recoveryAttemptId, relationshipType: 'EVIDENCE' },
+          ],
+        }));
         await enqueueSecurityNotice(transaction, {
           eventId: input.noticeEventId, userEmailId: input.emailId, userVersion: input.userVersion + 2,
           eventCode: 'PASSWORD_RECOVERED', correlationId: input.correlationId, occurredAt: completedAt,

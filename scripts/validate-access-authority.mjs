@@ -39,8 +39,8 @@ const expectedCapabilities = Object.freeze([
 function validate(source) {
   const failures = [];
   const require = (condition, code) => { if (!condition) failures.push(code); };
-  const accessSchema = source.schema.slice(source.schema.indexOf('model AccessScope'), source.schema.indexOf('model OutboxEvent'));
-  const servicePrincipalSchema = source.schema.slice(source.schema.indexOf('model ServicePrincipal'), source.schema.indexOf('model OutboxEvent'));
+  const accessSchema = source.schema.slice(source.schema.indexOf('model AccessScope'), source.schema.indexOf('model AuditEvent'));
+  const servicePrincipalSchema = source.schema.slice(source.schema.indexOf('model ServicePrincipal'), source.schema.indexOf('model AuditEvent'));
 
   require(['AccessScope', 'Capability', 'RoleTemplate', 'RoleTemplateAllowedScope', 'RoleTemplateAllowedSubject', 'RoleTemplateCapability', 'RoleAssignment', 'ApprovalRequest', 'ApprovalDecision', 'TemporaryAccessGrant', 'ServicePrincipal']
     .every((model) => source.schema.includes(`model ${model} {`)), 'ACCESS_MODELS');

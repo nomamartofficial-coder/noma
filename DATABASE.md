@@ -21,6 +21,8 @@ SEC-003 adds one forward-only technical migration for `encryption_migration_runs
 
 IAM-005 adds one forward-only Access migration. It enables `btree_gist`, creates typed scope/template/assignment/approval/temporary/service-principal tables, and seeds only the reviewed `access.*` capability catalogue. GIST exclusion constraints enforce half-open overlapping-grant ownership in PostgreSQL; triggers and relational keys preserve scope shape, immutable published templates, maker-checker evidence, and service-principal separation. No business membership or resource entity is added. See [`ACCESS.md`](ACCESS.md).
 
+IAM-008 adds the forward-only `audit_events` and `audit_event_links` history plus the unassigned `audit.event.read` capability. PostgreSQL `BEFORE UPDATE OR DELETE` row triggers and `BEFORE TRUNCATE` statement triggers reject ordinary history mutation with SQLSTATE `55000`; restrictive foreign keys prevent cascading deletion. The canonical `recorded_sequence` is `GENERATED ALWAYS AS IDENTITY`, so ordinary inserts cannot choose the timeline order. Prisma's `@default(autoincrement())` describes the generated value but does not distinguish `ALWAYS` from `BY DEFAULT`; the reviewed migration SQL is authoritative for that PostgreSQL-specific rule. Stable operation uniqueness, bounded JSON-object checks, and query-specific indexes support typed append and scoped keyset reads. These controls do not defend against a database owner or superuser deliberately dropping or disabling them. There is no backfill, severity enum, retention deletion, or production reader assignment. See [ADR-0025](docs/adr/0025-append-only-audit-service-and-privileged-action-timeline.md).
+
 ## Local start
 
 ```bash

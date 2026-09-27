@@ -8,7 +8,7 @@
 
 Noma authorization is deny by default. Policy is not capability, role is not a decision, MFA is not authorization, and UI visibility is not authority. Capability plus the wrong scope denies. Facts from separate assignments never cross-combine. A missing or unknown required fact denies. Step-up produces fresher authentication evidence; it never executes a deferred command. Redis, browser state, navigation, and cached role labels are never authorization truth.
 
-IAM-006 is not IAM-007, IAM-008, or IAM-009. It does not add field projections, audit workflows, Access administration, business entities, protected routes, or production activation.
+IAM-006 remains the decision authority used by IAM-007 disclosure and IAM-008 audit access. It does not itself add field projections, audit persistence, Access administration, business entities, protected routes, or production activation.
 
 ## PEP, PDP, and PIP
 
@@ -45,6 +45,8 @@ The approval seam validates exact operation, subject, template, scope, validity,
 Every current API route is registered as `PUBLIC` or `AUTHENTICATED_SELF`; there are currently no `IAM006_PROTECTED` or provider operations. Identity-owned self-security endpoints are not wrapped in Access capabilities. Future protected use cases must use the application PEP; a controller guard alone is insufficient.
 
 Seller, Rider, Operations, and Admin production routes continue to call the stable server-side `notFound()` boundary before rendering. No cookie, header, query, environment flag, local storage value, or Storybook fixture can open them.
+
+IAM-008 adds `audit.event.read.v1`: human interactive readers only, exact `audit.event.read` capability, privileged current assurance, exact Seller/Institution/Order/Case/Assignment/Fulfilment-location/Queue/Carrier scope, and no PLATFORM scope. The capability is unassigned by default. The PEP runs before the bounded database select; each successful query appends one non-recursive audit-read event in the same transaction. `/admin/audit` remains fail closed for IAM-009.
 
 ## Verification and rollback
 

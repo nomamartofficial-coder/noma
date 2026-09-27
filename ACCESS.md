@@ -22,7 +22,7 @@ IAM-005 stores scoped authority facts. It does not make final authorization deci
 
 Future owning modules create their authoritative business record and bind its UUID to an Access scope in the same database transaction through the transaction-bound `createAccessScope` seam. IAM-005 exposes no public arbitrary-scope API and creates no Seller, Institution, Rider, Order, Case, Queue, or Carrier entity.
 
-The migration seeds only the thirteen `access.*` capabilities needed to administer this foundation. Capability codes are exact, immutable, and retired rather than rewritten or deleted. No `seller.*`, `finance.*`, `support.*`, operational, or commerce capability is created.
+The IAM-005 migration seeds only the thirteen `access.*` capabilities needed to administer this foundation. IAM-008 separately seeds the exact `audit.event.read` capability without assigning it to any template or actor. Capability codes are exact, immutable, and retired rather than rewritten or deleted. No `seller.*`, `finance.*`, `support.*`, operational, or commerce capability is created.
 
 ## Templates and assignments
 
@@ -57,5 +57,7 @@ The integration suite uses isolated PostgreSQL 18 and real transaction barriers.
 ## Deferred and rollback
 
 IAM-006 now owns deny-by-default contextual policy and the application enforcement seam. IAM-009 owns human review workflow and Access administration. Business memberships, provider authentication, break-glass activation, protected surfaces, deployment, and production data remain out of scope.
+
+IAM-008 registers typed audit contracts for future Access commands, but the present Access persistence API is also used for repository/setup fixtures and has no activated command seam that can supply trusted actor and authority evidence. Those helpers do not emit production audit events. A future owning command must authorize, mutate, and append the registered event in one transaction before it can activate.
 
 Rollback is a reviewed source revert plus a forward database correction. The migration is additive and is not rolled back destructively.

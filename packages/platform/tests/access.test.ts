@@ -52,8 +52,9 @@ function session(): AuthenticatedSessionRecord {
 describe('IAM-005 Access contracts', () => {
   test('publishes only the bounded exact Access vocabulary', () => {
     expect(ACCESS_SCOPE_TYPES).toEqual(['SELF', 'SELLER', 'INSTITUTION', 'ORDER', 'CASE', 'ASSIGNMENT', 'FULFILMENT_LOCATION', 'QUEUE', 'CARRIER', 'PLATFORM']);
-    expect(ACCESS_CAPABILITY_CODES).toHaveLength(13);
-    expect(ACCESS_CAPABILITY_CODES.every((code) => code.startsWith('access.'))).toBe(true);
+    expect(ACCESS_CAPABILITY_CODES).toHaveLength(14);
+    expect(ACCESS_CAPABILITY_CODES.filter((code) => code.startsWith('access.'))).toHaveLength(13);
+    expect(ACCESS_CAPABILITY_CODES.filter((code) => !code.startsWith('access.'))).toEqual(['audit.event.read']);
     expect(ACCESS_CAPABILITY_CODES.some((code) => code.includes('*'))).toBe(false);
   });
 

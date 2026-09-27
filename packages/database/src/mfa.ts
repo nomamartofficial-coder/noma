@@ -1,5 +1,7 @@
 import { IDENTITY_SECURITY_NOTICE_CONTRACT, type MfaAuthorityPersistence, type MfaFactorRecord, type MfaSessionContext, type MfaStepUpChallengeRecord } from '@noma/platform/identity';
+import { prepareAuditEvent } from '@noma/platform/audit';
 
+import { appendAuditEvent } from './audit.js';
 import type { DatabaseClient } from './client.js';
 import { Prisma, type MfaFactor, type SessionStepUpChallenge } from './generated/prisma/client.js';
 import { createOutboxEvent, createOutboxEventEnvelope } from './outbox.js';
@@ -247,6 +249,27 @@ export function createMfaAuthorityPersistence(client: DatabaseClient, policy: {
           lastTransitionAt: input.at, lastTransitionId: uuid(input.transitionId),
           createdAt: input.at, updatedAt: input.at,
         } });
+        await appendAuditEvent(transaction, prepareAuditEvent({
+          eventId: input.transitionId,
+          actionCode: old ? 'identity.mfa.factor.replace' : 'identity.mfa.factor.activate',
+          occurredAt: input.at,
+          actor: { kind: 'HUMAN', userId: input.userId, sessionId: authority.sessionId },
+          resource: { type: 'MFA_FACTOR', id: factor.id },
+          outcome: 'SUCCEEDED',
+          correlationId: input.correlationId,
+          operationId: input.transitionId,
+          sourceVersion: factor.version + 1,
+          ...(old
+            ? {
+                beforeSummary: { factorState: 'ACTIVE' as const },
+                afterSummary: { factorState: 'ACTIVE' as const, previousFactorState: 'REPLACED' as const, recoveryCodeCount: input.recoveryCodes.length },
+                links: [{ targetType: 'MFA_FACTOR', targetId: old.id, relationshipType: 'REPLACES' }],
+              }
+            : {
+                beforeSummary: { factorState: 'PENDING_ENROLLMENT' as const },
+                afterSummary: { factorState: 'ACTIVE' as const, recoveryCodeCount: input.recoveryCodes.length },
+              }),
+        }));
         await enqueueMfaNotice(transaction, {
           eventId: input.noticeEventId, userEmailId: emailId, userVersion: authority.userVersion + 1,
           code: old ? 'MFA_FACTOR_REPLACED' : 'MFA_FACTOR_ACTIVATED', at: input.at, correlationId: input.correlationId,
@@ -368,10 +391,11 @@ export function createMfaAuthorityPersistence(client: DatabaseClient, policy: {
           status: 'REVOKED', revokedAt: input.at, revocationCode: 'STEP_UP_COMPLETED', statusReasonCode: 'STEP_UP_COMPLETED',
           lastTransitionAt: input.at, lastTransitionId: uuid(input.transitionId), version: { increment: 1 }, updatedAt: input.at,
         } });
+        const assurance = needsMfa && needsPassword ? 'PRIVILEGED_MFA_RECENT' : needsMfa ? 'MFA_VERIFIED' : 'RECENTLY_AUTHENTICATED';
         await transaction.session.create({ data: {
           id: uuid(input.successorSessionId), userId: input.userId,
           tokenDigest: digest(input.successorTokenDigest), status: 'ACTIVE',
-          assurance: needsMfa && needsPassword ? 'PRIVILEGED_MFA_RECENT' : needsMfa ? 'MFA_VERIFIED' : 'RECENTLY_AUTHENTICATED',
+          assurance,
           issuedSecurityVersion: input.securityVersion, issuedAt: input.at, lastUsedAt: input.at,
           idleExpiresAt: new Date(Math.min(input.at.getTime() + IDLE_MS, session.absoluteExpiresAt.getTime())),
           absoluteExpiresAt: session.absoluteExpiresAt,
@@ -382,6 +406,20 @@ export function createMfaAuthorityPersistence(client: DatabaseClient, policy: {
           deviceLabel: session.deviceLabel, clientFamily: session.clientFamily,
           lastTransitionAt: input.at, lastTransitionId: uuid(input.transitionId), createdAt: input.at, updatedAt: input.at,
         } });
+        await appendAuditEvent(transaction, prepareAuditEvent({
+          eventId: input.transitionId,
+          actionCode: 'identity.assurance.step-up.complete',
+          occurredAt: input.at,
+          actor: { kind: 'HUMAN', userId: input.userId, sessionId: authority.sessionId },
+          resource: { type: 'SESSION', id: input.successorSessionId },
+          outcome: 'SUCCEEDED',
+          correlationId: input.transitionId,
+          operationId: input.transitionId,
+          sourceVersion: input.securityVersion,
+          beforeSummary: { assurance: session.assurance },
+          afterSummary: { assurance },
+          links: [{ targetType: 'STEP_UP_CHALLENGE', targetId: challenge.id, relationshipType: 'COMPLETES' }],
+        }));
         return true;
       });
     },
@@ -415,6 +453,20 @@ export function createMfaAuthorityPersistence(client: DatabaseClient, policy: {
           lastTransitionAt: input.at, lastTransitionId: uuid(input.transitionId), updatedAt: input.at,
         } });
         await revokeSessions(transaction, input.userId, input.at, input.transitionId, 'MFA_FACTOR_REMOVED');
+        await appendAuditEvent(transaction, prepareAuditEvent({
+          eventId: input.transitionId,
+          actionCode: 'identity.mfa.factor.remove',
+          occurredAt: input.at,
+          actor: { kind: 'HUMAN', userId: input.userId, sessionId: authority.sessionId },
+          resource: { type: 'MFA_FACTOR', id: input.factorId },
+          reasonCode: 'USER_REQUESTED_FACTOR_REMOVAL',
+          outcome: 'SUCCEEDED',
+          correlationId: input.correlationId,
+          operationId: input.transitionId,
+          sourceVersion: input.factorVersion + 1,
+          beforeSummary: { factorState: 'ACTIVE' },
+          afterSummary: { factorState: 'REVOKED', sessionsRevoked: true },
+        }));
         await enqueueMfaNotice(transaction, { eventId: input.noticeEventId, userEmailId: emailId,
           userVersion: authority.userVersion + 1, code: 'MFA_FACTOR_REMOVED',
           at: input.at, correlationId: input.correlationId });
@@ -467,6 +519,20 @@ export function createMfaAuthorityPersistence(client: DatabaseClient, policy: {
           lastTransitionAt: input.at, lastTransitionId: uuid(input.transitionId),
           createdAt: input.at, updatedAt: input.at,
         } });
+        await appendAuditEvent(transaction, prepareAuditEvent({
+          eventId: input.transitionId,
+          actionCode: 'identity.mfa.recovery-codes.regenerate',
+          occurredAt: input.at,
+          actor: { kind: 'HUMAN', userId: input.userId, sessionId: authority.sessionId },
+          resource: { type: 'MFA_RECOVERY_BATCH', id: input.batchId },
+          outcome: 'SUCCEEDED',
+          correlationId: input.correlationId,
+          operationId: input.transitionId,
+          sourceVersion: 1,
+          beforeSummary: { batchState: 'ACTIVE' },
+          afterSummary: { batchState: 'ACTIVE', recoveryCodeCount: input.codes.length },
+          links: [{ targetType: 'MFA_FACTOR', targetId: factor.id, relationshipType: 'SECURES' }],
+        }));
         await enqueueMfaNotice(transaction, { eventId: input.noticeEventId, userEmailId: emailId,
           userVersion: authority.userVersion + 1, code: 'MFA_RECOVERY_CODES_REGENERATED',
           at: input.at, correlationId: input.correlationId });

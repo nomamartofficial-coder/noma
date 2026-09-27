@@ -15,6 +15,7 @@ const ALLOWED_CLIENT_FILES = new Set([
   'apps/web/src/identity/identity-public-flow.tsx',
   'apps/web/src/shells/protected/compact-shell-navigation.tsx',
   'apps/web/src/shells/surface-switcher.tsx',
+  'apps/web/src/audit/audit-viewer.tsx',
 ]);
 
 const read = (path) => readFile(resolve(ROOT, path), 'utf8');

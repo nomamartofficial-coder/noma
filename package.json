@@ -68,6 +68,11 @@
     "iam007:test": "pnpm --filter @noma/platform build && pnpm --filter @noma/database build && pnpm --filter @noma/security build && pnpm --filter @noma/api build && node node_modules/vitest/vitest.mjs run --project unit packages/platform/tests/privacy.test.ts apps/api/tests/access-disclosure.test.ts",
     "iam007:integration-test": "pnpm build && node node_modules/vitest/vitest.mjs run --project integration packages/testing/tests/privacy-projection.integration.test.ts",
     "iam007:verify": "pnpm iam007:validate && pnpm iam007:self-test && pnpm iam007:test && pnpm iam007:integration-test && pnpm iam006:verify && pnpm security:encryption:validate && pnpm security:encryption:self-test && node scripts/test-protected-role-routes.mjs",
+    "iam008:validate": "node scripts/validate-audit-service.mjs",
+    "iam008:self-test": "node scripts/validate-audit-service.mjs --self-test",
+    "iam008:test": "pnpm --filter @noma/ui build && pnpm --filter @noma/platform... build && pnpm --filter @noma/database... build && pnpm --filter @noma/api... build && node node_modules/vitest/vitest.mjs run --project unit packages/platform/tests/audit.test.ts apps/api/tests/audit-disclosure.test.ts && node node_modules/vitest/vitest.mjs run --project component tests/component/audit-viewer.component.test.tsx",
+    "iam008:integration-test": "pnpm build && node node_modules/vitest/vitest.mjs run --project integration packages/testing/tests/audit.integration.test.ts packages/testing/tests/mfa.integration.test.ts packages/testing/tests/identity-verification-recovery.integration.test.ts",
+    "iam008:verify": "pnpm iam008:validate && pnpm iam008:self-test && pnpm iam008:test && pnpm iam008:integration-test && pnpm iam007:verify && pnpm db:verify && pnpm queue:verify && node scripts/test-protected-role-routes.mjs",
     "queue:foundation:validate": "node scripts/validate-queue-foundation.mjs",
     "queue:self-test": "node scripts/validate-queue-foundation.mjs --self-test",
     "queue:test": "pnpm --filter @noma/contracts test && pnpm --filter @noma/integrations test && pnpm --filter @noma/worker test",
@@ -159,7 +164,7 @@
     "start:api": "pnpm --filter @noma/api start",
     "start:worker": "pnpm --filter @noma/worker start",
     "smoke:runtimes": "pnpm build && node scripts/smoke-runtimes.mjs",
-    "check": "pnpm workspace:validate && pnpm runtimes:validate && pnpm env:validate && pnpm db:validate && pnpm identity:validate && pnpm auth:validate && pnpm iam003:validate && pnpm iam004:validate && pnpm iam005:validate && pnpm iam006:validate && pnpm iam007:validate && pnpm queue:foundation:validate && pnpm testing:validate && pnpm providers:validate && pnpm observability:validate && pnpm ui:validate && pnpm deploy:validate && pnpm security:dependencies:validate && pnpm security:encryption:validate && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "check": "pnpm workspace:validate && pnpm runtimes:validate && pnpm env:validate && pnpm db:validate && pnpm identity:validate && pnpm auth:validate && pnpm iam003:validate && pnpm iam004:validate && pnpm iam005:validate && pnpm iam006:validate && pnpm iam007:validate && pnpm iam008:validate && pnpm queue:foundation:validate && pnpm testing:validate && pnpm providers:validate && pnpm observability:validate && pnpm ui:validate && pnpm deploy:validate && pnpm security:dependencies:validate && pnpm security:encryption:validate && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "clean": "turbo run clean && node scripts/clean-workspace.mjs"
   },
   "devDependencies": {

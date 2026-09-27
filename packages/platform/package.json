@@ -25,6 +25,10 @@
       "types": "./dist/access/index.d.ts",
       "default": "./dist/access/index.js"
     },
+    "./audit": {
+      "types": "./dist/audit/index.d.ts",
+      "default": "./dist/audit/index.js"
+    },
     "./privacy": {
       "types": "./dist/privacy/index.d.ts",
       "default": "./dist/privacy/index.js"

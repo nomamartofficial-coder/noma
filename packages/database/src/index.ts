@@ -1,4 +1,13 @@
 export {
+  appendAuditEvent,
+  AUDIT_TIMELINE_ROW_SELECT,
+  readAuditTimelineSources,
+  type AuditTimelineFilter,
+  type AuditTimelineRowSource,
+  type AuditTimelineScope,
+  type ReadAuditTimelineInput,
+} from './audit.js';
+export {
   createDatabaseClient,
   disconnectDatabaseClient,
   type DatabaseClient,

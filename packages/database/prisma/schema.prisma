@@ -200,6 +200,22 @@ enum AccessApprovalDecisionValue {
   @@map("access_approval_decision_value")
 }
 
+enum AuditActorKind {
+  HUMAN
+  SERVICE_PRINCIPAL
+  SYSTEM
+
+  @@map("audit_actor_kind")
+}
+
+enum AuditOutcome {
+  SUCCEEDED
+  DENIED
+  FAILED
+
+  @@map("audit_outcome")
+}
+
 model EncryptionMigrationRun {
   id                   String                    @id @db.Uuid
   consumerId           String                    @map("consumer_id") @db.VarChar(120)
@@ -652,6 +668,69 @@ model ServicePrincipal {
   @@unique([environment, code], map: "service_principals_environment_code_key")
   @@index([ownerUserId, revokedAt], map: "service_principals_owner_revoked_idx")
   @@map("service_principals")
+}
+
+model AuditEvent {
+  id                           String                  @id @db.Uuid
+  recordedSequence             BigInt                  @unique(map: "audit_events_recorded_sequence_key") @default(autoincrement()) @map("recorded_sequence")
+  actionCode                   String                  @map("action_code") @db.VarChar(120)
+  contractVersion              Int                     @map("contract_version")
+  sourceModule                 String                  @map("source_module") @db.VarChar(80)
+  occurredAt                   DateTime                @map("occurred_at") @db.Timestamptz(6)
+  recordedAt                   DateTime                @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  actorKind                    AuditActorKind          @map("actor_kind")
+  actorUserId                  String?                 @map("actor_user_id") @db.Uuid
+  actorServicePrincipalId      String?                 @map("actor_service_principal_id") @db.Uuid
+  systemActorCode              String?                 @map("system_actor_code") @db.VarChar(120)
+  sessionId                    String?                 @map("session_id") @db.Uuid
+  authorityRoleAssignmentId    String?                 @map("authority_role_assignment_id") @db.Uuid
+  authorityRoleTemplateCode    String?                 @map("authority_role_template_code") @db.VarChar(80)
+  authorityRoleTemplateVersion Int?                    @map("authority_role_template_version")
+  authorityCapabilityCode      String?                 @map("authority_capability_code") @db.VarChar(120)
+  authorityPolicyId            String?                 @map("authority_policy_id") @db.VarChar(160)
+  authorityScopeType           AccessScopeType?        @map("authority_scope_type")
+  authorityScopeId             String?                 @map("authority_scope_id") @db.Uuid
+  institutionId                String?                 @map("institution_id") @db.Uuid
+  assurance                    AuthenticationAssurance?
+  approvalRequestId            String?                 @map("approval_request_id") @db.Uuid
+  resourceType                 String                  @map("resource_type") @db.VarChar(80)
+  resourceId                   String                  @map("resource_id") @db.VarChar(200)
+  reasonCode                   String?                 @map("reason_code") @db.VarChar(80)
+  reasonText                   String?                 @map("reason_text") @db.VarChar(500)
+  outcome                      AuditOutcome
+  failureCode                  String?                 @map("failure_code") @db.VarChar(120)
+  requestId                    String?                 @map("request_id") @db.VarChar(200)
+  correlationId               String                  @map("correlation_id") @db.VarChar(200)
+  operationId                 String                  @map("operation_id") @db.VarChar(200)
+  sourceVersion               BigInt?                 @map("source_version")
+  beforeSummary               Json?                   @map("before_summary") @db.JsonB
+  afterSummary                Json?                   @map("after_summary") @db.JsonB
+  correctsAuditEventId         String?                 @map("corrects_audit_event_id") @db.Uuid
+  correctsAuditEvent           AuditEvent?             @relation("AuditEventCorrections", fields: [correctsAuditEventId], references: [id], onDelete: Restrict)
+  corrections                  AuditEvent[]            @relation("AuditEventCorrections")
+  links                        AuditEventLink[]
+
+  @@unique([sourceModule, actionCode, operationId], map: "audit_events_operation_key")
+  @@index([resourceType, resourceId, recordedSequence(sort: Desc), id(sort: Desc)], map: "audit_events_resource_timeline_idx")
+  @@index([actorUserId, recordedSequence(sort: Desc), id(sort: Desc)], map: "audit_events_human_actor_timeline_idx")
+  @@index([actorServicePrincipalId, recordedSequence(sort: Desc), id(sort: Desc)], map: "audit_events_service_actor_timeline_idx")
+  @@index([institutionId, recordedSequence(sort: Desc), id(sort: Desc)], map: "audit_events_institution_timeline_idx")
+  @@index([correlationId, recordedSequence(sort: Desc), id(sort: Desc)], map: "audit_events_correlation_timeline_idx")
+  @@index([actionCode, recordedSequence(sort: Desc), id(sort: Desc)], map: "audit_events_action_timeline_idx")
+  @@index([recordedAt(sort: Desc), recordedSequence(sort: Desc)], map: "audit_events_recorded_time_idx")
+  @@map("audit_events")
+}
+
+model AuditEventLink {
+  auditEventId     String     @map("audit_event_id") @db.Uuid
+  targetType       String     @map("target_type") @db.VarChar(80)
+  targetId         String     @map("target_id") @db.VarChar(200)
+  relationshipType String     @map("relationship_type") @db.VarChar(80)
+  auditEvent       AuditEvent @relation(fields: [auditEventId], references: [id], onDelete: Restrict)
+
+  @@id([auditEventId, targetType, targetId])
+  @@index([targetType, targetId, auditEventId], map: "audit_event_links_target_idx")
+  @@map("audit_event_links")
 }
 
 model OutboxEvent {
