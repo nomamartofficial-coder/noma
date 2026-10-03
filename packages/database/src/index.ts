@@ -59,6 +59,13 @@ export {
   type AccessAssignmentSummarySource,
 } from './access-disclosure.js';
 export {
+  ACCESS_REVIEW_FILTERS,
+  readScopedAccessReviewRows,
+  type AccessReviewCursor,
+  type AccessReviewFilter,
+  type AccessReviewRowSource,
+} from './access-review.js';
+export {
   EncryptionMigrationConflict,
   blockEncryptionMigrationRun,
   checkpointEncryptionMigrationRecord,
@@ -74,9 +81,11 @@ export {
 export {
   createAccessAuthorityPersistence,
   createAccessScope,
+  grantApprovedRoleAssignmentInTransaction,
   loadActiveAuthorityFactForUse,
   lockActiveAuthorityFactForUse,
   resolveAccessApprovalForAuthorization,
+  revokeApprovedRoleAssignmentInTransaction,
   type AccessAuthorityPersistence,
   type AccessSubject,
   type CreateAccessScopeInput,

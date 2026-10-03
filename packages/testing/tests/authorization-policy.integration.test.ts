@@ -82,11 +82,21 @@ describe.sequential('IAM-006 PostgreSQL authorization linearization', () => {
     const identity = createIdentityPersistence(database);
     sessionDigest = createHash('sha256').update('synthetic-iam006-session').digest('hex');
     const actor = await database.user.findUniqueOrThrow({ where: { id: actorId } });
-    await identity.createSession({
-      id: ids.nextUuid(), userId: actorId, tokenDigest: sessionDigest, assurance: 'CONTACT_VERIFIED',
+    const factorId = ids.nextUuid();
+    await database.mfaFactor.create({ data: {
+      id: factorId, userId: actorId, status: 'ACTIVE', encryptedSeedEnvelope: { format: 'synthetic-test-only' },
+      algorithm: 'SHA1', digits: 6, periodSeconds: 30,
+      enrollmentExpiresAt: new Date(AT.getTime() + 600_000), activatedAt: AT,
+      createdAt: AT, updatedAt: AT,
+    } });
+    const session = await identity.createSession({
+      id: ids.nextUuid(), userId: actorId, tokenDigest: sessionDigest, assurance: 'PRIVILEGED_MFA_RECENT',
       issuedSecurityVersion: actor.securityVersion, issuedAt: AT, idleExpiresAt: new Date(AT.getTime() + 3_600_000),
       absoluteExpiresAt: new Date(AT.getTime() + 7_200_000), deviceLabel: 'Synthetic IAM-006 browser', transitionId: ids.nextUuid(),
     });
+    await database.session.update({ where: { id: session.id }, data: {
+      passwordAuthenticatedAt: AT, mfaVerifiedAt: AT, mfaMethod: 'TOTP', mfaFactorId: factorId,
+    } });
     scopeId = ids.nextUuid();
     await runInDatabaseTransaction(database, (transaction) => createAccessScope(transaction, { id: scopeId, type: 'SELF', userId: actorId, createdAt: AT }));
     templateId = ids.nextUuid();

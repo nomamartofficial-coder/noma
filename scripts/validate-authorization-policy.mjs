@@ -36,7 +36,11 @@ function validate(source) {
   require(source.pep.includes('executeProtectedMutation') && source.pep.includes('runInDatabaseTransaction') && source.pep.includes("decision.decision === 'DENY'") && source.pep.includes('operation.execute(transaction, decision)'), 'APPLICATION_PEP');
   require(!/(fetch\(|axios|ioredis|PrismaClient|@noma\/database|Date\.now\(|new Date\(\))/.test(source.engine), 'PURE_PDP');
   require(source.pep.includes("status: 'UNAVAILABLE'") && !source.pep.includes('reasonCode: error.decision.reasonCode'), 'SAFE_PUBLIC_DENIAL');
-  require(source.apiRegistry.includes("'IAM006_PROTECTED'") && source.apiRegistry.includes("classification === 'IAM006_PROTECTED'") === false && !/policyId:\s*['"][^'"]+['"]/.test(source.apiRegistry), 'NO_ACTIVATED_PROTECTED_API');
+  const protectedRoutes = source.apiRegistry.match(/operation\('[a-z0-9.-]+', 'POST', '\/api\/v1\/admin\/access\/[a-z/-]+', 'IAM006_PROTECTED', '[a-z0-9.-]+\.v[1-9][0-9]*'\)/g) ?? [];
+  require(protectedRoutes.length === 17
+    && source.apiRegistry.includes("classification === 'IAM006_PROTECTED'")
+    && !/operation\('[^']+', '(?:GET|POST)', '(?!\/api\/v1\/admin\/access\/)[^']+', 'IAM006_PROTECTED'/.test(source.apiRegistry)
+    && new Set(protectedRoutes).size === protectedRoutes.length, 'EXACT_IAM009_PROTECTED_API');
   require(source.apiRegistry.includes("'/health/live', 'PUBLIC'") && source.apiRegistry.includes("'/api/v1/auth/session'") && source.apiRegistry.includes("'AUTHENTICATED_SELF'"), 'API_CLASSIFICATION');
   require(!/(?:request|body|query|cookie|header|localStorage).{0,80}(?:policyId|capability|authorityScope|relationshipFacts)/is.test(source.apiRegistry + source.pep), 'NO_CLIENT_AUTHORITY');
   require(!/(?:opa|cedar|casbin)/i.test(source.manifest), 'NO_DYNAMIC_POLICY_ENGINE');
@@ -46,8 +50,9 @@ function validate(source) {
   require(source.taskIndex.includes('IAM-005,EP03,"Implement membership, role grant, capability, and scope model",P0,P0-AUTHORITY,COMPLETE'), 'IAM005_COMPLETE');
   require(source.taskIndex.includes('IAM-006,EP03,Implement central authorization policy engine,P0,P0-AUTHORITY,COMPLETE'), 'IAM006_COMPLETE');
   require(source.taskIndex.includes('IAM-007,EP03,Implement field-level projections and sensitive-data redaction,P0,P0-PRIVACY,COMPLETE'), 'IAM007_COMPLETE');
-  require(source.taskIndex.includes('IAM-008,EP03,Implement append-only audit service and privileged-action timeline,P0,P0-AUTHORITY,IN_REVIEW'), 'IAM008_IN_REVIEW');
-  require(source.taskIndex.includes('IAM-009,EP03,Implement Access Admin workflows and access-review export,P0,P0-AUTHORITY,NOT_STARTED'), 'IAM009_DEFERRED');
+  require(source.taskIndex.includes('IAM-008,EP03,Implement append-only audit service and privileged-action timeline,P0,P0-AUTHORITY,COMPLETE'), 'IAM008_COMPLETE');
+  require(source.taskIndex.includes('IAM-009,EP03,Implement Access Admin workflows and access-review export,P0,P0-AUTHORITY,IN_REVIEW'), 'IAM009_IN_REVIEW');
+  require(source.taskIndex.includes('IAM-010,EP03,Implement account security pages and session management,P0,P0-AUTHORITY,NOT_STARTED'), 'IAM010_DEFERRED');
   return failures;
 }
 
@@ -69,12 +74,13 @@ if (process.argv.includes('--self-test')) {
     ['forged relationship fact', { pep: `${current.pep}\nconst relationshipFacts = request.body.relationshipFacts;` }],
     ['dynamic policy engine', { manifest: current.manifest.replace('"typescript":', '"casbin": "1.0.0",\n    "typescript":') }],
     ['super admin bypass', { engine: `${current.engine}\nconst superAdminBypass = 'ALLOW';` }],
-    ['activated protected API', { apiRegistry: `${current.apiRegistry}\nconst unsafe = { policyId: 'access.assignment.grant.v1' };` }],
+    ['unregistered protected API', { apiRegistry: `${current.apiRegistry}\noperation('access.unsafe.read', 'POST', '/api/v1/admin/access/unsafe', 'IAM006_PROTECTED', 'access.assignment.read.v1')` }],
     ['protected Web opened', { webBoundary: current.webBoundary.replace('notFound()', 'return undefined') }],
     ['missing IAM-006 integration', { ci: current.ci.replaceAll('iam006:integration-test', 'iam006:removed') }],
     ['regressed IAM-007', { taskIndex: current.taskIndex.replace('IAM-007,EP03,Implement field-level projections and sensitive-data redaction,P0,P0-PRIVACY,COMPLETE', 'IAM-007,EP03,Implement field-level projections and sensitive-data redaction,P0,P0-PRIVACY,IN_REVIEW') }],
-    ['missing IAM-008 review state', { taskIndex: current.taskIndex.replace('IAM-008,EP03,Implement append-only audit service and privileged-action timeline,P0,P0-AUTHORITY,IN_REVIEW', 'IAM-008,EP03,Implement append-only audit service and privileged-action timeline,P0,P0-AUTHORITY,NOT_STARTED') }],
-    ['premature IAM-009', { taskIndex: current.taskIndex.replace('IAM-009,EP03,Implement Access Admin workflows and access-review export,P0,P0-AUTHORITY,NOT_STARTED', 'IAM-009,EP03,Implement Access Admin workflows and access-review export,P0,P0-AUTHORITY,IN_REVIEW') }],
+    ['regressed IAM-008', { taskIndex: current.taskIndex.replace('IAM-008,EP03,Implement append-only audit service and privileged-action timeline,P0,P0-AUTHORITY,COMPLETE', 'IAM-008,EP03,Implement append-only audit service and privileged-action timeline,P0,P0-AUTHORITY,IN_REVIEW') }],
+    ['premature IAM-009', { taskIndex: current.taskIndex.replace('IAM-009,EP03,Implement Access Admin workflows and access-review export,P0,P0-AUTHORITY,IN_REVIEW', 'IAM-009,EP03,Implement Access Admin workflows and access-review export,P0,P0-AUTHORITY,COMPLETE') }],
+    ['premature IAM-010', { taskIndex: current.taskIndex.replace('IAM-010,EP03,Implement account security pages and session management,P0,P0-AUTHORITY,NOT_STARTED', 'IAM-010,EP03,Implement account security pages and session management,P0,P0-AUTHORITY,IN_REVIEW') }],
   ];
   for (const [name, changes] of fixtures) {
     if (validate({ ...current, ...changes }).length === 0) throw new Error(`IAM-006 negative fixture accepted: ${name}`);
@@ -86,5 +92,5 @@ if (process.argv.includes('--self-test')) {
     failures.forEach((failure) => console.error(`FAIL: ${failure}`));
     process.exit(1);
   }
-  console.log('PASS: IAM-006 closed policy registry, pure PDP, transaction PEP, and fail-closed boundaries');
+  console.log('PASS: IAM-006 closed policy registry, pure PDP, transaction PEP, and exact IAM-009 protected Access API boundary');
 }

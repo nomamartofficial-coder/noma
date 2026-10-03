@@ -150,7 +150,7 @@ describe.sequential('IAM-005 PostgreSQL Access authority', () => {
     expect(extension).toEqual([{ extname: 'btree_gist' }]);
     const capabilities = await database.capability.findMany({ orderBy: { code: 'asc' } });
     expect(capabilities.map(({ code }) => code)).toEqual([...ACCESS_CAPABILITY_CODES].sort());
-    expect(capabilities.filter(({ code }) => code.startsWith('access.'))).toHaveLength(13);
+    expect(capabilities.filter(({ code }) => code.startsWith('access.'))).toHaveLength(16);
     expect(capabilities.every(({ code }) => !code.includes('*'))).toBe(true);
     const auditReadCapability = capabilities.find(({ code }) => code === 'audit.event.read');
     if (!auditReadCapability) throw new Error('IAM-008 audit read capability is missing');

@@ -4,11 +4,16 @@ import { API_OPERATION_REGISTRY, resolveApiOperation } from '../src/authorizatio
 import { AuthorizationDeniedError, AuthorizationService, publicAuthorizationFailure } from '../src/authorization/authorization.service.js';
 
 describe('IAM-006 API policy enforcement point', () => {
-  test('classifies every current exact route without activating an IAM006 protected endpoint', () => {
+  test('classifies exact routes and activates only IAM-009 protected Access operations', () => {
     expect(new Set(API_OPERATION_REGISTRY.map(({ method, path }) => `${method} ${path}`)).size).toBe(API_OPERATION_REGISTRY.length);
-    expect(API_OPERATION_REGISTRY.filter(({ classification }) => classification === 'IAM006_PROTECTED')).toEqual([]);
+    const protectedOperations = API_OPERATION_REGISTRY.filter(({ classification }) => classification === 'IAM006_PROTECTED');
+    expect(protectedOperations).toHaveLength(17);
+    expect(protectedOperations.every(({ method, path, policyId }) => method === 'POST'
+      && path.startsWith('/api/v1/admin/access/') && policyId !== null)).toBe(true);
     expect(resolveApiOperation('POST', '/api/v1/auth/sign-in')?.classification).toBe('PUBLIC');
     expect(resolveApiOperation('GET', '/api/v1/auth/session')?.classification).toBe('AUTHENTICATED_SELF');
+    expect(resolveApiOperation('POST', '/api/v1/admin/access/reviews/attest')?.policyId).toBe('access.review.attest.v1');
+    expect(resolveApiOperation('GET', '/api/v1/admin/audit')).toBeNull();
     expect(resolveApiOperation('GET', '/seller')).toBeNull();
   });
 

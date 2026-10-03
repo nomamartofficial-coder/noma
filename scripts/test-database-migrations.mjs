@@ -15,6 +15,7 @@ const ENCRYPTION_MIGRATION_NAME = '20260912000100_sec_003_encryption_migration_r
 const MFA_MIGRATION_NAME = '20260913000100_iam_004_privileged_mfa';
 const ACCESS_MIGRATION_NAME = '20260915000100_iam_005_access_authority';
 const AUDIT_MIGRATION_NAME = '20260925000100_iam_008_append_only_audit';
+const ACCESS_REVIEW_MIGRATION_NAME = '20261002000100_iam_009_access_review_workflows';
 const EXPECTED_MIGRATION_CHECKSUMS = new Map([
   [BASELINE_MIGRATION_NAME, '9d9e22e2c4bb2d93831c62911ff5d0bdaecc039472d368ed1b1aad59408ee013'],
   [FOUNDATION_MIGRATION_NAME, 'a70a95dfa7c200d25b62a7ccb97e6a6cee970389431795b8b928d17c5dd9ddc9'],
@@ -24,6 +25,7 @@ const EXPECTED_MIGRATION_CHECKSUMS = new Map([
   [MFA_MIGRATION_NAME, 'f7bdb43b1f332e1258b86f343d205a0d0812daf655e96a6d2d73fb9a83e04ce6'],
   [ACCESS_MIGRATION_NAME, '8b85ba9b26d13c1cbf927c7dda63036732123b80e1dd27f9e9137e259b1e5d82'],
   [AUDIT_MIGRATION_NAME, '8ec76ce42b50b726d0135bab0b638e064d5d50967d45c50557472689af9992c2'],
+  [ACCESS_REVIEW_MIGRATION_NAME, '3791b644873f6429e1efd7038e5fdb51a6ae8193d3b11a3f6c576e1042bec5b0'],
 ]);
 const projectName = `noma-dev004-${process.pid}`;
 const databasePassword = randomBytes(24).toString('hex');
@@ -205,10 +207,18 @@ async function assertMigratedDatabase(database, environment, expectedProbe) {
 
   const technicalTables = await psql(
     database,
-    "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename IN ('outbox_events', 'job_executions', 'job_execution_attempts', 'users', 'user_emails', 'credentials', 'sessions', 'identity_tokens', 'recovery_attempts', 'encryption_migration_runs', 'mfa_factors', 'mfa_recovery_code_batches', 'mfa_recovery_codes', 'session_step_up_challenges', 'access_scopes', 'capabilities', 'role_templates', 'role_template_allowed_scopes', 'role_template_allowed_subjects', 'role_template_capabilities', 'role_assignments', 'approval_requests', 'approval_decisions', 'temporary_access_grants', 'service_principals', 'audit_events', 'audit_event_links') ORDER BY tablename;",
+    "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename IN ('outbox_events', 'job_executions', 'job_execution_attempts', 'users', 'user_emails', 'credentials', 'sessions', 'identity_tokens', 'recovery_attempts', 'encryption_migration_runs', 'mfa_factors', 'mfa_recovery_code_batches', 'mfa_recovery_codes', 'session_step_up_challenges', 'access_scopes', 'capabilities', 'role_templates', 'role_template_allowed_scopes', 'role_template_allowed_subjects', 'role_template_capabilities', 'role_assignments', 'approval_requests', 'approval_decisions', 'temporary_access_grants', 'service_principals', 'audit_events', 'audit_event_links', 'access_approval_effects', 'access_approval_revocation_targets', 'access_review_attestations', 'access_review_cycles', 'access_review_export_decisions', 'access_review_export_effects', 'access_review_export_requests', 'access_review_items') ORDER BY tablename;",
     environment,
   );
   assert.deepEqual(technicalTables.stdout.trim().split(/\r?\n/), [
+    'access_approval_effects',
+    'access_approval_revocation_targets',
+    'access_review_attestations',
+    'access_review_cycles',
+    'access_review_export_decisions',
+    'access_review_export_effects',
+    'access_review_export_requests',
+    'access_review_items',
     'access_scopes',
     'approval_decisions',
     'approval_requests',

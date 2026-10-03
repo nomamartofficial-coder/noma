@@ -1,4 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 
 const PORT = 3110;
 const ORIGIN = `http://127.0.0.1:${PORT}`;
@@ -6,14 +8,12 @@ const STARTUP_TIMEOUT_MS = 60_000;
 const PROBE_TIMEOUT_MS = 3_000;
 const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-function spawnPnpm(args, options) {
-  const pnpmCli = process.env.npm_execpath;
-  if (pnpmCli && /pnpm(?:\.(?:cjs|mjs|js))?$/i.test(pnpmCli)) return spawn(process.execPath, [pnpmCli, ...args], options);
-  return spawn('pnpm', args, { ...options, shell: process.platform === 'win32' });
-}
+const nextCli = createRequire(new URL('../apps/web/package.json', import.meta.url)).resolve('next/dist/bin/next');
 
 function stopChild(child) {
   if (!child.pid || child.exitCode !== null) return;
+  child.kill('SIGTERM');
+  if (child.exitCode !== null) return;
   if (process.platform === 'win32') {
     spawnSync('taskkill', ['/pid', String(child.pid), '/t', '/f'], { stdio: 'ignore', windowsHide: true });
   } else {
@@ -71,7 +71,8 @@ async function assertAvailable(path) {
   if (!response.ok) throw new Error(`${path}: expected public/runtime route to remain available, received ${response.status}`);
 }
 
-const child = spawnPnpm(['--filter', '@noma/web', 'start'], {
+const child = spawn(process.execPath, [nextCli, 'start'], {
+  cwd: fileURLToPath(new URL('../apps/web/', import.meta.url)),
   env: { ...process.env, HOST: '127.0.0.1', PORT: String(PORT) },
   stdio: 'inherit',
   windowsHide: true,
@@ -81,12 +82,17 @@ child.once('error', (error) => console.error(`failed to start Web for protected-
 
 try {
   await waitForWeb(child);
-  for (const path of ['/seller', '/seller/orders', '/rider', '/rider/jobs', '/operations', '/operations/finance', '/admin', '/admin/access']) await assertDenied(path);
+  for (const path of [
+    '/seller', '/seller/orders', '/rider', '/rider/jobs', '/operations', '/operations/finance',
+    '/admin', '/admin/access', '/admin/institutions', '/admin/commerce-types', '/admin/categories',
+    '/admin/sellers', '/admin/logistics', '/admin/finance', '/admin/notifications',
+    '/admin/audit', '/admin/emergency-controls', '/admin/system',
+  ]) await assertDenied(path);
   await assertDenied('/seller?role=seller&demo=true');
   await assertDenied('/rider/jobs?assigned=true', { headers: { cookie: 'noma_role=rider; demo_role=rider' } });
   await assertDenied('/operations/finance', { headers: { 'x-user-role': 'finance', 'x-demo-surface': 'operations' } });
   await assertDenied('/admin/access?isAdmin=true', { headers: { cookie: 'noma_admin=true', 'x-noma-admin': 'true' } });
-  for (const path of ['/', '/account', '/health/live', '/health/ready']) await assertAvailable(path);
+  for (const path of ['/', '/account', '/admin/access/start', '/health/live', '/health/ready']) await assertAvailable(path);
   console.log('PASS: protected role routes fail closed, bypass inputs are ignored, and public/runtime routes remain available');
 } finally {
   stopChild(child);

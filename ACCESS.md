@@ -56,8 +56,18 @@ The integration suite uses isolated PostgreSQL 18 and real transaction barriers.
 
 ## Deferred and rollback
 
-IAM-006 now owns deny-by-default contextual policy and the application enforcement seam. IAM-009 owns human review workflow and Access administration. Business memberships, provider authentication, break-glass activation, protected surfaces, deployment, and production data remain out of scope.
+IAM-006 owns deny-by-default contextual policy and the application enforcement seam. IAM-009 adds the exact human Access Admin workflow and review/export boundary described below. Business memberships, provider authentication, break-glass activation, unrelated protected surfaces, deployment, and production data remain out of scope.
 
 IAM-008 registers typed audit contracts for future Access commands, but the present Access persistence API is also used for repository/setup fixtures and has no activated command seam that can supply trusted actor and authority evidence. Those helpers do not emit production audit events. A future owning command must authorize, mutate, and append the registered event in one transaction before it can activate.
 
 Rollback is a reviewed source revert plus a forward database correction. The migration is additive and is not rolled back destructively.
+
+## IAM-009 bounded Access administration
+
+The only activated Admin surface is `/admin/access` (with `/admin/access/start` for sign-in, step-up, and exact-scope selection). Seventeen exact API operations handle scoped assignment request, independent approval, grant/revoke, temporary grant/revoke, review, and approved export. They all require current human exact-scope authority and IAM-004 assurance inside the owning PostgreSQL transaction. The browser reaches the API through a fixed same-origin Web transport; that transport never makes the authorization decision. No capability or privileged user is assigned by the migration.
+
+The grant path accepts only templates whose currently representable capabilities are Access-owned or `audit.event.read`. It rejects overlapping same-scope authority, maker/target self-approval, stale or consumed approval, inactive subject/template/scope/capability, and temporary `PLATFORM` access. This is intentionally conservative: seller/staff, rider/dispatcher, Finance, Trust & Safety, seller/Catalogue, and auditor/operational conflicts requiring future business ownership maps are not claimed as implemented. Such unmapped grants fail closed; domain owners must later supply approved facts before those roles can be activated. Approval evidence is consumed once by a unique PostgreSQL effect row in the same transaction as the assignment mutation and audit append.
+
+Each newly governed grant opens a monthly privileged or quarterly broader review cycle. A reviewer records only `RETAIN_CONFIRMED`, `REVOKE_REQUESTED`, or `NEEDS_FOLLOW_UP`. Follow-up is unresolved and cannot discharge the cycle. A revoke request is a final review determination, but access remains active until its separate approval-backed revoke commits. Review attestations are immutable evidence; review item state is the Access-owned business truth. Later approved event-driven triggers may open cycles, but external employment, cloud, GitHub, DNS, provider, and university event integrations are not fabricated here. Existing historical assignments are not backfilled.
+
+Review export uses an independent approval, current MFA evidence, a fixed purpose-specific projection, a 500-row ceiling, CSV formula neutralization, and one-use effect evidence. `access.assignment.read` does not authorize export. See [ADR-0026](docs/adr/0026-access-admin-review-and-export.md) and [IAM-009 evidence](docs/evidence/iam-009/README.md).

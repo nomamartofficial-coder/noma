@@ -8,6 +8,7 @@
     "20260912000100_sec_003_encryption_migration_runs/migration.sql": "b83284efa316aaa8d68608f0eeeb33a96c275a988ce43e4cac7bec12c94d6216",
     "20260913000100_iam_004_privileged_mfa/migration.sql": "f7bdb43b1f332e1258b86f343d205a0d0812daf655e96a6d2d73fb9a83e04ce6",
     "20260915000100_iam_005_access_authority/migration.sql": "8b85ba9b26d13c1cbf927c7dda63036732123b80e1dd27f9e9137e259b1e5d82",
-    "20260925000100_iam_008_append_only_audit/migration.sql": "8ec76ce42b50b726d0135bab0b638e064d5d50967d45c50557472689af9992c2"
+    "20260925000100_iam_008_append_only_audit/migration.sql": "8ec76ce42b50b726d0135bab0b638e064d5d50967d45c50557472689af9992c2",
+    "20261002000100_iam_009_access_review_workflows/migration.sql": "3791b644873f6429e1efd7038e5fdb51a6ae8193d3b11a3f6c576e1042bec5b0"
   }
 }

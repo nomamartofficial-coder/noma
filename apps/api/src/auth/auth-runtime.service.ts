@@ -110,6 +110,11 @@ export class AuthRuntimeService implements OnModuleInit, OnApplicationShutdown {
     return this.#authentication;
   }
 
+  database(): DatabaseClient {
+    if (!this.#database) throw new Error('Access database is not configured');
+    return this.#database;
+  }
+
   verificationRecovery(): IdentityVerificationRecoveryService {
     if (!this.#verificationRecovery) throw new Error('identity verification and recovery are not configured');
     return this.#verificationRecovery;

@@ -32,9 +32,11 @@ function activation(overrides: Record<string, unknown> = {}) {
 }
 
 describe('IAM-008 closed audit event registry', () => {
-  test('contains exactly the approved 21-action catalogue and remains frozen', () => {
+  test('contains exactly the approved 23-action catalogue and remains frozen', () => {
     expect(auditEventRegistry.definitions.map(({ actionCode }) => actionCode)).toEqual(AUDIT_ACTION_CODES);
-    expect(AUDIT_ACTION_CODES).toHaveLength(21);
+    expect(AUDIT_ACTION_CODES).toHaveLength(23);
+    expect(AUDIT_ACTION_CODES).toContain('access.review.attest');
+    expect(AUDIT_ACTION_CODES).toContain('access.review.export');
     expect(AUDIT_ACTION_CODES).not.toContain('access.assignment.read');
     expect(Object.isFrozen(auditEventRegistry.definitions)).toBe(true);
     expect(auditEventRegistry.resolve('audit.event.read')?.contractVersion).toBe(1);
