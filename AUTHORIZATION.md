@@ -42,11 +42,11 @@ The approval seam validates exact operation, subject, template, scope, validity,
 
 ## API and Web status
 
-Every current API route is registered as `PUBLIC` or `AUTHENTICATED_SELF`; there are currently no `IAM006_PROTECTED` or provider operations. Identity-owned self-security endpoints are not wrapped in Access capabilities. Future protected use cases must use the application PEP; a controller guard alone is insufficient.
+Identity-owned self-security endpoints remain `PUBLIC` or `AUTHENTICATED_SELF` and are not wrapped in Access capabilities. IAM-009 registers seventeen exact `IAM006_PROTECTED` Access Admin operations, each bound to one source-owned policy. The controller's origin/CSRF checks are additional browser protections, never substitutes for the transactional application PEP. There are no provider operations.
 
-Seller, Rider, Operations, and Admin production routes continue to call the stable server-side `notFound()` boundary before rendering. No cookie, header, query, environment flag, local storage value, or Storybook fixture can open them.
+Seller, Rider, Operations, and all unrelated Admin routes continue to call the stable server-side `notFound()` boundary before rendering. Only `/admin/access` has an independent server-side authorization read before rendering, with `/admin/access/start` as its narrow sign-in/step-up entry. No role label, local storage value, or Storybook fixture opens any unrelated route.
 
-IAM-008 adds `audit.event.read.v1`: human interactive readers only, exact `audit.event.read` capability, privileged current assurance, exact Seller/Institution/Order/Case/Assignment/Fulfilment-location/Queue/Carrier scope, and no PLATFORM scope. The capability is unassigned by default. The PEP runs before the bounded database select; each successful query appends one non-recursive audit-read event in the same transaction. `/admin/audit` remains fail closed for IAM-009.
+IAM-008 adds `audit.event.read.v1`: human interactive readers only, exact `audit.event.read` capability, privileged current assurance, exact Seller/Institution/Order/Case/Assignment/Fulfilment-location/Queue/Carrier scope, and no PLATFORM scope. The capability is unassigned by default. The PEP runs before the bounded database select; each successful query appends one non-recursive audit-read event in the same transaction. `/admin/audit` remains fail closed in IAM-009.
 
 ## Verification and rollback
 

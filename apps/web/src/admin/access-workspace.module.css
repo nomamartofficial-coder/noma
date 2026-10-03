@@ -1,0 +1,32 @@
+.workspace { display: grid; gap: var(--noma-space-6); min-width: 0; }
+.heading { display: grid; gap: var(--noma-space-2); }
+.heading h1, .heading p { margin: 0; }
+.heading h1 { font-size: var(--noma-type-page-title-font-size); }
+.heading p:first-child { color: var(--noma-color-text-secondary); font-weight: var(--noma-font-weight-semibold); }
+.section { display: grid; gap: var(--noma-space-4); min-width: 0; padding: var(--noma-space-5); border: var(--noma-border-thin) solid var(--noma-color-border-default); background: var(--noma-color-surface-primary); }
+.section h2, .section p { margin: 0; }
+.notice { margin: 0; padding: var(--noma-space-4); border: var(--noma-border-thin) solid var(--noma-color-border-strong); background: var(--noma-color-surface-selected); }
+.form { display: grid; gap: var(--noma-space-4); max-width: 760px; }
+.form label, .section > label { display: grid; gap: var(--noma-space-2); font-weight: var(--noma-font-weight-semibold); }
+.form input, .form select, .form textarea, .section > label select { width: 100%; min-height: var(--noma-size-target-default); padding: var(--noma-space-2); border: var(--noma-border-thin) solid var(--noma-color-border-strong); color: var(--noma-color-text-primary); background: var(--noma-color-surface-primary); }
+.form textarea { min-height: 6rem; resize: vertical; }
+.form .check { display: flex; align-items: flex-start; gap: var(--noma-space-2); }
+.form .check input { width: auto; min-height: 0; margin-top: .35rem; }
+.actions { display: flex; flex-wrap: wrap; gap: var(--noma-space-3); }
+.workspace button { min-height: var(--noma-size-target-default); width: fit-content; padding: var(--noma-space-2) var(--noma-space-4); border: var(--noma-border-thin) solid var(--noma-color-border-strong); background: var(--noma-color-surface-selected); color: var(--noma-color-text-primary); cursor: pointer; }
+.workspace button:disabled { opacity: .55; cursor: not-allowed; }
+.workspace button:focus-visible, .workspace a:focus-visible, .workspace input:focus-visible, .workspace select:focus-visible, .workspace textarea:focus-visible, .card summary:focus-visible { outline: var(--noma-focus-ring-width) var(--noma-focus-ring-style) var(--noma-focus-ring-color); outline-offset: var(--noma-focus-ring-offset); }
+.tableWrap { max-width: 100%; overflow-x: auto; }
+.tableWrap table { width: 100%; border-collapse: collapse; text-align: left; }
+.tableWrap caption { text-align: left; padding-bottom: var(--noma-space-2); }
+.tableWrap th, .tableWrap td { vertical-align: top; padding: var(--noma-space-3); border-bottom: var(--noma-border-thin) solid var(--noma-color-border-default); }
+.tableWrap small { display: block; overflow-wrap: anywhere; color: var(--noma-color-text-secondary); }
+.card { display: grid; gap: var(--noma-space-4); border: var(--noma-border-thin) solid var(--noma-color-border-default); padding: var(--noma-space-4); }
+.card summary { cursor: pointer; font-weight: var(--noma-font-weight-semibold); overflow-wrap: anywhere; }
+.card[open] > * + * { margin-top: var(--noma-space-4); }
+.card dl { display: grid; gap: var(--noma-space-3); margin: 0; }
+.card dl div { min-width: 0; }
+.card dt { color: var(--noma-color-text-secondary); }
+.card dd { margin: 0; overflow-wrap: anywhere; }
+@media (min-width: 768px) { .card dl { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (forced-colors: active) { .section, .notice, .card, .workspace button { border: 1px solid CanvasText; } }

@@ -200,6 +200,22 @@ enum AccessApprovalDecisionValue {
   @@map("access_approval_decision_value")
 }
 
+enum AccessReviewCadence {
+  MONTHLY
+  QUARTERLY
+  EVENT_DRIVEN
+
+  @@map("access_review_cadence")
+}
+
+enum AccessReviewOutcome {
+  RETAIN_CONFIRMED
+  REVOKE_REQUESTED
+  NEEDS_FOLLOW_UP
+
+  @@map("access_review_outcome")
+}
+
 enum AuditActorKind {
   HUMAN
   SERVICE_PRINCIPAL
@@ -273,6 +289,11 @@ model User {
   targetedAccessApprovals ApprovalRequest[] @relation("ApprovalRequestTargetUser")
   accessApprovalDecisions ApprovalDecision[] @relation("ApprovalDecisionApprover")
   ownedTemporaryAccessGrants TemporaryAccessGrant[] @relation("TemporaryAccessOwner")
+  executedAccessApprovalEffects AccessApprovalEffect[] @relation("AccessApprovalEffectExecutor")
+  accessReviewAttestations AccessReviewAttestation[]
+  requestedAccessReviewExports AccessReviewExportRequest[] @relation("AccessReviewExportRequestor")
+  decidedAccessReviewExports AccessReviewExportDecision[] @relation("AccessReviewExportApprover")
+  executedAccessReviewExports AccessReviewExportEffect[] @relation("AccessReviewExportExecutor")
 
   @@index([status, createdAt], map: "users_status_created_idx")
   @@map("users")
@@ -340,6 +361,7 @@ model Session {
   user                  User                    @relation(fields: [userId], references: [id], onDelete: Restrict)
   mfaFactor             MfaFactor?              @relation("SessionMfaFactor", fields: [mfaFactorId], references: [id], onDelete: Restrict)
   stepUpChallenges      SessionStepUpChallenge[]
+  accessReviewExportDecisions AccessReviewExportDecision[]
 
   @@index([userId, status, absoluteExpiresAt], map: "sessions_user_status_expiry_idx")
   @@map("sessions")
@@ -473,6 +495,8 @@ model AccessScope {
   childScopes              AccessScope[]   @relation("InstitutionScopeChildren")
   assignments              RoleAssignment[]
   approvalRequests         ApprovalRequest[]
+  accessReviewCycles       AccessReviewCycle[]
+  accessReviewExportRequests AccessReviewExportRequest[]
 
   @@unique([type, resourceId], map: "access_scopes_type_resource_key")
   @@index([parentInstitutionScopeId, type], map: "access_scopes_parent_type_idx")
@@ -569,6 +593,9 @@ model RoleAssignment {
   grantedByUser          User              @relation("RoleAssignmentGrantor", fields: [grantedByUserId], references: [id], onDelete: Restrict)
   revokedByUser          User?             @relation("RoleAssignmentRevoker", fields: [revokedByUserId], references: [id], onDelete: Restrict)
   temporaryAccessGrant   TemporaryAccessGrant?
+  approvalEffects        AccessApprovalEffect[]
+  revocationTargets      AccessApprovalRevocationTarget[]
+  accessReviewItems      AccessReviewItem[]
 
   @@index([userId, validFrom, validUntil], map: "role_assignments_user_validity_idx")
   @@index([servicePrincipalId, validFrom, validUntil], map: "role_assignments_service_validity_idx")
@@ -603,6 +630,9 @@ model ApprovalRequest {
   requestedByUser             User                    @relation("ApprovalRequestRequestor", fields: [requestedByUserId], references: [id], onDelete: Restrict)
   decisions                   ApprovalDecision[]
   temporaryAccessGrants       TemporaryAccessGrant[]
+  revocationTarget            AccessApprovalRevocationTarget?
+  effect                      AccessApprovalEffect?
+  linkedAccessReviewItems     AccessReviewItem[]
 
   @@unique([requestedByUserId, idempotencyKey], map: "approval_requests_requestor_idempotency_key")
   @@index([state, expiresAt], map: "approval_requests_state_expiry_idx")
@@ -630,6 +660,138 @@ model ApprovalDecision {
   @@unique([approvalRequestId, approverUserId], map: "approval_decisions_request_approver_key")
   @@index([approverUserId, decidedAt], map: "approval_decisions_approver_time_idx")
   @@map("approval_decisions")
+}
+
+model AccessApprovalRevocationTarget {
+  approvalRequestId String @id @map("approval_request_id") @db.Uuid
+  roleAssignmentId String @map("role_assignment_id") @db.Uuid
+  expectedVersion Int @map("expected_version")
+  approvalRequest ApprovalRequest @relation(fields: [approvalRequestId], references: [id], onDelete: Restrict)
+  roleAssignment RoleAssignment @relation(fields: [roleAssignmentId], references: [id], onDelete: Restrict)
+
+  @@index([roleAssignmentId, expectedVersion], map: "access_revocation_targets_assignment_version_idx")
+  @@map("access_approval_revocation_targets")
+}
+
+model AccessApprovalEffect {
+  id String @id @db.Uuid
+  approvalRequestId String @unique(map: "access_approval_effects_request_key") @map("approval_request_id") @db.Uuid
+  operation AccessApprovalOperation
+  roleAssignmentId String @map("role_assignment_id") @db.Uuid
+  idempotencyKey String @map("idempotency_key") @db.VarChar(160)
+  executedByUserId String @map("executed_by_user_id") @db.Uuid
+  executedAt DateTime @map("executed_at") @db.Timestamptz(6)
+  approvalRequest ApprovalRequest @relation(fields: [approvalRequestId], references: [id], onDelete: Restrict)
+  roleAssignment RoleAssignment @relation(fields: [roleAssignmentId], references: [id], onDelete: Restrict)
+  executedByUser User @relation("AccessApprovalEffectExecutor", fields: [executedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([executedByUserId, idempotencyKey], map: "access_approval_effects_executor_key")
+  @@map("access_approval_effects")
+}
+
+model AccessReviewCycle {
+  id String @id @db.Uuid
+  scopeId String @map("scope_id") @db.Uuid
+  cadence AccessReviewCadence
+  eventCode String? @map("event_code") @db.VarChar(80)
+  opensAt DateTime @map("opens_at") @db.Timestamptz(6)
+  dueAt DateTime @map("due_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  scope AccessScope @relation(fields: [scopeId], references: [id], onDelete: Restrict)
+  items AccessReviewItem[]
+
+  @@index([scopeId, dueAt, id], map: "access_review_cycles_scope_due_idx")
+  @@map("access_review_cycles")
+}
+
+model AccessReviewItem {
+  id String @id @db.Uuid
+  cycleId String @map("cycle_id") @db.Uuid
+  roleAssignmentId String @map("role_assignment_id") @db.Uuid
+  assignmentVersion Int @map("assignment_version")
+  outcome AccessReviewOutcome?
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  revocationRequestId String? @map("revocation_request_id") @db.Uuid
+  version Int @default(0)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  cycle AccessReviewCycle @relation(fields: [cycleId], references: [id], onDelete: Restrict)
+  roleAssignment RoleAssignment @relation(fields: [roleAssignmentId], references: [id], onDelete: Restrict)
+  revocationRequest ApprovalRequest? @relation(fields: [revocationRequestId], references: [id], onDelete: Restrict)
+  attestations AccessReviewAttestation[]
+
+  @@unique([cycleId, roleAssignmentId], map: "access_review_items_cycle_assignment_key")
+  @@index([cycleId, completedAt, id], map: "access_review_items_cycle_completion_idx")
+  @@map("access_review_items")
+}
+
+model AccessReviewAttestation {
+  id String @id @db.Uuid
+  itemId String @map("item_id") @db.Uuid
+  reviewerUserId String @map("reviewer_user_id") @db.Uuid
+  outcome AccessReviewOutcome
+  reason String @db.VarChar(500)
+  itemVersion Int @map("item_version")
+  attestedAt DateTime @map("attested_at") @db.Timestamptz(6)
+  operationId String @map("operation_id") @db.VarChar(160)
+  item AccessReviewItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  reviewerUser User @relation(fields: [reviewerUserId], references: [id], onDelete: Restrict)
+
+  @@unique([reviewerUserId, operationId], map: "access_review_attestations_operation_key")
+  @@unique([itemId, itemVersion], map: "access_review_attestations_item_version_key")
+  @@map("access_review_attestations")
+}
+
+model AccessReviewExportRequest {
+  id String @id @db.Uuid
+  scopeId String @map("scope_id") @db.Uuid
+  projectionId String @map("projection_id") @db.VarChar(100)
+  filterCategory String @map("filter_category") @db.VarChar(40)
+  rowCeiling Int @map("row_ceiling")
+  reason String @db.VarChar(500)
+  requestedByUserId String @map("requested_by_user_id") @db.Uuid
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  idempotencyKey String @map("idempotency_key") @db.VarChar(160)
+  state AccessApprovalState @default(PENDING)
+  version Int @default(0)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  scope AccessScope @relation(fields: [scopeId], references: [id], onDelete: Restrict)
+  requestedByUser User @relation("AccessReviewExportRequestor", fields: [requestedByUserId], references: [id], onDelete: Restrict)
+  decision AccessReviewExportDecision?
+  effect AccessReviewExportEffect?
+
+  @@unique([requestedByUserId, idempotencyKey], map: "access_review_export_requests_requestor_key")
+  @@index([scopeId, state, expiresAt, id], map: "access_review_export_requests_scope_state_idx")
+  @@map("access_review_export_requests")
+}
+
+model AccessReviewExportDecision {
+  id String @id @db.Uuid
+  requestId String @unique(map: "access_review_export_decisions_request_key") @map("request_id") @db.Uuid
+  approverUserId String @map("approver_user_id") @db.Uuid
+  decision AccessApprovalDecisionValue
+  reason String @db.VarChar(500)
+  sessionId String @map("session_id") @db.Uuid
+  securityVersion Int @map("security_version")
+  decidedAt DateTime @map("decided_at") @db.Timestamptz(6)
+  request AccessReviewExportRequest @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  approverUser User @relation("AccessReviewExportApprover", fields: [approverUserId], references: [id], onDelete: Restrict)
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+
+  @@map("access_review_export_decisions")
+}
+
+model AccessReviewExportEffect {
+  id String @id @db.Uuid
+  requestId String @unique(map: "access_review_export_effects_request_key") @map("request_id") @db.Uuid
+  executedByUserId String @map("executed_by_user_id") @db.Uuid
+  resultCount Int @map("result_count")
+  operationId String @map("operation_id") @db.VarChar(160)
+  executedAt DateTime @map("executed_at") @db.Timestamptz(6)
+  request AccessReviewExportRequest @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  executedByUser User @relation("AccessReviewExportExecutor", fields: [executedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([executedByUserId, operationId], map: "access_review_export_effects_executor_operation_key")
+  @@map("access_review_export_effects")
 }
 
 model TemporaryAccessGrant {

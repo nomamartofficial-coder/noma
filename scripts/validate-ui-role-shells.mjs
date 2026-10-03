@@ -7,7 +7,7 @@ const EXPECTED_ROUTES = Object.freeze([
   '/seller', '/seller/orders', '/seller/listings', '/seller/inventory', '/seller/fulfilment', '/seller/messages', '/seller/cases', '/seller/earnings', '/seller/payouts', '/seller/performance', '/seller/settings',
   '/rider', '/rider/jobs', '/rider/history', '/rider/earnings', '/rider/shift', '/rider/profile',
   '/operations', '/operations/orders', '/operations/fulfilments', '/operations/dispatch', '/operations/support', '/operations/support/cases', '/operations/returns', '/operations/catalogue', '/operations/sellers', '/operations/verification', '/operations/finance', '/operations/trust-safety', '/operations/incidents', '/operations/reports',
-  '/admin', '/admin/institutions', '/admin/commerce-types', '/admin/categories', '/admin/sellers', '/admin/access', '/admin/logistics', '/admin/finance', '/admin/notifications', '/admin/audit', '/admin/emergency-controls', '/admin/system',
+  '/admin', '/admin/institutions', '/admin/commerce-types', '/admin/categories', '/admin/sellers', '/admin/access', '/admin/access/start', '/admin/logistics', '/admin/finance', '/admin/notifications', '/admin/audit', '/admin/emergency-controls', '/admin/system',
 ]);
 
 const read = (path) => readFile(resolve(ROOT, path), 'utf8');

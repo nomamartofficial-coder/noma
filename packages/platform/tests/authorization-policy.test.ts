@@ -175,9 +175,29 @@ describe('IAM-006 central policy decision point', () => {
   });
 
   test('has an immutable closed registry with no wildcard or duplicate defaults', () => {
-    expect(ACCESS_AUTHORIZATION_POLICIES.map(({ id }) => id)).toEqual(['audit.event.read.v1', 'access.assignment.read.v1', 'access.assignment.grant.v1', 'access.service-principal.read.v1']);
+    expect(ACCESS_AUTHORIZATION_POLICIES.map(({ id }) => id)).toEqual([
+      'audit.event.read.v1', 'access.assignment.read.v1', 'access.assignment.grant.v1',
+      'access.assignment.request.v1', 'access.assignment.revoke.request.v1',
+      'access.approval.decide.v1', 'access.approval.read.v1', 'access.assignment.revoke.v1',
+      'access.temporary.request.v1', 'access.temporary.revoke.request.v1',
+      'access.temporary.grant.v1', 'access.temporary.revoke.v1',
+      'access.review.read.v1', 'access.review.attest.v1', 'access.review.export.v1',
+      'access.review.export.request.v1', 'access.review.export.decide.v1',
+      'access.review.export.approval.read.v1', 'access.service-principal.read.v1',
+    ]);
     expect(() => createAuthorizationPolicyRegistry([policy(), policy()])).toThrow(/Duplicate/);
     expect(() => policy({ id: 'synthetic.*' })).toThrow(/without wildcards/);
     expect(Object.isFrozen(authorizationPolicyRegistry.policies)).toBe(true);
+  });
+
+  test.each(['read', 'attest', 'export'] as const)('requires distinct scoped human review authority for %s', (operation) => {
+    const actionId = `access.review.${operation}`;
+    const policyId = `${actionId}.v1`;
+    const base = context({ actionId });
+    expect(evaluateAuthorization(authorizationPolicyRegistry, policyId, base)).toEqual(expect.objectContaining({ decision: 'DENY', reasonCode: 'CAPABILITY_MISSING' }));
+    const scoped = context({ actionId, authorityFacts: [authority({ capabilities: [actionId] })] });
+    expect(evaluateAuthorization(authorizationPolicyRegistry, policyId, scoped)).toEqual(expect.objectContaining({ decision: 'ALLOW', authorityAssignmentId: ASSIGNMENT }));
+    expect(evaluateAuthorization(authorizationPolicyRegistry, policyId, context({ ...scoped, resource: { ...scoped.resource, authorityScopeId: '10000000-0000-4000-8000-000000000098' } }))).toEqual(expect.objectContaining({ decision: 'DENY' }));
+    expect(evaluateAuthorization(authorizationPolicyRegistry, policyId, context({ ...scoped, actor: { actorType: 'HUMAN', userId: USER, session: session({ mfaVerifiedAt: new Date(AT.getTime() - 300_000) }) } }))).toEqual(expect.objectContaining({ decision: 'DENY', reasonCode: 'ASSURANCE_REQUIRED' }));
   });
 });

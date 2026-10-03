@@ -22,6 +22,8 @@ export const AUDIT_ACTION_CODES = [
   'access.temporary-access.revoke',
   'access.approval.request',
   'access.approval.decide',
+  'access.review.attest',
+  'access.review.export',
   'audit.event.read',
 ] as const;
 
@@ -88,6 +90,8 @@ export interface AuditSummaryByAction {
   'access.temporary-access.revoke': SummaryPair<Readonly<{ revoked: false }>, Readonly<{ revoked: true; temporary: true }>>;
   'access.approval.request': SummaryPair<never, Readonly<{ state: 'PENDING'; operation: string }>>;
   'access.approval.decide': SummaryPair<Readonly<{ state: 'PENDING' }>, Readonly<{ state: 'APPROVED' | 'REJECTED'; decision: 'APPROVE' | 'REJECT' }>>;
+  'access.review.attest': SummaryPair<Readonly<{ state: 'PENDING' | 'NEEDS_FOLLOW_UP' }>, Readonly<{ outcome: 'RETAIN_CONFIRMED' | 'REVOKE_REQUESTED' | 'NEEDS_FOLLOW_UP'; completed: boolean }>>;
+  'access.review.export': SummaryPair<never, Readonly<{ projectionId: 'access.review.export.row.v1'; scopeType: AccessScopeType; resultCount: number; rowCeiling: number }>>;
   'audit.event.read': SummaryPair<never, Readonly<{ projectionId: 'audit.timeline.row.v1'; filterCategory: string; resultCount: number }>>;
 }
 
@@ -164,6 +168,8 @@ const reasonCodesByAction: Readonly<Partial<Record<AuditActionCode, readonly str
   'access.temporary-access.revoke': Object.freeze(['TEMPORARY_ACCESS_ENDED']),
   'access.approval.request': Object.freeze(['ACCESS_CHANGE_REQUESTED']),
   'access.approval.decide': Object.freeze(['INDEPENDENT_REVIEW_COMPLETED']),
+  'access.review.attest': Object.freeze(['ACCESS_REVIEW_ATTESTED']),
+  'access.review.export': Object.freeze(['APPROVED_ACCESS_REVIEW_EXPORT']),
   'audit.event.read': Object.freeze(['INVESTIGATION', 'COMPLIANCE_REVIEW']),
 });
 
@@ -188,6 +194,8 @@ const rawDefinitions: readonly AuditEventDefinition[] = [
   { actionCode: 'access.temporary-access.revoke', contractVersion: 1, sourceModule: 'access', actorKinds: human, resourceType: 'ROLE_ASSIGNMENT', reason: 'REQUIRED', outcomes: succeeded, beforeFields: [field('revoked', 'boolean', [false])], afterFields: [field('revoked', 'boolean', [true]), field('temporary', 'boolean', [true])], authorityRequired: true, approvalRequired: true },
   { actionCode: 'access.approval.request', contractVersion: 1, sourceModule: 'access', actorKinds: human, resourceType: 'APPROVAL_REQUEST', reason: 'REQUIRED', outcomes: succeeded, beforeFields: [], afterFields: [field('state', 'string', ['PENDING']), field('operation', 'string', undefined, 80)], authorityRequired: true, approvalRequired: false },
   { actionCode: 'access.approval.decide', contractVersion: 1, sourceModule: 'access', actorKinds: human, resourceType: 'APPROVAL_REQUEST', reason: 'REQUIRED', outcomes: succeeded, beforeFields: [field('state', 'string', ['PENDING'])], afterFields: [field('state', 'string', ['APPROVED', 'REJECTED']), field('decision', 'string', ['APPROVE', 'REJECT'])], authorityRequired: true, approvalRequired: true },
+  { actionCode: 'access.review.attest', contractVersion: 1, sourceModule: 'access', actorKinds: human, resourceType: 'ACCESS_REVIEW_ITEM', reason: 'REQUIRED', outcomes: succeeded, beforeFields: [field('state', 'string', ['PENDING', 'NEEDS_FOLLOW_UP'])], afterFields: [field('outcome', 'string', ['RETAIN_CONFIRMED', 'REVOKE_REQUESTED', 'NEEDS_FOLLOW_UP']), field('completed', 'boolean')], authorityRequired: true, approvalRequired: false },
+  { actionCode: 'access.review.export', contractVersion: 1, sourceModule: 'access', actorKinds: human, resourceType: 'ACCESS_REVIEW_EXPORT', reason: 'REQUIRED', outcomes: succeeded, beforeFields: [], afterFields: [field('projectionId', 'string', ['access.review.export.row.v1']), field('scopeType', 'string', scopeTypes), field('resultCount', 'number'), field('rowCeiling', 'number')], authorityRequired: true, approvalRequired: true },
   { actionCode: 'audit.event.read', contractVersion: 1, sourceModule: 'audit', actorKinds: human, resourceType: 'AUDIT_TIMELINE', reason: 'OPTIONAL', outcomes: succeeded, beforeFields: [], afterFields: [field('projectionId', 'string', ['audit.timeline.row.v1']), field('filterCategory', 'string', ['RESOURCE', 'ACTOR', 'INSTITUTION', 'ACTION', 'CORRELATION', 'TIME']), field('resultCount', 'number')], authorityRequired: true, approvalRequired: false },
 ];
 

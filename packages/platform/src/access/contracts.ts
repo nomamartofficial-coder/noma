@@ -64,6 +64,9 @@ export const ACCESS_CAPABILITY_CODES = [
   'access.service-principal.create',
   'access.service-principal.rotate',
   'access.service-principal.revoke',
+  'access.review.read',
+  'access.review.attest',
+  'access.review.export',
   'audit.event.read',
 ] as const;
 export type AccessCapabilityCode = (typeof ACCESS_CAPABILITY_CODES)[number];

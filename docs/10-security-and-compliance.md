@@ -85,7 +85,7 @@ This document additionally locks:
 - an adults-only closed pilot unless a child-data and legal-capacity flow is formally approved;
 - a 30-day operational target for verified data-subject requests;
 - a 72-hour regulator-notification clock for qualifying personal-data breaches and immediate high-risk data-subject communication;
-- quarterly privileged-access review during the pilot and immediate event-driven review after role, employment, incident, or provider changes;
+- monthly high-privilege access review during the pilot, quarterly broader-authority review, and immediate event-driven review after role, employment, incident, or provider changes;
 - conservative internal retention periods pending final Nigerian legal/DPCO review;
 - a no-secrets-in-browser, no-card-data-in-Noma, private-by-default evidence model;
 - external vulnerability scanning and independent penetration testing before broad paid expansion; and

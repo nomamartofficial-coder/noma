@@ -90,6 +90,8 @@ For tasks after `UI-006`, model and reasoning-effort selection follows [`CODEX_E
 
 The `UI-006` Storybook, real-browser accessibility, and reviewed visual-baseline contracts remain unchanged. No execution profile may accept a visual baseline automatically or replace the required local/CI comparison and human review.
 
+IAM-009's exact five commands are `iam009:validate`, `iam009:self-test`, `iam009:test`, `iam009:integration-test`, and `iam009:verify`. The validator rejects authority, CSV, transport, route-activation, traceability, and CI-boundary regressions with deterministic negative fixtures. Focused unit tests cover the closed review outcomes, schedule, projections, CSV safety, and same-origin forwarding. The PostgreSQL integration suite uses disposable Testcontainers data to verify approval effect, review, and export persistence. Run it with Docker Desktop and an account permitted to access the local Docker engine; a sandbox pipe-denial is infrastructure failure, not a passing test. No production data or visual-baseline acceptance is involved.
+
 ## CI reporting
 
 The checked-in CI command catalog runs with the same UTC/seed/zero-retry contract. Unit and component jobs emit human-readable output, JUnit XML, V8 JSON summary, LCOV, and HTML coverage. Coverage remains diagnostic: DEV-008 records the repository baseline and provider-contract source separately and does not introduce an unapproved threshold that the current foundation cannot meet.

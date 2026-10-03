@@ -718,3 +718,5 @@ Before contributing:
 The final standard is simple:
 
 > Build Noma so that every important claim—identity, stock, payment, order, custody, refund, payout, protection, enforcement, and readiness—can be supported by the correct authority and evidence.
+
+IAM-009's bounded Access Admin implementation, review workflow, and approved export are documented in [`ACCESS.md`](ACCESS.md) and [ADR-0026](docs/adr/0026-access-admin-review-and-export.md). Run `pnpm iam009:verify` for task verification; no live administrator or production authority is seeded by this work.

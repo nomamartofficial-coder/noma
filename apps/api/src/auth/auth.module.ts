@@ -3,6 +3,8 @@ import type { ServerRuntimeConfig } from '@noma/config/server';
 import type { ServerObservability } from '@noma/observability/server';
 
 import { API_OBSERVABILITY, API_RUNTIME_CONFIG } from '../runtime-dependencies.service.js';
+import { AccessAdminController } from '../authorization/access-admin.controller.js';
+import { AuthorizationModule } from '../authorization/authorization.module.js';
 import { AuthController } from './auth.controller.js';
 import { AuthRuntimeService } from './auth-runtime.service.js';
 
@@ -11,7 +13,8 @@ export class AuthModule {
   static forRoot(config: ServerRuntimeConfig, observability: ServerObservability): DynamicModule {
     return {
       module: AuthModule,
-      controllers: [AuthController],
+      imports: [AuthorizationModule],
+      controllers: [AuthController, AccessAdminController],
       providers: [
         { provide: API_RUNTIME_CONFIG, useValue: config },
         { provide: API_OBSERVABILITY, useValue: observability },

@@ -16,6 +16,12 @@ const ALLOWED_CLIENT_FILES = new Set([
   'apps/web/src/shells/protected/compact-shell-navigation.tsx',
   'apps/web/src/shells/surface-switcher.tsx',
   'apps/web/src/audit/audit-viewer.tsx',
+  'apps/web/src/admin/access-start.tsx',
+  'apps/web/src/admin/access-workspace.tsx',
+]);
+const ALLOWED_ADMIN_TRANSPORT_ROUTES = new Set([
+  'apps/web/src/app/api/admin-access/[operation]/route.ts',
+  'apps/web/src/app/api/admin-access/select-scope/route.ts',
 ]);
 
 const read = (path) => readFile(resolve(ROOT, path), 'utf8');
@@ -97,7 +103,10 @@ export function validateUiShells(fixture) {
 
   if (consumerRoutes.join('|') !== [...EXPECTED_ROUTES].sort().join('|') || new Set(routes).size !== routes.length) failures.push(failure('ROUTE_MANIFEST', routes.join(', ')));
   if (fixture.pagePaths.some((path) => /\/health\//.test(path))) failures.push(failure('HEALTH_LAYOUT', 'health route became a page'));
-  if (fixture.apiRoutes.length > 0) failures.push(failure('BUSINESS_API', fixture.apiRoutes.join(', ')));
+  const unexpectedApiRoutes = fixture.apiRoutes.filter((path) => !ALLOWED_ADMIN_TRANSPORT_ROUTES.has(path));
+  if (unexpectedApiRoutes.length > 0 || [...ALLOWED_ADMIN_TRANSPORT_ROUTES].some((path) => !fixture.apiRoutes.includes(path))) {
+    failures.push(failure('BUSINESS_API', unexpectedApiRoutes.join(', ') || 'missing exact IAM-009 transport'));
+  }
 
   const mobileBlock = fixture.navigation.match(/export const mobileDestinations[\s\S]*?export const accountDestinations/)?.[0] ?? '';
   const accountBlock = fixture.navigation.match(/export const accountDestinations[\s\S]*?export function isDestinationCurrent/)?.[0] ?? '';

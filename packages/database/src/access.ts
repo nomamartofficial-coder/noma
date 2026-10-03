@@ -291,6 +291,54 @@ async function grantInTransaction(
   return { assignment, privilegeClass: template.privilegeClass };
 }
 
+/** Compose the existing IAM-005 grant and containment in the caller's governing transaction. */
+export async function grantApprovedRoleAssignmentInTransaction(
+  transaction: DatabaseTransactionClient,
+  input: GrantRoleAssignmentInput,
+  expectedEnvironment: AccessEnvironment,
+  temporary?: Readonly<{ id: string; ownerUserId: string; reason: string; approvalRequestId: string }>,
+): Promise<RoleAssignmentRecord> {
+  if (temporary && !input.validUntil) throw new Error('Temporary access requires finite expiry');
+  const granted = await grantInTransaction(transaction, input, environment(expectedEnvironment));
+  if (temporary) {
+    await transaction.temporaryAccessGrant.create({ data: {
+      id: uuid('temporary grant id', temporary.id), roleAssignmentId: granted.assignment.id,
+      ownerUserId: uuid('ownerUserId', temporary.ownerUserId),
+      reason: text('temporaryReason', temporary.reason, 500),
+      approvalRequestId: uuid('approvalRequestId', temporary.approvalRequestId),
+      createdAt: input.grantedAt,
+    } });
+  }
+  return assignmentRecord(granted.assignment);
+}
+
+/** One revocation truth, including early revocation of temporary assignments. */
+export async function revokeApprovedRoleAssignmentInTransaction(
+  transaction: DatabaseTransactionClient,
+  id: string,
+  expectedVersion: number,
+  revokedByUserId: string,
+  reason: string,
+  revokedAt: Date,
+  containmentTransitionId: string,
+): Promise<RoleAssignmentRecord | null> {
+  const at = instant('revokedAt', revokedAt);
+  const current = await transaction.roleAssignment.findUnique({ where: { id: uuid('assignment id', id) }, include: { roleTemplate: true } });
+  if (!current || current.revokedAt || current.version !== expectedVersion) return null;
+  const updated = await transaction.roleAssignment.updateMany({
+    where: { id: current.id, version: expectedVersion, revokedAt: null },
+    data: { revokedAt: at, revokedByUserId: uuid('revokedByUserId', revokedByUserId), revocationReason: text('revocationReason', reason, 500), version: { increment: 1 }, updatedAt: at },
+  });
+  if (updated.count !== 1) return null;
+  if (current.roleTemplate.privilegeClass === 'PRIVILEGED' && current.subjectType === 'HUMAN' && current.userId) {
+    await containIdentitySessionsForAuthorityChange(transaction, {
+      userId: current.userId, occurredAt: at, transitionId: containmentTransitionId,
+      reasonCode: 'PRIVILEGED_ACCESS_REVOKED',
+    });
+  }
+  return assignmentRecord(await transaction.roleAssignment.findUniqueOrThrow({ where: { id: current.id } }));
+}
+
 export function createAccessAuthorityPersistence(
   client: DatabaseClient,
   options: Readonly<{ environment: AccessEnvironment }>,
@@ -393,7 +441,7 @@ export function createAccessAuthorityPersistence(
     },
 
     async grantRoleAssignment(input) {
-      return runInDatabaseTransaction(client, async (transaction) => assignmentRecord((await grantInTransaction(transaction, input, expectedEnvironment)).assignment));
+      return runInDatabaseTransaction(client, async (transaction) => grantApprovedRoleAssignmentInTransaction(transaction, input, expectedEnvironment));
     },
 
     async grantTemporaryAccess(input) {
@@ -411,23 +459,9 @@ export function createAccessAuthorityPersistence(
     },
 
     async revokeRoleAssignment(id, expectedVersion, revokedByUserId, reason, revokedAt, containmentTransitionId) {
-      const at = instant('revokedAt', revokedAt);
-      return runInDatabaseTransaction(client, async (transaction) => {
-        const current = await transaction.roleAssignment.findUnique({ where: { id: uuid('assignment id', id) }, include: { roleTemplate: true } });
-        if (!current || current.revokedAt || current.version !== expectedVersion) return null;
-        const updated = await transaction.roleAssignment.updateMany({
-          where: { id: current.id, version: expectedVersion, revokedAt: null },
-          data: { revokedAt: at, revokedByUserId: uuid('revokedByUserId', revokedByUserId), revocationReason: text('revocationReason', reason, 500), version: { increment: 1 }, updatedAt: at },
-        });
-        if (updated.count !== 1) return null;
-        if (current.roleTemplate.privilegeClass === 'PRIVILEGED' && current.subjectType === 'HUMAN' && current.userId) {
-          await containIdentitySessionsForAuthorityChange(transaction, {
-            userId: current.userId, occurredAt: at, transitionId: containmentTransitionId,
-            reasonCode: 'PRIVILEGED_ACCESS_REVOKED',
-          });
-        }
-        return assignmentRecord(await transaction.roleAssignment.findUniqueOrThrow({ where: { id: current.id } }));
-      });
+      return runInDatabaseTransaction(client, async (transaction) => revokeApprovedRoleAssignmentInTransaction(
+        transaction, id, expectedVersion, revokedByUserId, reason, revokedAt, containmentTransitionId,
+      ));
     },
 
     async resolveActiveAuthorityFacts(subject, at) {

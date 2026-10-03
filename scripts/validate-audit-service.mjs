@@ -36,7 +36,7 @@ const APPROVED_ACTIONS = Object.freeze([
   'access.capability.retire', 'access.service-principal.create', 'access.service-principal.rotate',
   'access.service-principal.revoke', 'access.assignment.grant', 'access.assignment.revoke',
   'access.temporary-access.grant', 'access.temporary-access.revoke', 'access.approval.request',
-  'access.approval.decide', 'audit.event.read',
+  'access.approval.decide', 'access.review.attest', 'access.review.export', 'audit.event.read',
 ]);
 const REQUIRED_GATE_NAMES = Object.freeze([
   'Noma / CI Policy', 'Noma / Quality Gate', 'Noma / Integration Gate', 'Noma / Security Gate', 'Noma / Windows Compatibility',
@@ -122,8 +122,8 @@ function validate(source) {
     && source.ci.includes("command('iam008-integration'")
     && REQUIRED_GATE_NAMES.length === 5, 'FIVE_GATE_REGISTRATION');
   require(source.taskIndex.includes('IAM-007,EP03,Implement field-level projections and sensitive-data redaction,P0,P0-PRIVACY,COMPLETE')
-    && source.taskIndex.includes('IAM-008,EP03,Implement append-only audit service and privileged-action timeline,P0,P0-AUTHORITY,IN_REVIEW')
-    && source.taskIndex.includes('IAM-009,EP03,Implement Access Admin workflows and access-review export,P0,P0-AUTHORITY,NOT_STARTED'), 'ONE_TASK_LAG');
+    && source.taskIndex.includes('IAM-008,EP03,Implement append-only audit service and privileged-action timeline,P0,P0-AUTHORITY,COMPLETE')
+    && source.taskIndex.includes('IAM-009,EP03,Implement Access Admin workflows and access-review export,P0,P0-AUTHORITY,IN_REVIEW'), 'ONE_TASK_LAG');
   require(source.adr.includes('append-only') && source.adr.includes('no cryptographic chain')
     && source.evidence.includes('20260925000100_iam_008_append_only_audit')
     && [source.readme, source.testing, source.ciDoc, source.databaseDoc, source.accessDoc, source.authorizationDoc].every((value) => value.includes('IAM-008')), 'DOCUMENTATION_AND_EVIDENCE');
@@ -152,7 +152,7 @@ if (process.argv.includes('--self-test')) {
     ['activated admin boundary', { protectedBoundary: current.protectedBoundary.replace('notFound()', 'return undefined') }],
     ['sixth task command', { manifest: current.manifest.replace('"iam008:verify":', '"iam008:security-test": "echo unsafe",\n    "iam008:verify":') }],
     ['regressed IAM007', { taskIndex: current.taskIndex.replace('P0,P0-PRIVACY,COMPLETE', 'P0,P0-PRIVACY,IN_REVIEW') }],
-    ['advanced IAM009', { taskIndex: current.taskIndex.replace('export,P0,P0-AUTHORITY,NOT_STARTED', 'export,P0,P0-AUTHORITY,IN_REVIEW') }],
+    ['advanced IAM009', { taskIndex: current.taskIndex.replace('export,P0,P0-AUTHORITY,IN_REVIEW', 'export,P0,P0-AUTHORITY,COMPLETE') }],
   ];
   for (const [name, patch] of fixtures) {
     if (validate({ ...current, ...patch }).length === 0) throw new Error(`IAM-008 negative fixture accepted: ${name}`);
