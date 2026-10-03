@@ -76,6 +76,8 @@ export const storyInventory = Object.freeze([
   composition('operations', 'Operations shell and queue', 'apps/web/src/shells/protected/operations/operations-shell.tsx', ['protected-operations--queue']),
   composition('admin', 'Admin shell and review frame', 'apps/web/src/shells/protected/admin/admin-shell.tsx', ['protected-admin--review', 'protected-admin--shell']),
   composition('audit', 'Internal governed audit viewer behind the fail-closed Admin boundary', 'apps/web/src/audit/audit-viewer.tsx', ['protected-audit--loaded', 'protected-audit--loading', 'protected-audit--empty', 'protected-audit--filtered-empty', 'protected-audit--error', 'protected-audit--denied', 'protected-audit--malformed-query', 'protected-audit--pagination-loading']),
+  composition('access-admin-session', 'Provisioned Access Admin session entry', 'apps/web/src/admin/access-start.tsx', ['access-admin-session--provisioned-identity-required']),
+  composition('access-admin-workspace', 'Scoped Access Admin workspace and review outcomes', 'apps/web/src/admin/access-workspace.tsx', ['access-admin-workspace--empty-exact-scope', 'access-admin-workspace--due-review-requires-explicit-outcome']),
 ] as const satisfies readonly StoryInventoryEntry[]);
 
 const direct = (...storyIds: string[]): StateApplicability => Object.freeze({ kind: 'DIRECT', storyIds });

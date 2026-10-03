@@ -55,7 +55,7 @@ const requiredGates = Object.freeze([
 
 async function load() {
   const source = Object.fromEntries(await Promise.all(Object.entries(paths).map(async ([key, path]) => [
-    key, await readFile(new URL(path, root), 'utf8'),
+    key, (await readFile(new URL(path, root), 'utf8')).replace(/\r\n/g, '\n'),
   ])));
   source.unrelatedAdminPages = (await readdir(new URL('apps/web/src/app/(admin)/admin/', root), { withFileTypes: true }))
     .filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort().join('|');
