@@ -11,7 +11,7 @@ const FILES = Object.freeze({
   lock: 'pnpm-lock.yaml',
 });
 const APPROVED = Object.freeze({
-  next: '16.3.3',
+  next: '16.3.8',
   postcss: Object.freeze(['8.5.23', '8.5.25']),
   sharp: '0.35.4',
   fastUri: '3.1.7',
@@ -182,6 +182,9 @@ function validateSources({ root, web, security, integrations, workspace, lock })
 
   const packages = yamlSection(lock, 'packages');
   assertVersions(errors, packages, 'next', [APPROVED.next]);
+  if ([...packages.matchAll(/^  ['"]?next@[^\n]*:/gm)].length !== 1) {
+    errors.push(`${FILES.lock}: expected one exact Next.js ${APPROVED.next} package entry`);
+  }
   assertVersions(errors, packages, 'postcss', APPROVED.postcss);
   assertVersions(errors, packages, 'sharp', [APPROVED.sharp]);
   assertVersions(errors, packages, 'fast-uri', [APPROVED.fastUri]);
@@ -207,9 +210,10 @@ function validateSources({ root, web, security, integrations, workspace, lock })
   }
 
   const snapshots = yamlSection(lock, 'snapshots');
-  const nextBlocks = yamlEntryBlocks(snapshots, `next@${APPROVED.next}`);
-  if (nextBlocks.length !== 1) {
-    errors.push(`${FILES.lock}: expected one Next.js ${APPROVED.next} snapshot, found ${nextBlocks.length}`);
+  const nextBlocks = yamlEntryBlocks(snapshots, 'next@');
+  const nextHeaders = [...snapshots.matchAll(/^  ['"]?next@[^\n]*:/gm)];
+  if (nextHeaders.length !== 1 || nextBlocks.length !== 1 || !new RegExp(`^  next@${escapeRegex(APPROVED.next)}(?:\\([^\\n]*\\))?:$`).test(nextBlocks[0]?.split('\n')[0] ?? '')) {
+    errors.push(`${FILES.lock}: expected one exact Next.js ${APPROVED.next} snapshot, found ${nextBlocks.length}`);
   } else {
     requireDependency(errors, nextBlocks[0], 'Next.js', 'postcss', APPROVED.postcss[0]);
     requireDependency(errors, nextBlocks[0], 'Next.js', 'sharp', APPROVED.sharp);
@@ -290,7 +294,23 @@ function yamlEntryBlocks(section, prefix, { literalSuffix = false } = {}) {
 
 function runSelfTest(original) {
   const tests = [
-    fixture('restored vulnerable Next manifest', 'web', '"next": "16.3.3"', '"next": "16.3.0"', 'Next.js must be pinned exactly'),
+    ...['16.3.0', '16.3.3', '16.3.6', '16.3.7', '^16.3.8', '~16.3.8', 'latest', '16.3.9'].map((version) =>
+      fixture(`unapproved Next manifest ${version}`, 'web', `"next": "${APPROVED.next}"`, `"next": "${version}"`, 'Next.js must be pinned exactly')),
+    fixture('ranged Next importer', 'lock', `      next:\n        specifier: ${APPROVED.next}\n`, `      next:\n        specifier: ^${APPROVED.next}\n`, 'apps/web must resolve the exact Next.js'),
+    fixture('downgraded Next importer resolution', 'lock', `      next:\n        specifier: ${APPROVED.next}\n        version: ${APPROVED.next}(`, `      next:\n        specifier: ${APPROVED.next}\n        version: 16.3.6(`, 'apps/web must resolve the exact Next.js'),
+    fixture('missing Next package', 'lock', `  next@${APPROVED.next}:\n`, '  missing-next-package:\n', 'next package versions must be'),
+    fixture('downgraded Next package', 'lock', `  next@${APPROVED.next}:\n`, '  next@16.3.6:\n', 'next package versions must be'),
+    fixture('extra old Next package', 'lock', 'packages:\n', 'packages:\n  next@16.3.6:\n', 'next package versions must be'),
+    fixture('extra inline old Next package', 'lock', 'packages:\n', 'packages:\n  next@16.3.6: {}\n', 'expected one exact Next.js'),
+    fixture('extra quoted old Next package', 'lock', 'packages:\n', "packages:\n  'next@16.3.6': {}\n", 'expected one exact Next.js'),
+    fixture('extra double-quoted old Next package', 'lock', 'packages:\n', 'packages:\n  "next@16.3.6": {}\n', 'expected one exact Next.js'),
+    fixture('missing Next snapshot', 'lock', `  next@${APPROVED.next}(`, '  missing-next-snapshot(', 'expected one exact Next.js'),
+    fixture('extra old Next snapshot', 'lock', 'snapshots:\n', 'snapshots:\n  next@16.3.6:\n    dependencies: {}\n', 'expected one exact Next.js'),
+    fixture('extra inline old Next snapshot', 'lock', 'snapshots:\n', 'snapshots:\n  next@16.3.6: {}\n', 'expected one exact Next.js'),
+    fixture('extra quoted old Next snapshot', 'lock', 'snapshots:\n', "snapshots:\n  'next@16.3.6': {}\n", 'expected one exact Next.js'),
+    fixture('extra double-quoted old Next snapshot', 'lock', 'snapshots:\n', 'snapshots:\n  "next@16.3.6": {}\n', 'expected one exact Next.js'),
+    ...['16.3.6', '16.3.80', '16.3.8-canary.0'].map((version) =>
+      fixture(`unapproved Next snapshot ${version}`, 'lock', `  next@${APPROVED.next}(`, `  next@${version}(`, 'expected one exact Next.js')),
     fixture('restored vulnerable root Vitest manifest', 'root', '"vitest": "4.1.11"', '"vitest": "4.1.10"', 'vitest must be pinned exactly'),
     fixture('restored vulnerable Web Vitest manifest', 'web', '"vitest": "4.1.11"', '"vitest": "4.1.10"', 'vitest must be pinned exactly'),
     fixture('removed fast-uri override', 'workspace', "  'fast-uri@': 3.1.7\n", '', 'missing reviewed fast-uri@ convergence override'),
