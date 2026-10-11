@@ -1,8 +1,8 @@
 # Dependency security policy
 
-> **Task:** `SEC-005`, corrected by `SEC-006`, `SEC-007`, the bounded Next.js 16.3.3 security correction, and the IAM-002 pre-publication audit correction
+> **Task:** `SEC-005`, corrected by `SEC-006`, `SEC-007`, the bounded Next.js 16.3.3 security correction, the IAM-002 pre-publication audit correction, and PR #77's bounded Next.js 16.3.8 update
 > **Risk:** `P0-RECOVERY`  
-> **Status:** prior corrections complete; IAM-002 audit correction implemented for review; infrastructure activation remains blocked
+> **Status:** Next.js 16.3.8 correction under independent review; Security readiness HOLD; infrastructure activation remains blocked
 
 ## Purpose
 
@@ -14,9 +14,13 @@ The reviewed `16.3.3` lockfile update also advances Next's own `@next/env` and p
 
 ## Reviewed resolutions
 
+PR #77 now targets exactly `next@16.3.8`, superseding its initial `16.3.6` proposal. The [upstream 16.3.8 security release](https://github.com/vercel/next.js/releases/tag/v16.3.8) addresses additional image-optimization, metadata-image, and cache-isolation advisories beyond [GHSA-vcvr-r3jv-pc5j](https://github.com/advisories/GHSA-vcvr-r3jv-pc5j). The lockfile correction is limited to Next and its version-coupled `@next/env`/platform SWC entries relative to Dependabot's existing commit; React, application code, Storybook configuration, visual baselines, CI topology, and other reviewed pins remain unchanged. The earlier `16.3.3` paragraphs above are historical context, not the current approved Next resolution.
+
+This package-level remediation does not establish that Noma exposes an exploitable advisory path, nor does it clear unrelated registry findings. Remaining Moderate, High, or Critical findings require separate triage and bounded remediation; no audit ignore or CI allowance is introduced. Security readiness stays **HOLD**, Admin-actor UAT remains outstanding, and this PR authorizes neither merge, deployment, production Admin activation, nor IAM-010 advancement.
+
 | Package | Approved resolution | Reason |
 |---|---:|---|
-| `next` | `16.3.3` | Active-LTS security release addressing two Critical vulnerabilities while retaining the reviewed PostCSS and Sharp graph |
+| `next` | `16.3.8` | Exact reviewed security-release target, retaining the existing PostCSS and Sharp graph; unrelated audit findings remain unresolved |
 | `postcss` | `8.5.23`, `8.5.25` | Covers the four open PostCSS advisories while retaining Vite's already-safe graph |
 | `sharp` | `0.35.4` | Patched libheif-bearing release selected through Next's supported optional range |
 | `fast-uri` | `3.1.7` | Current patched compatible convergence override for Ajv's declared range |
@@ -36,9 +40,10 @@ pnpm security:dependencies:validate
 pnpm security:dependencies:self-test
 pnpm security:dependencies:verify
 pnpm audit --audit-level moderate
+pnpm audit --prod --audit-level moderate
 ```
 
-The first three commands are deterministic and network-free. They validate exact manifest pins, reviewed overrides, lockfile package sets, and relevant parent-to-transitive resolutions. The self-test mutates every protected boundary in memory and proves the validator rejects vulnerable or weaker fixtures.
+The first three commands are deterministic and network-free. They validate exact manifest pins, reviewed overrides, lockfile package sets, and relevant parent-to-transitive resolutions. The self-test mutates every protected boundary in memory and proves the validator rejects vulnerable or weaker fixtures. Both dependency and runtime validators reject older, ranged, and otherwise unapproved Next pins; dependency fixtures also reject mismatched importers, missing/extra packages, and missing, stale, duplicate, lookalike, or prerelease Next snapshots.
 
 The live `pnpm audit` command is required review evidence but is not embedded in a stable required CI gate because registry availability is external and time-varying. No advisory ignore is permitted. `pnpm audit --audit-level moderate` and `pnpm audit --prod --audit-level moderate` must remain clean. GitHub's pinned Dependency Review action independently rejects newly introduced vulnerabilities at `moderate` severity or above without advisory allowances.
 

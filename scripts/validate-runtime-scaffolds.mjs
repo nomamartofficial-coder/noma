@@ -15,13 +15,17 @@ const required = [
 const fail = (message) => { throw new Error(message); };
 const readJson = async (path) => JSON.parse(await readFile(resolve(ROOT, path), 'utf8'));
 
+function validateNextVersion(web) {
+  if (web.dependencies?.next !== '16.3.8') fail('Next.js must be pinned exactly to 16.3.8');
+}
+
 async function validate() {
   for (const path of required) await access(resolve(ROOT, path));
 
   const web = await readJson('apps/web/package.json');
   const api = await readJson('apps/api/package.json');
   const worker = await readJson('apps/worker/package.json');
-  if (web.dependencies?.next !== '16.3.3') fail('Next.js must be pinned to 16.3.3');
+  validateNextVersion(web);
   for (const pkg of [api, worker]) {
     if (pkg.dependencies?.['@nestjs/core'] !== '11.1.28') fail(`${pkg.name}: NestJS must be pinned to 11.1.28`);
     for (const script of ['dev', 'start', 'build', 'typecheck']) if (!pkg.scripts?.[script]) fail(`${pkg.name}: missing ${script}`);
@@ -37,6 +41,17 @@ async function validate() {
 }
 
 function selfTest() {
+  validateNextVersion({ dependencies: { next: '16.3.8' } });
+  for (const version of ['16.3.0', '16.3.3', '16.3.6', '16.3.7', '^16.3.8', '~16.3.8', 'latest', '16.3.9', undefined]) {
+    let rejected = false;
+    try {
+      validateNextVersion({ dependencies: { next: version } });
+    } catch (error) {
+      if (error.message !== 'Next.js must be pinned exactly to 16.3.8') throw error;
+      rejected = true;
+    }
+    if (!rejected) fail(`Next.js version negative test did not reject ${version}`);
+  }
   const injected = 'const PAYSTACK_SECRET_KEY = "not-real"';
   if (!/(PAYSTACK|DATABASE_URL|SECRET_KEY|PRIVATE_KEY|WEBHOOK_SECRET)/.test(injected)) fail('secret-boundary negative test did not fail');
 }
@@ -46,7 +61,7 @@ try {
   console.log(`PASS: ${result.runtimes} runtime scaffolds and ${result.healthChecks} distinct health checks`);
   if (process.argv.includes('--self-test')) {
     selfTest();
-    console.log('PASS: injected Web secret identifier was rejected');
+    console.log('PASS: unapproved Next.js versions and injected Web secret identifier were rejected');
   }
 } catch (error) {
   console.error(`FAIL: ${error.message}`);
