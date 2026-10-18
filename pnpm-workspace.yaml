@@ -6,6 +6,7 @@ overrides:
   mysql2: 3.23.1
   multer: 2.3.0
   'nanoid@': 3.3.18
+  'proxy-addr@': 2.0.8
   qs: 6.16.0
   sharp: 0.35.4
   deepmerge-ts: 8.0.2

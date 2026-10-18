@@ -19,6 +19,7 @@ const APPROVED = Object.freeze({
   multer: '2.3.0',
   qs: '6.16.0',
   nanoid: '3.3.18',
+  proxyAddr: '2.0.8',
   deepmergeTs: '8.0.2',
   argon2: '0.45.1',
   otpauth: '9.5.2',
@@ -149,6 +150,7 @@ function validateSources({ root, web, security, integrations, workspace, lock })
   for (const advisory of ['GHSA-5p2g-fcmc-qvqq', 'GHSA-w3rx-r6r6-pgpr']) {
     if (workspace.includes(advisory)) errors.push(`${FILES.workspace}: advisory exclusions are forbidden (${advisory})`);
   }
+  validateProxyAddr(errors, { rootManifest, workspace, lock });
 
   const importers = yamlSection(lock, 'importers');
   const webImporter = yamlEntryBlocks(importers, 'apps/web@').at(0)
@@ -244,6 +246,61 @@ function validateSources({ root, web, security, integrations, workspace, lock })
   return [...new Set(errors)];
 }
 
+function validateProxyAddr(errors, { rootManifest, workspace, lock }) {
+  const version = APPROVED.proxyAddr;
+  const workspaceOverride = `  'proxy-addr@': ${version}`;
+  const lockOverride = `  proxy-addr@: ${version}`;
+  const header = `  proxy-addr@${version}:`;
+  const edge = `      proxy-addr: ${version}`;
+  const proxyLines = (source) => source.split('\n').filter((line) => line.includes('proxy-addr'));
+  const workspaceLines = proxyLines(workspace);
+  if (workspaceLines.length !== 1 || workspaceLines[0] !== workspaceOverride
+    || !yamlSection(workspace, 'overrides').split('\n').includes(workspaceOverride)
+    || JSON.stringify(rootManifest.pnpm ?? {}).includes('proxy-addr')) {
+    errors.push(`${FILES.workspace}: expected only the exact proxy-addr@ convergence override to ${version}`);
+  }
+  const lockOverrides = proxyLines(yamlSection(lock, 'overrides'));
+  if (lockOverrides.length !== 1 || lockOverrides[0] !== lockOverride) {
+    errors.push(`${FILES.lock}: expected exact proxy-addr@ override to ${version}`);
+  }
+
+  const packages = yamlSection(lock, 'packages');
+  const snapshots = yamlSection(lock, 'snapshots');
+  const packageBlocks = yamlEntryBlocks(packages, 'proxy-addr@');
+  const snapshotBlocks = yamlEntryBlocks(snapshots, 'proxy-addr@');
+  if (proxyLines(packages).length !== 1 || packageBlocks.length !== 1 || packageBlocks[0]?.split('\n')[0] !== header) {
+    errors.push(`${FILES.lock}: expected one exact proxy-addr ${version} package`);
+  }
+  // The reviewed registry tarball identity must not disappear or be replaced by a URL/alias.
+  const integrity = 'sha512-5nnx0yGyVUcY6t9RnWcARWtwT9F1D8O9rt08htPvnd49W1IgZtmLkhu9WfMzQj1cFxjHIO6connUNVW5k7AVyQ==';
+  const resolutionLines = packageBlocks[0]?.split('\n').filter((line) => line.includes('resolution:')) ?? [];
+  if (resolutionLines.length !== 1 || resolutionLines[0] !== `    resolution: {integrity: ${integrity}}`) {
+    errors.push(`${FILES.lock}: proxy-addr must retain its reviewed registry integrity resolution`);
+  }
+  const expectedSnapshot = `${header}\n    dependencies:\n      forwarded: 0.2.0\n      ipaddr.js: 1.9.1`;
+  if (snapshotBlocks.length !== 1 || snapshotBlocks[0]?.trimEnd() !== expectedSnapshot) {
+    errors.push(`${FILES.lock}: expected one exact proxy-addr ${version} snapshot with unchanged dependencies`);
+  }
+  const expressBlocks = yamlEntryBlocks(snapshots, 'express@');
+  if (expressBlocks.length === 0) errors.push(`${FILES.lock}: no Express snapshot available to validate proxy-addr`);
+  for (const block of expressBlocks) {
+    const edges = proxyLines(block);
+    if (edges.length !== 1 || edges[0] !== edge) errors.push(`${FILES.lock}: Express must resolve exact proxy-addr ${version}`);
+  }
+  // Canonical generated spelling and multiplicity reject quoted/inline stale copies,
+  // duplicate overrides, aliases and extra versions anywhere in the resolved graph.
+  const expectedLines = [lockOverride, header, header, ...expressBlocks.map(() => edge)].sort();
+  if (JSON.stringify(proxyLines(lock).sort()) !== JSON.stringify(expectedLines)) {
+    errors.push(`${FILES.lock}: unexpected proxy-addr graph entry or dependency edge`);
+  }
+  const pnpmPolicy = JSON.stringify(rootManifest.pnpm ?? {});
+  if (workspace.includes('GHSA-jqcg-44mw-7w3h') || pnpmPolicy.includes('GHSA-jqcg-44mw-7w3h')
+    || /(?:^|[\s{,])['"]?(?:ignore|ignoreGhsas|ignoreCves)['"]?\s*:/m.test(workspace)
+    || /"(?:ignore|ignoreGhsas|ignoreCves)"\s*:/.test(pnpmPolicy)) {
+    errors.push('dependency audit advisory suppression is forbidden');
+  }
+}
+
 function assertVersions(errors, section, name, expected) {
   const actual = [...section.matchAll(new RegExp(`^  ${escapeRegex(name)}@([^:\\s(]+)(?:\\([^\\n]*)?\\)?:\\s*$`, 'gm'))]
     .map((match) => match[1])
@@ -294,6 +351,32 @@ function yamlEntryBlocks(section, prefix, { literalSuffix = false } = {}) {
 
 function runSelfTest(original) {
   const tests = [
+    ...['2.0.7', '2.0.9', '^2.0.8', '~2.0.8', 'latest'].map((version) =>
+      fixture(`unapproved proxy override ${version}`, 'workspace', "  'proxy-addr@': 2.0.8\n", `  'proxy-addr@': ${version}\n`, 'exact proxy-addr@ convergence override')),
+    fixture('missing proxy override', 'workspace', "  'proxy-addr@': 2.0.8\n", '', 'exact proxy-addr@ convergence override'),
+    fixture('forced proxy override', 'workspace', "  'proxy-addr@': 2.0.8\n", '  proxy-addr: 2.0.8\n', 'exact proxy-addr@ convergence override'),
+    fixture('conflicting proxy override', 'workspace', "  'proxy-addr@': 2.0.8\n", "  'proxy-addr@': 2.0.8\n  proxy-addr: 2.0.7\n", 'exact proxy-addr@ convergence override'),
+    fixture('superseding root proxy override', 'root', '"private": true', '"private": true, "pnpm": {"overrides": {"proxy-addr": "2.0.7"}}', 'exact proxy-addr@ convergence override'),
+    fixture('missing proxy lock override', 'lock', '  proxy-addr@: 2.0.8\n', '', 'exact proxy-addr@ override'),
+    fixture('ranged proxy lock override', 'lock', '  proxy-addr@: 2.0.8\n', '  proxy-addr@: ^2.0.8\n', 'exact proxy-addr@ override'),
+    fixture('vulnerable proxy package', 'lock', '  proxy-addr@2.0.8:\n', '  proxy-addr@2.0.7:\n', 'one exact proxy-addr 2.0.8 package'),
+    fixture('missing proxy package', 'lock', '  proxy-addr@2.0.8:\n', '  missing-proxy-package:\n', 'one exact proxy-addr 2.0.8 package'),
+    ...['proxy-addr@2.0.7', 'proxy-addr@2.0.9', "'proxy-addr@2.0.7'", '"proxy-addr@2.0.7"', 'proxy-addr@2.0.8'].map((entry) =>
+      fixture(`extra proxy package ${entry}`, 'lock', 'packages:\n', `packages:\n  ${entry}: {}\n`, 'one exact proxy-addr 2.0.8 package')),
+    fixture('missing proxy integrity', 'lock', '  proxy-addr@2.0.8:\n    resolution:', '  proxy-addr@2.0.8:\n    missing-resolution:', 'reviewed registry integrity resolution'),
+    fixture('stale proxy snapshot', 'lock', '  proxy-addr@2.0.8:\n    dependencies:', '  proxy-addr@2.0.7:\n    dependencies:', 'one exact proxy-addr 2.0.8 snapshot'),
+    fixture('missing proxy snapshot', 'lock', '  proxy-addr@2.0.8:\n    dependencies:', '  missing-proxy-snapshot:\n    dependencies:', 'one exact proxy-addr 2.0.8 snapshot'),
+    fixture('extra quoted proxy snapshot', 'lock', 'snapshots:\n', 'snapshots:\n  "proxy-addr@2.0.7": {}\n', 'unexpected proxy-addr graph entry'),
+    fixture('duplicate proxy snapshot', 'lock', 'snapshots:\n', 'snapshots:\n  proxy-addr@2.0.8:\n', 'one exact proxy-addr 2.0.8 snapshot'),
+    fixture('wrong proxy parent edge', 'lock', '      proxy-addr: 2.0.8\n', '      proxy-addr: 2.0.7\n', 'Express must resolve exact proxy-addr'),
+    fixture('aliased proxy parent edge', 'lock', '      proxy-addr: 2.0.8\n', '      proxy-addr: npm:proxy-addr@2.0.8\n', 'Express must resolve exact proxy-addr'),
+    fixture('missing proxy parent edge', 'lock', '      proxy-addr: 2.0.8\n', '', 'Express must resolve exact proxy-addr'),
+    fixture('duplicate proxy parent edge', 'lock', '      proxy-addr: 2.0.8\n', '      proxy-addr: 2.0.8\n      proxy-addr: 2.0.7\n', 'Express must resolve exact proxy-addr'),
+    fixture('changed proxy child edge', 'lock', '      forwarded: 0.2.0\n', '      forwarded: 0.1.0\n', 'one exact proxy-addr 2.0.8 snapshot'),
+    fixture('proxy advisory suppression', 'workspace', 'verifyDepsBeforeRun: false', 'audit:\n  ignoreGhsas: [GHSA-jqcg-44mw-7w3h]\nverifyDepsBeforeRun: false', 'advisory suppression is forbidden'),
+    fixture('inline audit suppression', 'workspace', 'verifyDepsBeforeRun: false', 'audit: {ignoreGhsas: [GHSA-jqcg-44mw-7w3h]}\nverifyDepsBeforeRun: false', 'advisory suppression is forbidden'),
+    fixture('inline CVE audit suppression', 'workspace', 'verifyDepsBeforeRun: false', 'auditConfig: {ignoreCves: [CVE-2026-90711]}\nverifyDepsBeforeRun: false', 'advisory suppression is forbidden'),
+    fixture('root audit suppression', 'root', '"private": true', '"private": true, "pnpm": {"auditConfig": {"ignoreCves": ["CVE-2026-90711"]}}', 'advisory suppression is forbidden'),
     ...['16.3.0', '16.3.3', '16.3.6', '16.3.7', '^16.3.8', '~16.3.8', 'latest', '16.3.9'].map((version) =>
       fixture(`unapproved Next manifest ${version}`, 'web', `"next": "${APPROVED.next}"`, `"next": "${version}"`, 'Next.js must be pinned exactly')),
     fixture('ranged Next importer', 'lock', `      next:\n        specifier: ${APPROVED.next}\n`, `      next:\n        specifier: ^${APPROVED.next}\n`, 'apps/web must resolve the exact Next.js'),
