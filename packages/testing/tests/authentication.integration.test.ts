@@ -335,13 +335,14 @@ describe.sequential('IAM-002 real PostgreSQL and Redis authority', () => {
       const crossOriginRecovery = await fetch(`${origin}/api/v1/auth/password-recovery/request`, { method: 'POST', headers: { Origin: 'https://attacker.invalid', 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'api-auth@noma.test' }) });
       expect(crossOriginRecovery.status).toBe(403);
 
-      const wrong = await request('/api/v1/auth/sign-in', { method: 'POST', body: JSON.stringify({ email: 'api-auth@noma.test', password: 'A wrong synthetic passphrase' }) });
+      const forgedForwardingHeaders = { 'X-Forwarded-For': '10.1.2.3', Forwarded: 'for=10.1.2.3;proto=https', 'X-Real-IP': '10.1.2.3' };
+      const wrong = await request('/api/v1/auth/sign-in', { method: 'POST', headers: forgedForwardingHeaders, body: JSON.stringify({ email: 'api-auth@noma.test', password: 'A wrong synthetic passphrase' }) });
       const unknown = await request('/api/v1/auth/sign-in', { method: 'POST', body: JSON.stringify({ email: 'unknown-api@noma.test', password: 'A wrong synthetic passphrase' }) });
       expect(wrong.status).toBe(401);
       expect(unknown.status).toBe(401);
       expect(await wrong.json()).toEqual(await unknown.json());
 
-      const signedIn = await request('/api/v1/auth/sign-in', { method: 'POST', body: JSON.stringify({ email: 'api-auth@noma.test', password }) });
+      const signedIn = await request('/api/v1/auth/sign-in', { method: 'POST', headers: forgedForwardingHeaders, body: JSON.stringify({ email: 'api-auth@noma.test', password }) });
       expect(signedIn.status).toBe(200);
       const principal = await signedIn.json() as Record<string, unknown>;
       expect(principal).toMatchObject({ accountStatus: 'PENDING_EMAIL', assurance: 'AUTHENTICATED' });

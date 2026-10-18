@@ -2,7 +2,7 @@
 
 > **Task:** `SEC-005`, corrected by `SEC-006`, `SEC-007`, the bounded Next.js 16.3.3 security correction, the IAM-002 pre-publication audit correction, and PR #77's bounded Next.js 16.3.8 update
 > **Risk:** `P0-RECOVERY`  
-> **Status:** Next.js 16.3.8 correction under independent review; Security readiness HOLD; infrastructure activation remains blocked
+> **Status:** Next.js 16.3.8 merged; Issue #78 Group A correction pending independent Security review; Security readiness HOLD; infrastructure activation remains blocked
 
 ## Purpose
 
@@ -28,10 +28,23 @@ This package-level remediation does not establish that Noma exposes an exploitab
 | `multer` | `2.3.0` | Patched multipart parser forced through the current Nest platform dependency |
 | `qs` | `6.16.0` | Patched query-string parser selected through Express's supported range |
 | `nanoid` | `3.3.18` | Current patched floor for GHSA-2v37-7h3g-55p8 within PostCSS's declared range |
+| `proxy-addr` | `2.0.8` | Group A exact patched target for GHSA-jqcg-44mw-7w3h / CVE-2026-90711 within Express's declared range |
 | `deepmerge-ts` | `8.0.2` | Current patched release for GHSA-ggr8-5vv4-36mx in Prisma's configuration-only graph |
 | `vitest`, `@vitest/coverage-v8`, `@vitest/browser-playwright` | `4.1.11` | Same-major patched test-tool family for the mock redirect path-traversal advisory |
 
 The `fast-uri@` and `nanoid@` keys in `pnpm-workspace.yaml` intentionally use pnpm's convergence-only override form. They apply only where the declaring dependency already accepts the selected version. The forced `mysql2`, `multer`, `qs`, `sharp`, and `deepmerge-ts` overrides are narrow advisory responses for transitive parents; none becomes an application-owned direct dependency. The exact `deepmerge-ts` `minimumReleaseAgeExclude` entry remains the sole reviewed cooling-period exception. Prisma schema validation, generation, migration, Nest runtime checks, Next production build, and the complete Vitest/Storybook browser suites must prove compatibility before review.
+
+## Issue #78 — Group A only
+
+[Approved scope](https://github.com/nomamartofficial-coder/noma/issues/78#issuecomment-6115029888) permits only `proxy-addr@2.0.7` → exact `2.0.8` for [GHSA-jqcg-44mw-7w3h / CVE-2026-90711](https://github.com/advisories/GHSA-jqcg-44mw-7w3h). The production dependency paths are `apps/api → @nestjs/platform-express → express → proxy-addr` and the peer-resolved `apps/api|apps/worker → @nestjs/core → @nestjs/platform-express → express → proxy-addr`. Express remains `5.2.1`; its `^2.0.7` range accepts `2.0.8`. The added `'proxy-addr@': 2.0.8` convergence-only override does not force incompatible parents or introduce a direct application dependency. `forwarded@0.2.0`, `ipaddr.js@1.9.1`, MIT licensing, and the package's Node engine requirement remain unchanged; no new install script is introduced.
+
+The advisory concerns short IPv4-mapped IPv6 / generic-zero IPv6 subnets incorrectly trusting unrelated IPv4 peers. Synthetic tests exercise single/multiple subnet paths and equivalent mapped spellings, legitimate IPv4/mapped/IPv6 CIDRs, forwarding-chain stopping, and Express's default disabled proxy trust. Authentication tests exercise the real controller's socket-derived network signal despite forged forwarding headers and `ip`/`ips`, including a missing-socket fallback; real API authentication regressions retain their credential, session, CSRF, and privacy assertions with forged headers. Noma does not enable Express trusted proxies or use forwarding headers as authentication authority; the installed vulnerable library is not proof of an exploitable Noma authentication path. Neither topology nor authentication semantics are changed.
+
+The offline policy requires the sole exact override, package, registry integrity, snapshot with unchanged children, and every Express edge. Negative fixtures reject vulnerable, missing, ranged, conflicting, aliased/quoted/inline extra graph representations, duplicate entries, and advisory suppression without relaxing any existing dependency invariant.
+
+Fresh registry audits on 18 October 2026 changed from **23 full / 19 production (one Critical each)** to **22 full / 18 production (zero Critical)**. The targeted advisory is absent; Moderate-floor audits still fail on unrelated findings. Undici, Sharp, Multer, brace-expansion, gRPC, fast-uri, and source-map-js findings remain outside this patch; their inventory and verification limits are indexed in [Group A evidence](evidence/security/group-a-proxy-addr.md). Groups B–F still require separate approval. IAM-009 remains `IN_REVIEW`, IAM-010 remains `NOT_STARTED`; Admin-actor UAT and independent human Security review remain outstanding.
+
+Recovery is a separately reviewed forward fix if compatibility fails. Stop activation and preserve evidence; do not silently restore vulnerable `2.0.7`, change proxy trust/authentication, weaken an exact pin or CI gate, or suppress an advisory. This Group A Draft PR is not merge/deployment/activation authority and does not close Issue #78.
 
 ## Commands
 
